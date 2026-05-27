@@ -1,6 +1,7 @@
 "use client";
 
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
+import { refreshBackendHealth } from "@/lib/services/backendHealth";
 import { fetchFeed } from "@/lib/services/feedService";
 import { fetchJudgments } from "@/lib/services/judgmentService";
 import { mapFeedRecordToFeedItem, mapJudgmentRecordToDecision, mapMissionRecordToMission, mapTaskRecordToTask } from "@/lib/services/mappers";
@@ -21,6 +22,11 @@ export async function hydrateMissions() {
     useMissionStore.getState().mergeMissionsFromRemote(mapped);
   } catch (error) {
     useSyncStore.getState().recordReadFailure("missions-hydration", error);
+    useSyncStore.getState().addWarning({
+      type: "read",
+      severity: "warning",
+      message: "Mission hydration delayed. Local mission state remains active.",
+    });
     console.warn("[ProductAI hydrate] missions fetch failed", error);
   }
 }
@@ -35,6 +41,11 @@ export async function hydrateTasks() {
     useTaskStore.getState().mergeTasksFromRemote(mapped);
   } catch (error) {
     useSyncStore.getState().recordReadFailure("tasks-hydration", error);
+    useSyncStore.getState().addWarning({
+      type: "read",
+      severity: "warning",
+      message: "Task hydration delayed. Local task timeline remains active.",
+    });
     console.warn("[ProductAI hydrate] tasks fetch failed", error);
   }
 }
@@ -49,6 +60,11 @@ export async function hydrateFeed() {
     useOrganizationStore.getState().mergeFeedFromRemote(mapped);
   } catch (error) {
     useSyncStore.getState().recordReadFailure("feed-hydration", error);
+    useSyncStore.getState().addWarning({
+      type: "read",
+      severity: "warning",
+      message: "Feed hydration delayed. Local execution continuity maintained.",
+    });
     console.warn("[ProductAI hydrate] feed fetch failed", error);
   }
 }
@@ -63,6 +79,11 @@ export async function hydrateJudgments() {
     useOrganizationStore.getState().mergeDecisionsFromRemote(mapped);
   } catch (error) {
     useSyncStore.getState().recordReadFailure("judgments-hydration", error);
+    useSyncStore.getState().addWarning({
+      type: "read",
+      severity: "warning",
+      message: "Judgment hydration delayed. Decision workflow remains local-first.",
+    });
     console.warn("[ProductAI hydrate] judgments fetch failed", error);
   }
 }
@@ -74,13 +95,33 @@ export async function hydrateProductAIState() {
   const sync = useSyncStore.getState();
   const readFailureCountBefore = sync.readFailures.length;
   sync.setHydrationStatus("hydrating");
+
+  const health = await refreshBackendHealth();
+  if (health === "unavailable") {
+    useSyncStore.getState().addWarning({
+      type: "backend",
+      severity: "warning",
+      message: "Backend unavailable. Local execution continuity maintained.",
+    });
+  }
+
   try {
     await Promise.all([hydrateMissions(), hydrateTasks(), hydrateFeed(), hydrateJudgments()]);
     const readFailureCountAfter = useSyncStore.getState().readFailures.length;
     if (readFailureCountAfter > readFailureCountBefore) {
       useSyncStore.getState().setHydrationStatus("failed", "Some hydration reads failed");
+      useSyncStore.getState().incrementPendingHydration();
+      useSyncStore.getState().addWarning({
+        type: "hydration",
+        severity: "warning",
+        message: "Hydration retry delayed due to backend timeout.",
+      });
     } else {
       useSyncStore.getState().setHydrationStatus("success");
+      useSyncStore.getState().setLastSuccessfulReadAt();
+      useSyncStore.getState().resetPendingHydration();
+      useSyncStore.getState().clearWarningsByType("read");
+      useSyncStore.getState().clearWarningsByType("hydration");
     }
     useSyncStore.getState().setLastHydratedAt(
       new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
@@ -91,6 +132,17 @@ export async function hydrateProductAIState() {
       error instanceof Error ? error.message : "Hydration failed"
     );
     useSyncStore.getState().recordReadFailure("global-hydration", error);
+    useSyncStore.getState().incrementPendingHydration();
+    useSyncStore.getState().addWarning({
+      type: "hydration",
+      severity: "warning",
+      message: "Backend synchronization delayed. Local execution continuity maintained.",
+    });
     console.warn("[ProductAI hydrate] global hydration failed", error);
   }
+}
+
+export async function runSyncRetry() {
+  await refreshBackendHealth();
+  await hydrateProductAIState();
 }

@@ -16,8 +16,18 @@ export function syncWrite(
   const mode = getPersistenceMode();
   if (!remoteFn || mode === "local") return;
 
-  void remoteFn().catch((error) => {
-    useSyncStore.getState().recordWriteFailure(label, error);
-    console.warn(`[ProductAI sync:${label}] remote write failed`, error);
-  });
+  void remoteFn()
+    .then(() => {
+      useSyncStore.getState().setLastSuccessfulWriteAt();
+      useSyncStore.getState().clearWarningsByType("write");
+    })
+    .catch((error) => {
+      useSyncStore.getState().recordWriteFailure(label, error);
+      useSyncStore.getState().addWarning({
+        type: "write",
+        severity: "warning",
+        message: `Backend synchronization delayed for ${label}. Local execution continuity maintained.`,
+      });
+      console.warn(`[ProductAI sync:${label}] remote write failed`, error);
+    });
 }

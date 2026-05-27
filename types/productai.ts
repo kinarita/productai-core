@@ -54,7 +54,9 @@ export interface Mission {
   assignedAgents: AgentRole[];
   blockers: string[];
   recentActivity: string;
+  createdAt?: string;
   updatedAt: string;
+  syncedAt?: string;
   requirementsSummary: string;
   architectureSummary: string;
   releaseReadiness: ReleaseReadiness;
@@ -86,6 +88,7 @@ export interface Task {
   events?: TaskEvent[];
   updatedAt?: string;
   createdAt?: string;
+  syncedAt?: string;
 }
 
 export type TaskEventType =
@@ -130,6 +133,9 @@ export interface Decision {
   }[];
   status: DecisionStatus;
   priority: "high" | "medium" | "low";
+  createdAt?: string;
+  updatedAt?: string;
+  syncedAt?: string;
 }
 
 export interface MemoryItem {
@@ -180,6 +186,9 @@ export interface OrganizationFeedItem {
   status?: TaskStatus | DecisionStatus;
   message: string;
   timestamp: string;
+  createdAt?: string;
+  updatedAt?: string;
+  syncedAt?: string;
   requiresCeoApproval?: boolean;
 }
 

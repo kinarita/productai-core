@@ -212,6 +212,48 @@ Phase 3-4 adds mode-aware backend reads and safe store merge actions.
   - recent read/write failures
 - Runtime/Settings surfaces show lightweight sync health without intrusive UI.
 
+## Phase 3-5 sync operational layer
+
+Phase 3-5 promotes sync/hydration from background mechanics into a visible operational system for CEO use.
+
+### Operational capabilities
+
+- manual actions in Settings:
+  - refresh from backend
+  - run hydration
+  - retry sync
+- lightweight backend health check:
+  - endpoint probe (`/api/missions`)
+  - 3s timeout
+  - statuses: `healthy` / `degraded` / `unavailable`
+- sync warning system:
+  - calm operational messages
+  - no panic overlays
+  - local continuity emphasized
+
+### Remote mode specification (future-oriented)
+
+- `local`:
+  - browser-first, localStorage persistence only
+- `hybrid`:
+  - local-first interaction model
+  - best-effort backend read/write synchronization
+- `remote` (specification only in current phase):
+  - backend as source of truth
+  - intended base for auth + multi-user collaboration
+  - full source-of-truth migration deferred
+
+### Metadata normalization
+
+To prepare future conflict resolution:
+
+- Mission / Task / Decision / Feed now support normalized metadata:
+  - `createdAt`
+  - `updatedAt`
+  - `syncedAt` (optional, future-ready)
+
+This phase does not introduce heavy conflict-resolution logic; it only standardizes metadata shape.
+
 ## Store migration path
 
 A service layer (`lib/services`) is introduced as migration prep:

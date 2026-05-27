@@ -72,7 +72,9 @@ export function mapMissionRecordToMission(record: MissionRecord, base?: Mission)
       assignedAgents: ["COO", "Architect", "Engineer", "QA"],
       blockers: [],
       recentActivity: "Hydrated from backend.",
+      createdAt: record.createdAt,
       updatedAt: record.updatedAt,
+      syncedAt: record.updatedAt,
       requirementsSummary: record.summary,
       architectureSummary: record.summary,
       releaseReadiness: {
@@ -95,7 +97,9 @@ export function mapMissionRecordToMission(record: MissionRecord, base?: Mission)
     status: (record.status as Mission["status"]) ?? base?.status ?? "planning",
     health: (record.health as Mission["health"]) ?? base?.health ?? "stable",
     progress: record.progress,
+    createdAt: record.createdAt ?? base?.createdAt,
     updatedAt: record.updatedAt,
+    syncedAt: record.updatedAt,
   };
 }
 
@@ -117,6 +121,7 @@ export function mapTaskRecordToTask(record: TaskRecord, base?: Task): Task {
       createdFrom: "manual",
       updatedAt: record.updatedAt,
       createdAt: record.createdAt,
+      syncedAt: record.updatedAt,
       events: [],
     }),
     id: record.id,
@@ -134,6 +139,7 @@ export function mapTaskRecordToTask(record: TaskRecord, base?: Task): Task {
     createdFrom: (record.createdFrom as Task["createdFrom"]) ?? base?.createdFrom ?? "manual",
     updatedAt: record.updatedAt,
     createdAt: record.createdAt,
+    syncedAt: record.updatedAt,
   };
 }
 
@@ -151,6 +157,9 @@ export function mapFeedRecordToFeedItem(
       missionName: record.missionName,
       message: record.message,
       timestamp: record.createdAt,
+      createdAt: record.createdAt,
+      updatedAt: record.createdAt,
+      syncedAt: record.createdAt,
     }),
     id: record.id,
     missionId: record.missionId,
@@ -163,6 +172,9 @@ export function mapFeedRecordToFeedItem(
     authorName: record.authorName,
     message: record.message,
     timestamp: record.createdAt,
+    createdAt: record.createdAt,
+    updatedAt: record.createdAt,
+    syncedAt: record.createdAt,
   };
 }
 
@@ -183,6 +195,9 @@ export function mapJudgmentRecordToDecision(record: JudgmentRecord, base?: Decis
       status: "pending",
       priority: "medium",
       relatedTaskIds: [],
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      syncedAt: record.updatedAt,
     }),
     id: record.id,
     title: record.title,
@@ -191,5 +206,8 @@ export function mapJudgmentRecordToDecision(record: JudgmentRecord, base?: Decis
     summary: record.summary,
     status: (record.status as Decision["status"]) ?? base?.status ?? "pending",
     priority: (record.priority as Decision["priority"]) ?? base?.priority ?? "medium",
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    syncedAt: record.updatedAt,
   };
 }

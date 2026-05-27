@@ -4,6 +4,29 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-27
 
+### Added (Phase 3-5 sync operational layer)
+
+- Manual sync operations in Settings:
+  - Refresh from backend
+  - Run hydration
+  - Retry sync
+- Lightweight backend health check service with timeout probe.
+- Extended sync store operational fields:
+  - last successful read/write timestamps
+  - pending hydration retry count
+  - backend health status
+  - structured sync warnings
+- Runtime sync warnings section with calm operational messaging.
+- Sync summary expansion in Settings for operational visibility.
+- Metadata normalization support in frontend types:
+  - `createdAt`, `updatedAt`, `syncedAt?` across core entities.
+
+### Changed (Phase 3-5)
+
+- `writeSync` now records success timestamps and operational warnings on failures.
+- `readHydrationService` now updates operational sync telemetry and warning lifecycle.
+- Sync behavior messaging aligned to operational continuity tone.
+
 ### Added (Phase 3-4 read hydration bridge)
 
 - Mode-aware read hydration service for missions/tasks/feed/judgments.

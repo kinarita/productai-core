@@ -1,5 +1,43 @@
 # ProductAI Development Progress
 
+## 2026-05-27 — Phase 3-5 sync operational layer
+
+### Objective
+
+Evolve persistence sync from internal background behavior into an operationally visible, CEO-readable sync system.
+
+### Implemented in Phase 3-5
+
+- Added manual sync operations in Settings:
+  - Refresh from backend
+  - Run hydration
+  - Retry sync
+- Expanded sync state model:
+  - `lastSuccessfulWriteAt`
+  - `lastSuccessfulReadAt`
+  - `pendingHydrationCount`
+  - `backendHealth`
+  - `syncWarnings`
+- Connected write sync to operational tracking:
+  - record write failure
+  - add calm warning message
+  - record successful write time
+- Connected read hydration to operational tracking:
+  - backend health check before hydration
+  - warning creation on hydration/read issues
+  - pending retry count updates
+  - successful read timestamp updates
+- Added lightweight backend health service with timeout-based probe.
+- Added runtime sync warnings + operational sync health details.
+- Normalized persistence metadata shape in frontend types:
+  - `createdAt`, `updatedAt`, `syncedAt?`
+
+### Coexistence status
+
+- local-first UX remains unchanged.
+- backend unavailability does not block local execution.
+- sync UI remains quiet and operational (no panic-style overlays).
+
 ## 2026-05-27 — Phase 3-4 read hydration bridge
 
 ### Objective

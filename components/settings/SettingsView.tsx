@@ -4,15 +4,39 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { organizationSettings } from "@/data/mockData";
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
+import { refreshBackendHealth } from "@/lib/services/backendHealth";
+import { hydrateProductAIState, runSyncRetry } from "@/lib/services/readHydrationService";
 import { useSyncStore } from "@/lib/store/syncStore";
 import { resetAllProductAIState } from "@/lib/store/resetProductAIState";
+import { useState } from "react";
 
 export function SettingsView() {
+  const [runningAction, setRunningAction] = useState<string | null>(null);
   const s = organizationSettings;
   const persistenceMode = getPersistenceMode();
   const hydrationStatus = useSyncStore((state) => state.hydrationStatus);
   const lastHydratedAt = useSyncStore((state) => state.lastHydratedAt);
+  const lastSuccessfulWriteAt = useSyncStore((state) => state.lastSuccessfulWriteAt);
+  const pendingHydrationCount = useSyncStore((state) => state.pendingHydrationCount);
+  const backendHealth = useSyncStore((state) => state.backendHealth);
   const clearSyncLog = useSyncStore((state) => state.clearSyncLog);
+  const clearWarnings = useSyncStore((state) => state.clearWarnings);
+
+  const runManualAction = async (action: "refresh" | "hydrate" | "retry") => {
+    setRunningAction(action);
+    try {
+      if (action === "refresh") {
+        await refreshBackendHealth();
+        await hydrateProductAIState();
+      } else if (action === "hydrate") {
+        await hydrateProductAIState();
+      } else {
+        await runSyncRetry();
+      }
+    } finally {
+      setRunningAction(null);
+    }
+  };
 
   return (
     <AppShell
@@ -103,17 +127,53 @@ export function SettingsView() {
           </p>
           <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
             <p>Persistence mode: {persistenceMode}</p>
-            <p className="mt-1">Backend sync mode: best effort</p>
+            <p className="mt-1">Backend sync: operational</p>
+            <p className="mt-1">Backend health: {backendHealth}</p>
             <p className="mt-1">Hydration status: {hydrationStatus}</p>
             <p className="mt-1">Last hydration: {lastHydratedAt ?? "Not yet"}</p>
+            <p className="mt-1">Last successful write: {lastSuccessfulWriteAt ?? "Not yet"}</p>
+            <p className="mt-1">Pending retries: {pendingHydrationCount}</p>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => clearSyncLog()}
               className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground"
             >
               Clear sync log
+            </button>
+            <button
+              type="button"
+              onClick={() => clearWarnings()}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground"
+            >
+              Clear warnings
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void runManualAction("refresh")}
+              disabled={runningAction !== null}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Refresh from backend
+            </button>
+            <button
+              type="button"
+              onClick={() => void runManualAction("hydrate")}
+              disabled={runningAction !== null}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Run hydration
+            </button>
+            <button
+              type="button"
+              onClick={() => void runManualAction("retry")}
+              disabled={runningAction !== null}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Retry sync
             </button>
           </div>
           <button
