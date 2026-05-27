@@ -15,6 +15,10 @@ interface MissionState {
   resetToInitial: () => void;
 }
 
+function touchMission(mission: Mission, patch: Partial<Mission>): Mission {
+  return { ...mission, ...patch, updatedAt: "Just now" };
+}
+
 export const useMissionStore = create<MissionState>()(
   persist(
     (set) => ({
@@ -23,13 +27,13 @@ export const useMissionStore = create<MissionState>()(
       updateMissionStatus: (missionId, status) =>
         set((state) => ({
           missions: state.missions.map((m) =>
-            m.id === missionId ? { ...m, status } : m
+            m.id === missionId ? touchMission(m, { status }) : m
           ),
         })),
       updateMissionHealth: (missionId, health) =>
         set((state) => ({
           missions: state.missions.map((m) =>
-            m.id === missionId ? { ...m, health } : m
+            m.id === missionId ? touchMission(m, { health }) : m
           ),
         })),
       applyJudgmentOutcome: (missionId, outcome) =>
@@ -39,10 +43,12 @@ export const useMissionStore = create<MissionState>()(
 
             if (outcome === "approved") {
               const score = Math.min(100, m.releaseReadiness.score + 5);
-              return {
-                ...m,
+              return touchMission(m, {
                 health: m.health === "blocked" ? m.health : "stable",
                 status: m.status === "planning" ? "active" : m.status,
+                summary: "Release readiness improved after CEO approval.",
+                recentActivity:
+                  "CEO approval recorded — release readiness and mission health updated.",
                 releaseReadiness: {
                   ...m.releaseReadiness,
                   score,
@@ -57,28 +63,39 @@ export const useMissionStore = create<MissionState>()(
                     (b) => !b.toLowerCase().includes("ceo")
                   ),
                 },
-              };
+              });
             }
 
             if (outcome === "rejected") {
-              return {
-                ...m,
+              const blockers = m.blockers.includes("CEO decision rejected — revisit scope")
+                ? m.blockers
+                : [...m.blockers, "CEO decision rejected — revisit scope"];
+              return touchMission(m, {
                 health: "risky",
+                summary: "Mission at risk following CEO rejection of pending decision.",
+                recentActivity:
+                  "CEO rejected a pending decision — escalation recommended.",
+                blockers,
                 releaseReadiness: {
                   ...m.releaseReadiness,
                   summary: `${m.releaseReadiness.summary} Related CEO decision rejected.`,
+                  blockers: [
+                    ...m.releaseReadiness.blockers,
+                    "CEO judgment: rejected",
+                  ],
                 },
-              };
+              });
             }
 
-            return {
-              ...m,
+            return touchMission(m, {
               health: m.health === "stable" ? "delayed" : m.health,
+              summary: "CEO requested revision — mission timeline under review.",
+              recentActivity: "CEO requested revision on pending decision.",
               releaseReadiness: {
                 ...m.releaseReadiness,
                 summary: `${m.releaseReadiness.summary} CEO requested revision.`,
               },
-            };
+            });
           }),
         })),
       resetToInitial: () => set({ ...missionStoreInitial }),

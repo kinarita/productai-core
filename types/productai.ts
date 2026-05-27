@@ -41,6 +41,8 @@ export interface Mission {
   id: string;
   name: string;
   description: string;
+  /** CEO-facing operational summary — updated as the mission evolves */
+  summary: string;
   status: MissionStatus;
   lifecycle: MissionLifecyclePhase;
   progress: number;
