@@ -26,6 +26,7 @@ import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useTaskStore } from "@/lib/store/taskStore";
+import { countTasksByStatus, getRecentlyUpdatedTask } from "@/lib/task/taskSelectors";
 import { useUiStore } from "@/lib/store/uiStore";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
@@ -158,6 +159,8 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
 
   const pendingDecisions = missionDecisions.filter((d) => d.status === "pending");
   const activeTasks = missionTasks.filter((t) => t.status !== "completed");
+  const taskCounts = countTasksByStatus(tasks, missionId);
+  const recentlyUpdatedTask = getRecentlyUpdatedTask(missionTasks, missionId);
   const relatedBranches = getBranchesForMissionId(mission);
   const relatedPrs = getPullRequestsForMissionId(mission);
   const memoryInsights = getMemoriesForMissionId(mission);
@@ -259,6 +262,47 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                 <AgentAvatar key={role} role={role} />
               ))}
             </div>
+          </Card>
+
+          <Card>
+            <SectionHeader title="Task Summary" description="Execution state for this mission" />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-lg border border-border bg-surface p-3">
+                <p className="text-xs font-medium uppercase text-muted">Active</p>
+                <p className="mt-1 text-2xl font-semibold text-foreground">
+                  {taskCounts.active + taskCounts.in_review}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-3">
+                <p className="text-xs font-medium uppercase text-muted">Blocked</p>
+                <p className="mt-1 text-2xl font-semibold text-danger">{taskCounts.blocked}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-3">
+                <p className="text-xs font-medium uppercase text-muted">Completed</p>
+                <p className="mt-1 text-2xl font-semibold text-success">{taskCounts.completed}</p>
+              </div>
+            </div>
+            {recentlyUpdatedTask ? (
+              <div className="mt-4 rounded-lg border border-border bg-surface p-3">
+                <p className="text-xs font-medium uppercase text-muted">Recently updated</p>
+                <Link
+                  href={`/tasks/${recentlyUpdatedTask.id}`}
+                  className="mt-1 block text-sm font-medium text-foreground hover:text-accent"
+                >
+                  {recentlyUpdatedTask.title}
+                </Link>
+                <p className="mt-1 text-xs text-muted">
+                  {recentlyUpdatedTask.status}
+                  {recentlyUpdatedTask.updatedAt ? ` · ${recentlyUpdatedTask.updatedAt}` : ""}
+                </p>
+              </div>
+            ) : null}
+            <Link
+              href={`/tasks?mission=${missionId}`}
+              className="mt-3 inline-block text-xs font-medium text-accent hover:underline"
+            >
+              Open all tasks →
+            </Link>
           </Card>
 
           <Card>

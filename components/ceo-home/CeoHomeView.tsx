@@ -9,6 +9,10 @@ import { computeOrganizationHealth } from "@/lib/store/computeOrganizationHealth
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
+import { useTaskStore } from "@/lib/store/taskStore";
+import { getImportantTasks } from "@/lib/task/taskSelectors";
+import { StatusPill } from "@/components/StatusPill";
+import type { TaskStatus } from "@/types/productai";
 import { agents } from "@/data/mockData";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 
@@ -19,10 +23,19 @@ const healthVariant = {
   blocked: "danger" as const,
 };
 
+const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
+  active: "info",
+  in_review: "warning",
+  blocked: "danger",
+  completed: "success",
+};
+
 export function CeoHomeView() {
   const missions = useMissionStore((s) => s.missions);
   const decisions = useOrganizationStore((s) => s.decisions);
   const runtimeAlerts = useRuntimeStore((s) => s.alerts);
+  const tasks = useTaskStore((s) => s.tasks);
+  const importantTasks = getImportantTasks(tasks, 6);
 
   const orgHealth = computeOrganizationHealth(missions, runtimeAlerts);
   const activeMissions = missions.filter((m) => m.status === "active" || m.status === "planning");
@@ -79,6 +92,46 @@ export function CeoHomeView() {
             trend="up"
           />
         </div>
+
+        <Card title="Important Tasks" description="Blocked, in review, and recently updated work">
+          {importantTasks.length === 0 ? (
+            <p className="text-sm text-muted">No tasks need attention right now.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {importantTasks.map((task) => (
+                <li key={task.id}>
+                  <Link
+                    href={`/tasks/${task.id}`}
+                    className="group flex items-center justify-between gap-4 py-4 transition-colors first:pt-0 last:pb-0 hover:bg-surface/50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground group-hover:text-accent">{task.title}</p>
+                      <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                        <MissionLink
+                          missionId={task.missionId}
+                          missionName={task.missionName}
+                          variant="pill"
+                        />
+                        {task.updatedAt ? <span>· Updated {task.updatedAt}</span> : null}
+                      </p>
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent opacity-0 transition-opacity group-hover:opacity-100">
+                        Open execution console
+                        <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </div>
+                    <StatusPill variant={taskStatusVariant[task.status]}>{task.status}</StatusPill>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link
+            href="/tasks"
+            className="mt-4 inline-block text-xs font-medium text-accent hover:underline"
+          >
+            View all tasks →
+          </Link>
+        </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card title="Active Missions" description="Current product initiatives — open for detail">

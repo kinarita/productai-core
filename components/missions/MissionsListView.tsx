@@ -9,6 +9,8 @@ import { LifecycleStepper } from "@/components/LifecycleStepper";
 import { ProgressBar } from "@/components/ProgressBar";
 import { StatusPill } from "@/components/StatusPill";
 import { useMissionStore } from "@/lib/store/missionStore";
+import { useTaskStore } from "@/lib/store/taskStore";
+import { countTasksByStatus } from "@/lib/task/taskSelectors";
 import type { MissionHealth } from "@/types/productai";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -27,6 +29,7 @@ const statusVariant = {
 
 export function MissionsListView() {
   const missions = useMissionStore((s) => s.missions);
+  const tasks = useTaskStore((s) => s.tasks);
 
   return (
     <AppShell
@@ -34,7 +37,11 @@ export function MissionsListView() {
       description="Track software products from idea to release"
     >
       <div className="grid gap-6">
-        {missions.map((mission) => (
+        {missions.map((mission) => {
+          const taskCounts = countTasksByStatus(tasks, mission.id);
+          const activeTaskCount = taskCounts.active + taskCounts.in_review;
+
+          return (
           <Card key={mission.id}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -102,7 +109,26 @@ export function MissionsListView() {
               <p className="text-xs text-muted">{mission.releaseReadiness.label}</p>
             </div>
 
-            <div className="mt-6 flex justify-end border-t border-border pt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-border pt-4 text-sm">
+              <span className="text-muted">
+                <span className="font-medium text-foreground">{activeTaskCount}</span> active tasks
+              </span>
+              {taskCounts.blocked > 0 ? (
+                <span className="text-danger">
+                  <span className="font-medium">{taskCounts.blocked}</span> blocked
+                </span>
+              ) : (
+                <span className="text-muted">0 blocked</span>
+              )}
+              <Link
+                href={`/tasks?mission=${mission.id}`}
+                className="text-xs font-medium text-accent hover:underline"
+              >
+                Open Tasks →
+              </Link>
+            </div>
+
+            <div className="mt-4 flex justify-end border-t border-border pt-4">
               <Link
                 href={`/missions/${mission.id}`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-surface"
@@ -112,7 +138,8 @@ export function MissionsListView() {
               </Link>
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </AppShell>
   );

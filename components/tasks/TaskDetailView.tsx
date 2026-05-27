@@ -8,13 +8,19 @@ import { Card } from "@/components/Card";
 import { MissionLink } from "@/components/MissionLink";
 import { SectionHeader } from "@/components/SectionHeader";
 import { StatusPill } from "@/components/StatusPill";
-import { agents, missions as seedMissions } from "@/data/mockData";
+import { TaskStatusActions } from "@/components/tasks/TaskStatusActions";
+import { missions as seedMissions } from "@/data/mockData";
 import { getRuntimeSignalsForMission } from "@/lib/mission/missionDetailData";
+import {
+  executeSuggestedAction,
+  getSuggestedActionsForStatus,
+} from "@/lib/task/suggestedTaskActions";
+import { agentName, sourceBadgeClass } from "@/lib/task/taskUi";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useTaskStore } from "@/lib/store/taskStore";
-import type { AgentRole, TaskEvent, TaskStatus } from "@/types/productai";
+import type { TaskEvent, TaskStatus } from "@/types/productai";
 
 const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
   active: "info",
@@ -22,10 +28,6 @@ const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "suc
   blocked: "danger",
   completed: "success",
 };
-
-function agentName(role: AgentRole) {
-  return agents.find((a) => a.role === role)?.name ?? role;
-}
 
 function eventVariant(type: TaskEvent["type"]) {
   if (type === "blocked") return "danger";
@@ -39,32 +41,6 @@ function eventVariant(type: TaskEvent["type"]) {
 
 function formatEventType(type: TaskEvent["type"]) {
   return type.replaceAll("_", " ");
-}
-
-function suggestedActions(status: TaskStatus) {
-  if (status === "blocked") {
-    return [
-      { title: "Escalate to COO", description: "Clarify owner and unblock dependencies." },
-      { title: "Request architectural review", description: "Align on constraints before resuming." },
-      { title: "Add execution note", description: "Capture what is currently blocking progress." },
-    ];
-  }
-  if (status === "in_review") {
-    return [
-      { title: "Request QA validation", description: "Confirm acceptance criteria and edge cases." },
-      { title: "Link evidence", description: "Add a short note describing what changed and what to verify." },
-    ];
-  }
-  if (status === "completed") {
-    return [
-      { title: "Update mission status", description: "Confirm mission progress is reflected." },
-      { title: "Record learning", description: "Add a short memory if this revealed a new pattern." },
-    ];
-  }
-  return [
-    { title: "Clarify next step", description: "Add a concrete execution note and expected outcome." },
-    { title: "Move to review when ready", description: "Shift into validation once work is done." },
-  ];
 }
 
 interface TaskDetailViewProps {
@@ -93,15 +69,30 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
 
   const relatedFeed = useMemo(() => {
     if (!task) return [];
-    return feed
-      .filter((f) => f.taskId === task.id || f.missionId === task.missionId)
-      .slice(0, 8);
+    const byTask = feed.filter((f) => f.taskId === task.id);
+    const byMission = feed.filter((f) => f.missionId === task.missionId && !f.taskId);
+    return [...byTask, ...byMission].slice(0, 8);
   }, [feed, task]);
 
   const runtimeSignals = useMemo(() => {
     if (!task) return [];
     return getRuntimeSignalsForMission(task.missionId, providerHealth, alerts);
   }, [alerts, providerHealth, task]);
+
+  const runtimeImpactMessage = useMemo(() => {
+    if (!task || task.status !== "blocked") return null;
+    const claude = providerHealth.find(
+      (p) => p.provider.includes("Claude") && p.health !== "healthy"
+    );
+    if (claude) {
+      return "Claude latency may affect summarization workflow.";
+    }
+    const degraded = providerHealth.find((p) => p.health === "degraded");
+    if (degraded) {
+      return `Runtime impact detected — ${degraded.provider} elevated latency may slow execution.`;
+    }
+    return null;
+  }, [providerHealth, task]);
 
   const timeline = useMemo(() => {
     const events = task?.events ?? [];
@@ -112,10 +103,12 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
     notFound();
   }
 
+  const suggestions = getSuggestedActionsForStatus(task.status);
+
   return (
     <AppShell>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <Link
             href="/tasks"
             className="text-sm font-medium text-muted transition-colors hover:text-foreground"
@@ -136,7 +129,18 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
             ) : null}
           </div>
         </div>
+        <div className="shrink-0">
+          <TaskStatusActions task={task} compact />
+        </div>
       </div>
+
+      {runtimeImpactMessage ? (
+        <div className="mb-6 rounded-lg border border-warning/30 bg-amber-50/50 px-4 py-3 text-sm text-foreground">
+          <span className="font-medium text-warning">Runtime impact detected</span>
+          <span className="text-muted"> — </span>
+          {runtimeImpactMessage}
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -161,7 +165,7 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
 
           <Card>
             <SectionHeader title="Execution Status" description="Current operational state and expectations" />
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-sm text-foreground">
                   Status:{" "}
@@ -180,6 +184,7 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                 </p>
               </div>
             </div>
+            <TaskStatusActions task={task} />
           </Card>
 
           <Card>
@@ -191,13 +196,18 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                 {timeline.map((e) => (
                   <li key={e.id} className="rounded-lg border border-border bg-surface p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs text-muted">
-                        {e.timestamp} · {e.source}
-                        {e.actor ? ` · ${e.actor}` : ""}
-                      </p>
-                      <StatusPill variant={eventVariant(e.type)}>{formatEventType(e.type)}</StatusPill>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={sourceBadgeClass(e.source)}>{e.source}</span>
+                        <StatusPill variant={eventVariant(e.type)}>{formatEventType(e.type)}</StatusPill>
+                      </div>
+                      <span className="text-xs text-muted">{e.timestamp}</span>
                     </div>
                     <p className="mt-2 text-sm text-foreground">{e.message}</p>
+                    {e.actor ? (
+                      <p className="mt-1 text-xs text-muted">
+                        {agentName(e.actor)} · {e.actor}
+                      </p>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -264,6 +274,7 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                   <li key={f.id} className="rounded-lg border border-border bg-surface p-3">
                     <p className="text-xs text-muted">
                       {f.authorName} ({f.author}) · {f.timestamp}
+                      {f.taskId === task.id ? " · this task" : ""}
                     </p>
                     <p className="mt-1 text-sm text-foreground">{f.message}</p>
                   </li>
@@ -300,12 +311,19 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
           </Card>
 
           <Card>
-            <SectionHeader title="Suggested Next Actions" description="Simple mock guidance" />
+            <SectionHeader title="Suggested Next Actions" description="Execute organizational responses" />
             <ul className="space-y-3">
-              {suggestedActions(task.status).map((a) => (
-                <li key={a.title} className="rounded-lg border border-border bg-surface p-3">
+              {suggestions.map((a) => (
+                <li key={a.key} className="rounded-lg border border-border bg-surface p-3">
                   <p className="text-sm font-medium text-foreground">{a.title}</p>
                   <p className="mt-1 text-xs text-muted">{a.description}</p>
+                  <button
+                    type="button"
+                    onClick={() => executeSuggestedAction(task, a.key)}
+                    className="mt-3 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface"
+                  >
+                    Run action
+                  </button>
                 </li>
               ))}
             </ul>
@@ -315,4 +333,3 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
     </AppShell>
   );
 }
-

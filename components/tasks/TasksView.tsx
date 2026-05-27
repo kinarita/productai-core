@@ -5,11 +5,11 @@ import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { MissionLink } from "@/components/MissionLink";
 import { MissionFilterBanner } from "@/components/MissionFilterBanner";
+import { TaskStatusActions } from "@/components/tasks/TaskStatusActions";
 import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
-import { agents } from "@/data/mockData";
 import Link from "next/link";
 import { useTaskStore } from "@/lib/store/taskStore";
-import type { Agent, Task, TaskEvent, TaskStatus } from "@/types/productai";
+import type { Task, TaskEvent } from "@/types/productai";
 
 const columns = [
   { key: "active" as const, label: "Active" },
@@ -17,20 +17,6 @@ const columns = [
   { key: "blocked" as const, label: "Blocked" },
   { key: "completed" as const, label: "Completed" },
 ];
-
-function findAgentByRole(role: Task["assignedTo"]): Agent | undefined {
-  return agents.find((a) => a.role === role);
-}
-
-function actionButtonClass(variant: "primary" | "secondary" | "danger") {
-  if (variant === "primary") {
-    return "rounded-md bg-accent px-2 py-1 text-xs font-medium text-white hover:opacity-90";
-  }
-  if (variant === "danger") {
-    return "rounded-md border border-danger/30 bg-danger/5 px-2 py-1 text-xs font-medium text-danger hover:bg-danger/10";
-  }
-  return "rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-surface";
-}
 
 function latestEvent(task: Task): TaskEvent | undefined {
   const events = task.events ?? [];
@@ -45,25 +31,8 @@ export function TasksView({ missionFilter }: TasksViewProps) {
   useMissionFilterFromUrl(missionFilter);
 
   const tasks = useTaskStore((s) => s.tasks);
-  const updateTaskStatus = useTaskStore((s) => s.updateTaskStatus);
-  const addTaskEvent = useTaskStore((s) => s.addTaskEvent);
 
   const filteredTasks = missionFilter ? tasks.filter((t) => t.missionId === missionFilter) : tasks;
-
-  const handleStatus = (task: Task, status: TaskStatus) => {
-    const actor = findAgentByRole(task.assignedTo);
-    updateTaskStatus(task.id, status, actor);
-  };
-
-  const handleNudge = (task: Task) => {
-    addTaskEvent(task.id, {
-      type: "note",
-      actor: task.assignedTo,
-      agentId: task.assignedAgentId,
-      message: `Execution note: unblocked dependencies check requested for "${task.title}".`,
-      source: "tasks",
-    });
-  };
 
   return (
     <AppShell
@@ -108,8 +77,6 @@ export function TasksView({ missionFilter }: TasksViewProps) {
                         Open Detail →
                       </Link>
                     </div>
-                    <p className="mt-1">
-                    </p>
                     <div className="mt-3 flex items-center justify-between">
                       <Badge variant="accent">{task.assignedTo}</Badge>
                       <span className="text-xs text-muted">
@@ -130,89 +97,7 @@ export function TasksView({ missionFilter }: TasksViewProps) {
                       </div>
                     )}
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      {task.status === "active" ? (
-                        <>
-                          <button
-                            type="button"
-                            className={actionButtonClass("secondary")}
-                            onClick={() => handleStatus(task, "in_review")}
-                          >
-                            Move to Review
-                          </button>
-                          <button
-                            type="button"
-                            className={actionButtonClass("danger")}
-                            onClick={() => handleStatus(task, "blocked")}
-                          >
-                            Block
-                          </button>
-                          <button
-                            type="button"
-                            className={actionButtonClass("primary")}
-                            onClick={() => handleStatus(task, "completed")}
-                          >
-                            Complete
-                          </button>
-                        </>
-                      ) : task.status === "in_review" ? (
-                        <>
-                          <button
-                            type="button"
-                            className={actionButtonClass("secondary")}
-                            onClick={() => handleStatus(task, "active")}
-                          >
-                            Back to Active
-                          </button>
-                          <button
-                            type="button"
-                            className={actionButtonClass("danger")}
-                            onClick={() => handleStatus(task, "blocked")}
-                          >
-                            Block
-                          </button>
-                          <button
-                            type="button"
-                            className={actionButtonClass("primary")}
-                            onClick={() => handleStatus(task, "completed")}
-                          >
-                            Complete
-                          </button>
-                        </>
-                      ) : task.status === "blocked" ? (
-                        <>
-                          <button
-                            type="button"
-                            className={actionButtonClass("secondary")}
-                            onClick={() => handleStatus(task, "active")}
-                          >
-                            Start
-                          </button>
-                          <button
-                            type="button"
-                            className={actionButtonClass("secondary")}
-                            onClick={() => handleNudge(task)}
-                          >
-                            Add Note
-                          </button>
-                          <button
-                            type="button"
-                            className={actionButtonClass("primary")}
-                            onClick={() => handleStatus(task, "completed")}
-                          >
-                            Complete
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          className={actionButtonClass("secondary")}
-                          onClick={() => handleStatus(task, "active")}
-                        >
-                          Reopen
-                        </button>
-                      )}
-                    </div>
+                    <TaskStatusActions task={task} />
 
                     {task.events?.length ? (
                       <p className="mt-3 text-xs text-muted">
