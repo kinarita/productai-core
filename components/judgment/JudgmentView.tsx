@@ -12,6 +12,7 @@ import {
 } from "@/lib/store/organizationStore";
 import { useUiStore } from "@/lib/store/uiStore";
 import { useMissionStore } from "@/lib/store/missionStore";
+import { useTaskStore } from "@/lib/store/taskStore";
 import type { DecisionStatus } from "@/types/productai";
 import { Check, RotateCcw, X } from "lucide-react";
 
@@ -33,6 +34,8 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
   const addFeedItem = useOrganizationStore((s) => s.addFeedItem);
   const setSelectedDecision = useUiStore((s) => s.setSelectedDecision);
   const applyJudgmentOutcome = useMissionStore((s) => s.applyJudgmentOutcome);
+  const updateTaskStatus = useTaskStore((s) => s.updateTaskStatus);
+  const addTaskEvent = useTaskStore((s) => s.addTaskEvent);
 
   const filtered = missionFilter
     ? decisions.filter((d) => d.relatedMissionId === missionFilter)
@@ -51,6 +54,23 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
     updateDecisionStatus(decisionId, status);
     setSelectedDecision(decisionId);
     applyJudgmentOutcome(decision.relatedMissionId, action);
+
+    if (decision.relatedTaskIds?.length) {
+      decision.relatedTaskIds.forEach((taskId) => {
+        if (action === "approved") {
+          updateTaskStatus(taskId, "active");
+          addTaskEvent(taskId, `CEO approval unblocked execution for "${decision.title}".`);
+          return;
+        }
+        if (action === "rejected") {
+          updateTaskStatus(taskId, "blocked");
+          addTaskEvent(taskId, `CEO rejected decision "${decision.title}" — task blocked pending follow-up.`);
+          return;
+        }
+        addTaskEvent(taskId, `CEO requested revision on "${decision.title}".`);
+        updateTaskStatus(taskId, "active");
+      });
+    }
 
     addFeedItem({
       type: action === "approved" ? "approval_required" : "coordination",

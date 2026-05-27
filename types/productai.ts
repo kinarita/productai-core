@@ -69,9 +69,14 @@ export interface Task {
   missionName: string;
   status: TaskStatus;
   assignedTo: AgentRole;
+  /** Optional agent identity for assignment */
+  assignedAgentId?: string;
   dependencies: string[];
   eta: string;
   progress: number;
+  /** Lightweight event trail (local-only) */
+  events?: string[];
+  updatedAt?: string;
 }
 
 export interface Decision {
@@ -80,6 +85,8 @@ export interface Decision {
   relatedMissionId: string;
   missionName: string;
   summary: string;
+  /** Optional tasks impacted by this decision */
+  relatedTaskIds?: string[];
   optionA: { label: string; description: string };
   optionB: { label: string; description: string };
   risks: string[];
@@ -129,6 +136,9 @@ export interface OrganizationFeedItem {
   authorName: string;
   missionId: string;
   missionName: string;
+  /** Optional richer metadata for UI */
+  title?: string;
+  agentId?: string;
   message: string;
   timestamp: string;
   requiresCeoApproval?: boolean;

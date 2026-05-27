@@ -25,6 +25,7 @@ import {
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
+import { useTaskStore } from "@/lib/store/taskStore";
 import { useUiStore } from "@/lib/store/uiStore";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
@@ -71,6 +72,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
     () => storeMission ?? seedMissions.find((m) => m.id === missionId),
     [storeMission, missionId]
   );
+  const tasks = useTaskStore((s) => s.tasks);
   const allDecisions = useOrganizationStore((s) => s.decisions);
   const allFeed = useOrganizationStore((s) => s.organizationFeedItems);
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
@@ -101,6 +103,32 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
     [missionId, providerHealth, alerts]
   );
 
+  const missionTasks = useMemo(
+    () => tasks.filter((t) => t.missionId === missionId),
+    [tasks, missionId]
+  );
+
+  const taskActivity = useMemo(() => {
+    return missionTasks
+      .filter((t) => (t.events?.length ?? 0) > 0)
+      .slice(0, 4)
+      .map((t) => {
+        const last = t.events?.[t.events.length - 1] ?? `Updated task: ${t.title}`;
+        return {
+          id: `task-${t.id}`,
+          source: "task" as const,
+          timestamp: t.updatedAt ?? "Recent",
+          message: last,
+          meta: `${t.assignedTo} · ${t.title}`,
+        };
+      });
+  }, [missionTasks]);
+
+  const recentActivityWithTasks = useMemo(
+    () => [...taskActivity, ...recentActivity].slice(0, 12),
+    [taskActivity, recentActivity]
+  );
+
   if (!hydrated) {
     return <MissionDetailSkeleton />;
   }
@@ -128,7 +156,6 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   }
 
   const pendingDecisions = missionDecisions.filter((d) => d.status === "pending");
-  const missionTasks = getTasksForMissionId(missionId);
   const activeTasks = missionTasks.filter((t) => t.status !== "completed");
   const relatedBranches = getBranchesForMissionId(mission);
   const relatedPrs = getPullRequestsForMissionId(mission);
@@ -434,7 +461,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
           <Card>
             <SectionHeader title="Recent Activity" />
             <ul className="space-y-3">
-              {recentActivity.map((item) => (
+              {recentActivityWithTasks.map((item) => (
                 <li key={item.id} className="border-b border-border pb-3 last:border-0 last:pb-0">
                   <p className="text-xs text-muted">
                     {item.meta} · {item.timestamp}

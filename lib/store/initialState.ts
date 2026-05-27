@@ -6,6 +6,7 @@ import {
   organizationFeedItems as initialFeed,
   runtimeCosts,
   runtimeSummary,
+  tasks as initialTasks,
 } from "@/data/mockData";
 import type { RuntimeAlert } from "@/lib/store/runtimeStore";
 import type { AgentRole } from "@/types/productai";
@@ -77,9 +78,14 @@ export const uiStoreInitial = {
   activeFeedFilter: "all" as const,
 };
 
+export const taskStoreInitial = {
+  tasks: initialTasks,
+};
+
 export const PERSIST_KEYS = [
   "productai-ui",
   "productai-missions",
   "productai-organization",
   "productai-runtime",
+  "productai-tasks",
 ] as const;

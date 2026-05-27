@@ -10,7 +10,7 @@ export interface MissionRuntimeAlert {
 
 export interface MissionActivityItem {
   id: string;
-  source: "feed" | "decision" | "runtime" | "mission";
+  source: "feed" | "decision" | "runtime" | "mission" | "task";
   timestamp: string;
   message: string;
   meta?: string;
@@ -22,6 +22,7 @@ export interface RuntimeSignal {
   severity: "info" | "warning" | "danger";
 }
 
+/** @deprecated Tasks now live in taskStore; use `useTaskStore` in client views. */
 export function getTasksForMissionId(missionId: string) {
   return tasks.filter((t) => t.missionId === missionId);
 }
