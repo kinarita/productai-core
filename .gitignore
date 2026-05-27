@@ -221,6 +221,9 @@ __marimo__/
 /node_modules/
 /.next/
 /out/
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
 
 # Application utilities (override generic lib/ ignore above)
 !/lib/

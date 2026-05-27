@@ -1,5 +1,39 @@
 # ProductAI Development Progress
 
+## 2026-05-27 — Phase 3-1 backend foundation
+
+### Objective
+
+Move ProductAI from store-only architecture to a hybrid persistence foundation without breaking existing UI/UX.
+
+### Implemented in Phase 3-1
+
+- Added SQLite foundation with `better-sqlite3`.
+- Added DB bootstrap flow:
+  - schema initialization
+  - minimal seed insertion from existing mock data
+  - local DB file generation (`data/productai.db`)
+- Added domain separation (`lib/domain/*`) for mission/task/feed/judgment row mapping.
+- Added repository layer (`lib/server/repositories/*`) with SQL access abstraction.
+- Added API route foundation:
+  - `GET /api/missions`
+  - `GET /api/tasks`
+  - `GET /api/feed`
+- Added service layer prep (`lib/services/*`) for future store->API migration.
+- Kept Zustand/localStorage operational behavior intact (coexistence mode).
+- Added feed type/status normalization improvements toward type-first filtering.
+
+### Architecture evolution
+
+- **Before**: UI -> Zustand stores -> localStorage
+- **Now**: UI -> Zustand stores (active) + API/Repository/SQLite foundation (ready)
+- **Future**: UI -> services -> API -> repositories -> SQLite (gradual migration)
+
+### Notes
+
+- This phase intentionally avoids auth/multi-user/realtime/background execution.
+- UI visual system and navigation remain unchanged by design.
+
 ## 2026-05-27 — Phase 2 complete (2-1 to 2-11)
 
 ### Phase 2 timeline

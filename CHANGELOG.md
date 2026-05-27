@@ -4,6 +4,31 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-27
 
+### Added (Phase 3-1 foundation)
+
+- SQLite persistence base with `better-sqlite3` and local DB bootstrap.
+- Initial backend schema for:
+  - missions
+  - decisions
+  - tasks
+  - feed_items
+  - runtime_events
+- Domain mapping layer (`lib/domain`) for mission/task/feed/judgment records.
+- Repository abstraction layer (`lib/server/repositories`) to isolate SQL from UI.
+- Backend API foundation with route handlers:
+  - `GET /api/missions`
+  - `GET /api/tasks`
+  - `GET /api/feed`
+- Service layer preparation (`lib/services`) for future store migration.
+- Phase 3 architecture documentation (`docs/PHASE3_BACKEND_FOUNDATION.md`).
+
+### Changed (Phase 3-1 stabilization)
+
+- Feed type model normalized with explicit `judgment` and `memory` types.
+- Feed filtering moved closer to type/status-based matching.
+- Blocker age surfaced in mission and cross-mission blocker visibility.
+- Empty-state wording and filter chip consistency refined without UI redesign.
+
 ### Added
 
 - Mission-centered ProductAI UI foundation across CEO Home, Missions, Judgment, Tasks, Feed, Runtime, and Settings.

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ProductAILiveEffects } from "@/components/ProductAILiveEffects";
+import { bootstrapDatabase } from "@/lib/server/db/bootstrap";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,6 +13,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  if (typeof window === "undefined") {
+    bootstrapDatabase();
+  }
+
   return (
     <html lang="en">
       <body>
