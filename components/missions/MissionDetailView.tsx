@@ -197,13 +197,22 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   return (
     <AppShell>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Link
-          href="/missions"
-          className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Missions
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/missions"
+            className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Missions
+          </Link>
+          <nav className="flex flex-wrap items-center gap-1 text-xs text-muted">
+            <Link href="/ceo-home" className="hover:text-accent">CEO Home</Link>
+            <span>&gt;</span>
+            <Link href="/missions" className="hover:text-accent">Missions</Link>
+            <span>&gt;</span>
+            <span className="text-foreground">{mission.name}</span>
+          </nav>
+        </div>
         <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
           <span className="text-muted">Related:</span>
           <Link
@@ -270,7 +279,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
               description="Judgment → Tasks → Dependencies → QA → Mission readiness"
             />
             <div className="grid gap-4 lg:grid-cols-2">
-              <MissionExecutionFlow counts={executionCounts} />
+              <MissionExecutionFlow missionId={missionId} counts={executionCounts} />
               <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
                 <p className="text-xs font-medium uppercase text-muted">Execution Health</p>
                 <p className="text-sm text-muted">
@@ -290,7 +299,9 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                 <ul className="mt-2 space-y-1">
                   {dependencyInsights.waitingChains.slice(0, 3).map((chain) => (
                     <li key={`${chain.blockedTask.id}-${chain.blockedBy.id}`} className="text-sm text-foreground">
-                      <span className="font-medium">{chain.blockedTask.title}</span>
+                      <Link href={`/tasks/${chain.blockedTask.id}`} className="font-medium text-accent hover:underline">
+                        {chain.blockedTask.title}
+                      </Link>
                       <span className="text-muted"> is waiting on </span>
                       <Link
                         href={`/tasks/${chain.blockedBy.id}`}
@@ -415,6 +426,13 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                 {dependencyInsights.runtimeImpacted} tasks show runtime-related execution impact.
               </li>
             </ul>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {dependencyInsights.causeTags.map((tag) => (
+                <span key={tag} className="rounded border border-border bg-surface px-2 py-0.5 text-xs text-muted">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </Card>
 
           <Card>
@@ -707,14 +725,22 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                       {item.authorName} · {item.timestamp}
                     </p>
                     <p className="mt-1 text-sm text-foreground">{item.message}</p>
-                    {item.taskId ? (
+                    <div className="mt-1 flex flex-wrap gap-3 text-xs">
+                      {item.taskId ? (
+                        <Link
+                          href={`/tasks/${item.taskId}`}
+                          className="font-medium text-accent hover:underline"
+                        >
+                          Open Task →
+                        </Link>
+                      ) : null}
                       <Link
-                        href={`/tasks/${item.taskId}`}
-                        className="mt-1 inline-block text-xs font-medium text-accent hover:underline"
+                        href={`/organization-feed?mission=${missionId}${item.taskId ? `&task=${item.taskId}` : ""}`}
+                        className="font-medium text-accent hover:underline"
                       >
-                        Open Task →
+                        Open in Feed →
                       </Link>
-                    ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>

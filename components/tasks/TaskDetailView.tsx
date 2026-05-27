@@ -116,6 +116,15 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
     <AppShell>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
+          <nav className="mb-2 flex flex-wrap items-center gap-1 text-xs text-muted">
+            <Link href="/ceo-home" className="hover:text-accent">CEO Home</Link>
+            <span>&gt;</span>
+            <Link href={`/missions/${task.missionId}`} className="hover:text-accent">{task.missionName}</Link>
+            <span>&gt;</span>
+            <Link href={`/tasks?mission=${task.missionId}`} className="hover:text-accent">Task</Link>
+            <span>&gt;</span>
+            <span className="text-foreground">Execution</span>
+          </nav>
           <Link
             href="/tasks"
             className="text-sm font-medium text-muted transition-colors hover:text-foreground"
@@ -305,12 +314,17 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
             ) : (
               <ul className="space-y-3">
                 {relatedFeed.map((f) => (
-                  <li key={f.id} className="rounded-lg border border-border bg-surface p-3">
-                    <p className="text-xs text-muted">
-                      {f.authorName} ({f.author}) · {f.timestamp}
-                      {f.taskId === task.id ? " · this task" : ""}
-                    </p>
-                    <p className="mt-1 text-sm text-foreground">{f.message}</p>
+                  <li key={f.id}>
+                    <Link
+                      href={`/organization-feed?task=${task.id}`}
+                      className="block rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background"
+                    >
+                      <p className="text-xs text-muted">
+                        {f.authorName} ({f.author}) · {f.timestamp}
+                        {f.taskId === task.id ? " · this task" : ""}
+                      </p>
+                      <p className="mt-1 text-sm text-foreground">{f.message}</p>
+                    </Link>
                   </li>
                 ))}
               </ul>

@@ -11,6 +11,9 @@ import Link from "next/link";
 import { useTaskStore } from "@/lib/store/taskStore";
 import type { Task, TaskEvent } from "@/types/productai";
 
+const allowedStatus = ["todo", "active", "in_review", "blocked", "completed"] as const;
+type TaskQueryStatus = (typeof allowedStatus)[number];
+
 const columns = [
   { key: "active" as const, label: "Active" },
   { key: "in_review" as const, label: "In Review" },
@@ -25,14 +28,28 @@ function latestEvent(task: Task): TaskEvent | undefined {
 
 interface TasksViewProps {
   missionFilter?: string;
+  statusFilter?: string;
 }
 
-export function TasksView({ missionFilter }: TasksViewProps) {
+function normalizeStatus(status?: string): Task["status"] | undefined {
+  if (!status) return undefined;
+  const lowered = status.toLowerCase() as TaskQueryStatus;
+  if (!allowedStatus.includes(lowered)) return undefined;
+  if (lowered === "todo") return "active";
+  return lowered;
+}
+
+export function TasksView({ missionFilter, statusFilter }: TasksViewProps) {
   useMissionFilterFromUrl(missionFilter);
 
   const tasks = useTaskStore((s) => s.tasks);
+  const normalizedStatus = normalizeStatus(statusFilter);
 
-  const filteredTasks = missionFilter ? tasks.filter((t) => t.missionId === missionFilter) : tasks;
+  const filteredTasks = tasks.filter((t) => {
+    if (missionFilter && t.missionId !== missionFilter) return false;
+    if (normalizedStatus && t.status !== normalizedStatus) return false;
+    return true;
+  });
 
   return (
     <AppShell
@@ -41,6 +58,23 @@ export function TasksView({ missionFilter }: TasksViewProps) {
     >
       {missionFilter && (
         <MissionFilterBanner missionId={missionFilter} basePath="/tasks" />
+      )}
+      {(missionFilter || normalizedStatus) && (
+        <div className="mb-4 flex flex-wrap gap-2 text-xs">
+          {missionFilter ? (
+            <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">
+              mission: {missionFilter}
+            </span>
+          ) : null}
+          {normalizedStatus ? (
+            <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">
+              status: {normalizedStatus}
+            </span>
+          ) : null}
+          <Link href="/tasks" className="rounded-md border border-border bg-background px-2 py-1 text-accent hover:bg-surface">
+            Clear filters
+          </Link>
+        </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-4">

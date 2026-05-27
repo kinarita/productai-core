@@ -71,12 +71,31 @@ export function getMissionDependencyInsights(missionTasks: Task[], allTasks: Tas
     0
   );
 
+  const causeTags = new Set<string>(["dependency"]);
+  if (runtimeImpacted > 0) causeTags.add("runtime");
+  if (architectureWaiting > 0) causeTags.add("architecture");
+  if (
+    missionTasks.some((t) =>
+      (t.events ?? []).some((e) => e.source === "judgment" || /judgment|decision/i.test(e.message))
+    )
+  ) {
+    causeTags.add("judgment");
+  }
+  if (
+    missionTasks.some((t) =>
+      (t.events ?? []).some((e) => e.actor === "QA" || /qa|validation|review/i.test(e.message))
+    )
+  ) {
+    causeTags.add("qa");
+  }
+
   return {
     warningsCount: warnings.length,
     waitingChains,
     runtimeImpacted,
     architectureWaiting,
     downstreamLinked,
+    causeTags: Array.from(causeTags),
   };
 }
 

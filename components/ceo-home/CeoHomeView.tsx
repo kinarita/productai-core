@@ -199,22 +199,22 @@ export function CeoHomeView() {
 
         <Card title="Execution Risk Overview" description="Where mission flow is currently constrained">
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-surface p-3">
+            <Link href="/missions" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Missions with blockers</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">{blockedMissions.length}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-3">
+            </Link>
+            <Link href="/tasks?status=blocked" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Blocked dependencies</p>
               <p className="mt-1 text-2xl font-semibold text-warning">{dependencyWarnings.length}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-3">
+            </Link>
+            <Link href="/tasks?status=in_review" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Review bottlenecks</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">{reviewBottlenecks}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-3">
+            </Link>
+            <Link href="/organization-feed?status=blocked&type=runtime" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Runtime-impacted tasks</p>
               <p className="mt-1 text-2xl font-semibold text-danger">{runtimeImpacted}</p>
-            </div>
+            </Link>
           </div>
           {blockedMissions.length > 0 ? (
             <ul className="mt-4 space-y-2">
@@ -230,6 +230,48 @@ export function CeoHomeView() {
               ))}
             </ul>
           ) : null}
+        </Card>
+
+        <Card title="Cross-mission Blocker List" description="Organization-wide execution bottlenecks">
+          {tasks.filter((t) => t.status === "blocked").length === 0 ? (
+            <p className="text-sm text-muted">No blocked tasks across missions.</p>
+          ) : (
+            <ul className="space-y-3">
+              {tasks
+                .filter((t) => t.status === "blocked")
+                .slice(0, 8)
+                .map((task) => {
+                  const rootBlocker = task.dependencies[0] ?? "No explicit dependency";
+                  const runtimeHit = (task.events ?? []).some(
+                    (e) => e.source === "runtime" || /runtime|latency|provider/i.test(e.message)
+                  );
+                  return (
+                    <li key={task.id} className="rounded-lg border border-border bg-surface p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <Link href={`/tasks/${task.id}`} className="text-sm font-medium text-foreground hover:text-accent">
+                          {task.title}
+                        </Link>
+                        <StatusPill variant="danger">blocked</StatusPill>
+                      </div>
+                      <p className="mt-1 text-xs text-muted">
+                        <MissionLink missionId={task.missionId} missionName={task.missionName} variant="pill" />
+                        <span> · root blocker: {rootBlocker}</span>
+                        <span> · deps: {task.dependencies.length}</span>
+                        <span> · runtime: {runtimeHit ? "impacted" : "stable"}</span>
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-3 text-xs">
+                        <Link href={`/tasks/${task.id}`} className="font-medium text-accent hover:underline">
+                          Task detail →
+                        </Link>
+                        <Link href={`/missions/${task.missionId}`} className="font-medium text-accent hover:underline">
+                          Mission detail →
+                        </Link>
+                      </div>
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">

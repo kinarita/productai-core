@@ -1,10 +1,10 @@
 import { TasksView } from "@/components/tasks/TasksView";
 
 interface TasksPageProps {
-  searchParams: Promise<{ mission?: string }>;
+  searchParams: Promise<{ mission?: string; status?: string }>;
 }
 
 export default async function TasksPage({ searchParams }: TasksPageProps) {
-  const { mission } = await searchParams;
-  return <TasksView missionFilter={mission} />;
+  const { mission, status } = await searchParams;
+  return <TasksView missionFilter={mission} statusFilter={status} />;
 }

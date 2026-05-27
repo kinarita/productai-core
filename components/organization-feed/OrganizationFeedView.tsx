@@ -80,9 +80,35 @@ function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): bool
 
 interface OrganizationFeedViewProps {
   missionFilter?: string;
+  taskFilter?: string;
+  typeFilter?: string;
+  statusFilter?: string;
 }
 
-export function OrganizationFeedView({ missionFilter }: OrganizationFeedViewProps) {
+function matchesStatus(item: OrganizationFeedItem, status?: string) {
+  if (!status) return true;
+  const normalized = status.toLowerCase();
+  if (normalized === "blocked") {
+    return item.type === "escalation" || /block|waiting|dependency/i.test(item.message);
+  }
+  if (normalized === "in_review") {
+    return item.type === "qa_review" || /review|validation/i.test(item.message);
+  }
+  if (normalized === "completed") {
+    return item.type === "implementation" && /complete|done|shipped|ready/i.test(item.message);
+  }
+  if (normalized === "active") {
+    return item.type === "task_assignment" || item.type === "task_creation";
+  }
+  return true;
+}
+
+export function OrganizationFeedView({
+  missionFilter,
+  taskFilter,
+  typeFilter,
+  statusFilter,
+}: OrganizationFeedViewProps) {
   useMissionFilterFromUrl(missionFilter);
   useLiveOrganizationFeed(true);
 
@@ -95,8 +121,15 @@ export function OrganizationFeedView({ missionFilter }: OrganizationFeedViewProp
   if (missionFilter) {
     filtered = filtered.filter((f) => f.missionId === missionFilter);
   }
+  if (taskFilter) {
+    filtered = filtered.filter((f) => f.taskId === taskFilter);
+  }
+  if (typeFilter) {
+    filtered = filtered.filter((f) => f.type === typeFilter);
+  }
 
   filtered = filtered.filter((f) => matchesFeedFilter(f, activeFeedFilter));
+  filtered = filtered.filter((f) => matchesStatus(f, statusFilter));
 
   return (
     <AppShell
@@ -105,6 +138,17 @@ export function OrganizationFeedView({ missionFilter }: OrganizationFeedViewProp
     >
       {missionFilter && (
         <MissionFilterBanner missionId={missionFilter} basePath="/organization-feed" />
+      )}
+      {(missionFilter || taskFilter || typeFilter || statusFilter) && (
+        <div className="mb-3 flex flex-wrap gap-2 text-xs">
+          {missionFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">mission: {missionFilter}</span> : null}
+          {taskFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">task: {taskFilter}</span> : null}
+          {typeFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">type: {typeFilter}</span> : null}
+          {statusFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">status: {statusFilter}</span> : null}
+          <Link href="/organization-feed" className="rounded-md border border-border bg-background px-2 py-1 text-accent hover:bg-surface">
+            Clear filters
+          </Link>
+        </div>
       )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
