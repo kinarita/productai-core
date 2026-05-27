@@ -23,6 +23,10 @@ export function getMissionById(missionId: string): Mission | undefined {
   return missions.find((m) => m.id === missionId);
 }
 
+export function getMissionNameById(missionId: string): string | undefined {
+  return getMissionById(missionId)?.name;
+}
+
 export function getTasksForMission(mission: Mission): Task[] {
   return tasks.filter((t) => mission.taskIds.includes(t.id));
 }
@@ -49,6 +53,6 @@ export function getActivitiesForMission(mission: Mission): OrganizationFeedItem[
 
 export function getReleaseForMission(mission: Mission): ReleaseItem | undefined {
   return releases.find(
-    (r) => r.mission === mission.name && r.state !== "production"
+    (r) => r.relatedMissionId === mission.id && r.state !== "production"
   );
 }

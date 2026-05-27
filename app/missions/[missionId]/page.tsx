@@ -62,9 +62,12 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
   const activities = getActivitiesForMission(mission);
   const release = getReleaseForMission(mission);
 
+  const hasPendingDecisions = pendingDecisions.length > 0;
+  const hasCode = relatedBranches.length > 0 || relatedPrs.length > 0;
+
   return (
     <AppShell>
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <Link
           href="/missions"
           className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
@@ -72,6 +75,27 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
           <ArrowLeft className="h-4 w-4" />
           Back to Missions
         </Link>
+        <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+          <span className="text-muted">Related:</span>
+          <Link href="/tasks" className="transition-colors hover:text-accent">
+            Tasks
+          </Link>
+          {hasPendingDecisions && (
+            <Link href="/judgment" className="transition-colors hover:text-accent">
+              Judgment
+            </Link>
+          )}
+          {hasCode && (
+            <Link href="/code-release" className="transition-colors hover:text-accent">
+              Code & Release
+            </Link>
+          )}
+          {activities.length > 0 && (
+            <Link href="/organization-feed" className="transition-colors hover:text-accent">
+              Organization Feed
+            </Link>
+          )}
+        </nav>
       </div>
 
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
@@ -293,6 +317,14 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
                 ))}
               </ul>
             )}
+            {activities.length > 0 && (
+              <Link
+                href="/organization-feed"
+                className="mt-3 inline-block text-xs font-medium text-accent hover:underline"
+              >
+                View full Organization Feed →
+              </Link>
+            )}
           </Card>
 
           <Card>
@@ -300,14 +332,22 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
             {memoryInsights.length === 0 ? (
               <p className="text-sm text-muted">No linked memories for this mission.</p>
             ) : (
-              <ul className="space-y-3">
-                {memoryInsights.map((m) => (
-                  <li key={m.id} className="rounded-lg border border-border bg-surface p-3">
-                    <p className="text-sm font-medium text-foreground">{m.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted">{m.summary}</p>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="space-y-3">
+                  {memoryInsights.map((m) => (
+                    <li key={m.id} className="rounded-lg border border-border bg-surface p-3">
+                      <p className="text-sm font-medium text-foreground">{m.title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted">{m.summary}</p>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/memory"
+                  className="mt-3 inline-block text-xs font-medium text-accent hover:underline"
+                >
+                  Open Memory Vault →
+                </Link>
+              </>
             )}
           </Card>
         </div>

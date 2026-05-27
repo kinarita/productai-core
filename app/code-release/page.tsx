@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
+import { MissionLink } from "@/components/MissionLink";
 import { branches, pullRequests, commits, releases } from "@/data/mockData";
 import { GitCommit, GitPullRequest } from "lucide-react";
 
@@ -33,7 +34,17 @@ export default function CodeReleasePage() {
                 {branches.map((b) => (
                   <tr key={b.name} className="border-b border-border last:border-0">
                     <td className="py-3 font-mono text-sm text-accent">{b.name}</td>
-                    <td className="py-3 text-muted">{b.mission}</td>
+                    <td className="py-3">
+                      {b.relatedMissionId ? (
+                        <MissionLink
+                          missionId={b.relatedMissionId}
+                          missionName={b.missionName}
+                          variant="subtle"
+                        />
+                      ) : (
+                        <span className="text-muted">{b.missionName}</span>
+                      )}
+                    </td>
                     <td className="py-3 text-muted">
                       +{b.ahead} / -{b.behind}
                     </td>
@@ -72,6 +83,15 @@ export default function CodeReleasePage() {
                   <p className="mt-1 text-xs text-muted">
                     {pr.branch} · {pr.author} · {pr.reviews} reviews
                   </p>
+                  {pr.relatedMissionId && pr.missionName && (
+                    <p className="mt-2">
+                      <MissionLink
+                        missionId={pr.relatedMissionId}
+                        missionName={pr.missionName}
+                        variant="pill"
+                      />
+                    </p>
+                  )}
                 </div>
               </li>
             ))}
@@ -88,6 +108,11 @@ export default function CodeReleasePage() {
                   <p className="mt-0.5 font-mono text-xs text-muted">
                     {c.sha} · {c.branch} · {c.author} · {c.timestamp}
                   </p>
+                  {c.relatedMissionId && (
+                    <p className="mt-1">
+                      <MissionLink missionId={c.relatedMissionId} variant="subtle" />
+                    </p>
+                  )}
                 </div>
               </li>
             ))}
@@ -103,9 +128,14 @@ export default function CodeReleasePage() {
               >
                 <div>
                   <p className="font-mono text-sm font-semibold text-foreground">v{r.version}</p>
-                  <p className="text-xs text-muted">
-                    {r.mission} · {r.branch}
-                    {r.deployedAt ? ` · deployed ${r.deployedAt}` : ""}
+                  <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted">
+                    <MissionLink
+                      missionId={r.relatedMissionId}
+                      missionName={r.missionName}
+                      variant="pill"
+                    />
+                    <span>· {r.branch}</span>
+                    {r.deployedAt ? <span>· deployed {r.deployedAt}</span> : null}
                   </p>
                 </div>
                 <Badge variant={releaseStateVariant[r.state]}>{r.state}</Badge>

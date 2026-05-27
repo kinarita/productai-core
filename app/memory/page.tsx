@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
+import { MissionLink } from "@/components/MissionLink";
 import { memories } from "@/data/mockData";
 import { BookMarked } from "lucide-react";
 
@@ -41,8 +42,12 @@ export default function MemoryPage() {
                   <Badge variant={categoryVariant[memory.category]}>
                     {categoryLabels[memory.category]}
                   </Badge>
-                  {memory.mission && (
-                    <span className="text-xs text-muted">{memory.mission}</span>
+                  {memory.relatedMissionId && memory.missionName && (
+                    <MissionLink
+                      missionId={memory.relatedMissionId}
+                      missionName={memory.missionName}
+                      variant="pill"
+                    />
                   )}
                   <span className="text-xs text-muted">· {memory.createdAt}</span>
                 </div>

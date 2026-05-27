@@ -63,7 +63,8 @@ export interface Mission {
 export interface Task {
   id: string;
   title: string;
-  mission: string;
+  missionId: string;
+  missionName: string;
   status: TaskStatus;
   assignedTo: AgentRole;
   dependencies: string[];
@@ -74,7 +75,8 @@ export interface Task {
 export interface Decision {
   id: string;
   title: string;
-  mission: string;
+  relatedMissionId: string;
+  missionName: string;
   summary: string;
   optionA: { label: string; description: string };
   optionB: { label: string; description: string };
@@ -95,7 +97,8 @@ export interface MemoryItem {
   category: "learning" | "architecture" | "incident" | "pattern";
   title: string;
   summary: string;
-  mission?: string;
+  relatedMissionId?: string;
+  missionName?: string;
   createdAt: string;
   tags: string[];
 }
@@ -103,7 +106,8 @@ export interface MemoryItem {
 export interface ReleaseItem {
   id: string;
   version: string;
-  mission: string;
+  relatedMissionId: string;
+  missionName: string;
   branch: string;
   state: ReleaseState;
   deployedAt?: string;
@@ -121,7 +125,8 @@ export interface OrganizationFeedItem {
     | "approval_required";
   author: AgentRole;
   authorName: string;
-  mission: string;
+  missionId: string;
+  missionName: string;
   message: string;
   timestamp: string;
   requiresCeoApproval?: boolean;
@@ -137,7 +142,8 @@ export interface RuntimeCost {
 
 export interface Branch {
   name: string;
-  mission: string;
+  relatedMissionId?: string;
+  missionName: string;
   ahead: number;
   behind: number;
   lastCommit: string;
@@ -148,6 +154,8 @@ export interface PullRequest {
   number: number;
   title: string;
   branch: string;
+  relatedMissionId?: string;
+  missionName?: string;
   status: "open" | "merged" | "draft";
   author: string;
   reviews: number;
@@ -159,6 +167,7 @@ export interface Commit {
   message: string;
   author: string;
   branch: string;
+  relatedMissionId?: string;
   timestamp: string;
 }
 

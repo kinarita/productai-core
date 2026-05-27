@@ -1,13 +1,14 @@
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
+import { MissionLink } from "@/components/MissionLink";
 import { tasks } from "@/data/mockData";
 
 const columns = [
-  { key: "active" as const, label: "Active", variant: "info" as const },
-  { key: "in_review" as const, label: "In Review", variant: "warning" as const },
-  { key: "blocked" as const, label: "Blocked", variant: "danger" as const },
-  { key: "completed" as const, label: "Completed", variant: "success" as const },
+  { key: "active" as const, label: "Active" },
+  { key: "in_review" as const, label: "In Review" },
+  { key: "blocked" as const, label: "Blocked" },
+  { key: "completed" as const, label: "Completed" },
 ];
 
 export default function TasksPage() {
@@ -28,7 +29,13 @@ export default function TasksPage() {
                     className="rounded-lg border border-border bg-surface p-4"
                   >
                     <p className="text-sm font-medium text-foreground">{task.title}</p>
-                    <p className="mt-1 text-xs text-muted">{task.mission}</p>
+                    <p className="mt-1">
+                      <MissionLink
+                        missionId={task.missionId}
+                        missionName={task.missionName}
+                        variant="subtle"
+                      />
+                    </p>
                     <div className="mt-3 flex items-center justify-between">
                       <Badge variant="accent">{task.assignedTo}</Badge>
                       <span className="text-xs text-muted">ETA {task.eta}</span>

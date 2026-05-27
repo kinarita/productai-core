@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
+import { MissionLink } from "@/components/MissionLink";
 import { decisions } from "@/data/mockData";
 import { Check, RotateCcw, X } from "lucide-react";
 
@@ -21,7 +22,20 @@ export default function JudgmentPage() {
                     {decision.priority}
                   </Badge>
                 </div>
-                <p className="mt-1 text-sm text-muted">{decision.mission}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <MissionLink
+                    missionId={decision.relatedMissionId}
+                    missionName={decision.missionName}
+                    variant="link"
+                  />
+                  <span className="text-xs text-muted">·</span>
+                  <MissionLink
+                    missionId={decision.relatedMissionId}
+                    variant="subtle"
+                  >
+                    View Mission →
+                  </MissionLink>
+                </div>
               </div>
               <Badge variant="warning">pending</Badge>
             </div>

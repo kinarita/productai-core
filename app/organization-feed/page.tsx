@@ -2,6 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { MissionLink } from "@/components/MissionLink";
 import { organizationFeedItems } from "@/data/mockData";
 import { ShieldAlert } from "lucide-react";
 
@@ -49,7 +50,11 @@ export default function OrganizationFeedPage() {
                   <Badge variant={typeVariant[item.type] ?? "default"}>
                     {typeLabels[item.type]}
                   </Badge>
-                  <span className="text-xs text-muted">{item.mission}</span>
+                  <MissionLink
+                    missionId={item.missionId}
+                    missionName={item.missionName}
+                    variant="pill"
+                  />
                   <span className="text-xs text-muted">· {item.timestamp}</span>
                   {item.requiresCeoApproval && (
                     <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-warning">
