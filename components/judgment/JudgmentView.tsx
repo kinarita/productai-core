@@ -59,15 +59,30 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
       decision.relatedTaskIds.forEach((taskId) => {
         if (action === "approved") {
           updateTaskStatus(taskId, "active");
-          addTaskEvent(taskId, `CEO approval unblocked execution for "${decision.title}".`);
+          addTaskEvent(taskId, {
+            type: "status_change",
+            actor: "COO",
+            message: `CEO approval unblocked execution for "${decision.title}".`,
+            source: "judgment",
+          });
           return;
         }
         if (action === "rejected") {
           updateTaskStatus(taskId, "blocked");
-          addTaskEvent(taskId, `CEO rejected decision "${decision.title}" — task blocked pending follow-up.`);
+          addTaskEvent(taskId, {
+            type: "revision_requested",
+            actor: "COO",
+            message: `CEO rejected decision "${decision.title}" — task blocked pending follow-up.`,
+            source: "judgment",
+          });
           return;
         }
-        addTaskEvent(taskId, `CEO requested revision on "${decision.title}".`);
+        addTaskEvent(taskId, {
+          type: "revision_requested",
+          actor: "COO",
+          message: `CEO requested revision on "${decision.title}".`,
+          source: "judgment",
+        });
         updateTaskStatus(taskId, "active");
       });
     }

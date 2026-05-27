@@ -4,21 +4,41 @@ import { agents } from "@/data/mockData";
 import { taskStoreInitial } from "@/lib/store/initialState";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
-import type { Agent, AgentRole, MissionHealth, OrganizationFeedItem, Task, TaskStatus } from "@/types/productai";
+import type {
+  Agent,
+  AgentRole,
+  MissionHealth,
+  OrganizationFeedItem,
+  Task,
+  TaskEvent,
+  TaskEventSource,
+  TaskEventType,
+  TaskStatus,
+} from "@/types/productai";
 
 type TaskStatusAction = "start" | "review" | "block" | "complete";
+
+const PERSIST_VERSION = 1;
 
 interface TaskState {
   tasks: Task[];
   updateTaskStatus: (taskId: string, status: TaskStatus, actor?: Agent) => void;
   assignTask: (taskId: string, agentId: string) => void;
   addTask: (task: Task) => void;
-  addTaskEvent: (taskId: string, message: string) => void;
+  addTaskEvent: (taskId: string, event: Omit<TaskEvent, "id" | "timestamp"> & { timestamp?: string }) => void;
   resetToInitial: () => void;
 }
 
 function nowLabel() {
   return "Just now";
+}
+
+function nowTimestamp() {
+  return new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function makeEventId() {
+  return `te-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
 }
 
 function findAgentById(agentId: string): Agent | undefined {
@@ -43,6 +63,13 @@ function buildTaskEventMessage(action: TaskStatusAction, taskTitle: string) {
   return `Completed task: ${taskTitle}`;
 }
 
+function inferEventType(action: TaskStatusAction): TaskEventType {
+  if (action === "review") return "moved_to_review";
+  if (action === "block") return "blocked";
+  if (action === "complete") return "completed";
+  return "task_started";
+}
+
 function statusToAction(next: TaskStatus): TaskStatusAction {
   if (next === "in_review") return "review";
   if (next === "blocked") return "block";
@@ -57,6 +84,36 @@ function computeMissionHealthFromTasks(blockedCount: number, current: MissionHea
   return current === "delayed" ? "stable" : current;
 }
 
+function createTaskEvent(
+  partial: Omit<TaskEvent, "id" | "timestamp"> & { timestamp?: string }
+): TaskEvent {
+  return {
+    id: makeEventId(),
+    type: partial.type,
+    message: partial.message,
+    timestamp: partial.timestamp ?? nowTimestamp(),
+    actor: partial.actor,
+    agentId: partial.agentId,
+    source: partial.source,
+  };
+}
+
+function normalizeTaskEvents(events: Task["events"] | undefined, fallbackTimestamp?: string): TaskEvent[] {
+  if (!events?.length) return [];
+  const first = events[0] as unknown;
+  if (typeof first === "string") {
+    const ts = fallbackTimestamp ?? "Recent";
+    return (events as unknown as string[]).map((m, i) => ({
+      id: `te-legacy-${i}`,
+      type: "note" as const,
+      message: m,
+      timestamp: ts,
+      source: "system" as const,
+    }));
+  }
+  return events as TaskEvent[];
+}
+
 export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
@@ -67,7 +124,17 @@ export const useTaskStore = create<TaskState>()(
         if (!existing) return;
 
         const action = statusToAction(status);
-        const event = buildTaskEventMessage(action, existing.title);
+        const message = buildTaskEventMessage(action, existing.title);
+        const eventType = inferEventType(action);
+        const ts = nowTimestamp();
+        const nextEvent = createTaskEvent({
+          type: eventType,
+          actor: actor?.role ?? existing.assignedTo,
+          agentId: actor?.id ?? existing.assignedAgentId,
+          message,
+          timestamp: ts,
+          source: "tasks",
+        });
         const nextTasks = state.tasks.map((t) => {
           if (t.id !== taskId) return t;
           const nextProgress = status === "completed" ? 100 : t.progress;
@@ -76,7 +143,7 @@ export const useTaskStore = create<TaskState>()(
             status,
             progress: nextProgress,
             updatedAt: nowLabel(),
-            events: [...(t.events ?? []), event].slice(-12),
+            events: [...normalizeTaskEvents(t.events, t.updatedAt), nextEvent].slice(-24),
           };
         });
 
@@ -93,10 +160,11 @@ export const useTaskStore = create<TaskState>()(
           author: authorRole,
           authorName,
           agentId: actor?.id ?? existing.assignedAgentId,
+          taskId: existing.id,
           title: existing.title,
           missionId,
           missionName,
-          message: event,
+          message,
           requiresCeoApproval: false,
         });
 
@@ -151,7 +219,16 @@ export const useTaskStore = create<TaskState>()(
                   assignedAgentId: agent.id,
                   assignedTo: agent.role,
                   updatedAt: nowLabel(),
-                  events: [...(t.events ?? []), `Assigned to ${agent.name}`].slice(-12),
+                  events: [
+                    ...normalizeTaskEvents(t.events, t.updatedAt),
+                    createTaskEvent({
+                      type: "reassigned",
+                      actor: "COO",
+                      agentId: agent.id,
+                      message: `Assigned to ${agent.name}`,
+                      source: "tasks",
+                    }),
+                  ].slice(-24),
                 }
               : t
           ),
@@ -163,6 +240,7 @@ export const useTaskStore = create<TaskState>()(
           author: "COO",
           authorName: findAgentNameByRole("COO"),
           agentId: agent.id,
+          taskId,
           title: task.title,
           missionId: task.missionId,
           missionName: task.missionName,
@@ -173,18 +251,25 @@ export const useTaskStore = create<TaskState>()(
       addTask: (task) =>
         set((state) => ({
           tasks: [
-            { ...task, updatedAt: task.updatedAt ?? nowLabel(), events: task.events ?? [] },
+            {
+              ...task,
+              updatedAt: task.updatedAt ?? nowLabel(),
+              events: normalizeTaskEvents(task.events, task.updatedAt),
+            },
             ...state.tasks,
           ],
         })),
-      addTaskEvent: (taskId, message) =>
+      addTaskEvent: (taskId, event) =>
         set((state) => ({
           tasks: state.tasks.map((t) =>
             t.id === taskId
               ? {
                   ...t,
                   updatedAt: nowLabel(),
-                  events: [...(t.events ?? []), message].slice(-12),
+                  events: [
+                    ...normalizeTaskEvents(t.events, t.updatedAt),
+                    createTaskEvent(event),
+                  ].slice(-24),
                 }
               : t
           ),
@@ -193,10 +278,28 @@ export const useTaskStore = create<TaskState>()(
     }),
     {
       name: "productai-tasks",
+      version: PERSIST_VERSION,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         tasks: state.tasks,
       }),
+      migrate: (persisted, version) => {
+        const slice = persisted as { tasks?: Task[] };
+        if (!slice.tasks?.length) return { tasks: taskStoreInitial.tasks };
+
+        if (version < PERSIST_VERSION) {
+          return {
+            tasks: slice.tasks.map((t) => ({
+              ...t,
+              events: normalizeTaskEvents(t.events, t.updatedAt),
+            })),
+          };
+        }
+        // Ensure events normalized even if data drifted
+        return {
+          tasks: slice.tasks.map((t) => ({ ...t, events: normalizeTaskEvents(t.events, t.updatedAt) })),
+        };
+      },
     }
   )
 );

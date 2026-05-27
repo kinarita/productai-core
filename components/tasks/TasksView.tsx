@@ -7,8 +7,9 @@ import { MissionLink } from "@/components/MissionLink";
 import { MissionFilterBanner } from "@/components/MissionFilterBanner";
 import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
 import { agents } from "@/data/mockData";
+import Link from "next/link";
 import { useTaskStore } from "@/lib/store/taskStore";
-import type { Agent, Task, TaskStatus } from "@/types/productai";
+import type { Agent, Task, TaskEvent, TaskStatus } from "@/types/productai";
 
 const columns = [
   { key: "active" as const, label: "Active" },
@@ -31,6 +32,11 @@ function actionButtonClass(variant: "primary" | "secondary" | "danger") {
   return "rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-surface";
 }
 
+function latestEvent(task: Task): TaskEvent | undefined {
+  const events = task.events ?? [];
+  return events.length ? events[events.length - 1] : undefined;
+}
+
 interface TasksViewProps {
   missionFilter?: string;
 }
@@ -50,7 +56,13 @@ export function TasksView({ missionFilter }: TasksViewProps) {
   };
 
   const handleNudge = (task: Task) => {
-    addTaskEvent(task.id, `Execution note: unblocked dependencies check requested for "${task.title}".`);
+    addTaskEvent(task.id, {
+      type: "note",
+      actor: task.assignedTo,
+      agentId: task.assignedAgentId,
+      message: `Execution note: unblocked dependencies check requested for "${task.title}".`,
+      source: "tasks",
+    });
   };
 
   return (
@@ -71,15 +83,32 @@ export function TasksView({ missionFilter }: TasksViewProps) {
                 {columnTasks.map((task) => (
                   <li
                     key={task.id}
-                    className="rounded-lg border border-border bg-surface p-4"
+                    className="group rounded-lg border border-border bg-surface p-4 transition-colors hover:bg-surface/70"
                   >
-                    <p className="text-sm font-medium text-foreground">{task.title}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link
+                          href={`/tasks/${task.id}`}
+                          className="block truncate text-sm font-medium text-foreground hover:text-accent"
+                        >
+                          {task.title}
+                        </Link>
+                        <p className="mt-1">
+                          <MissionLink
+                            missionId={task.missionId}
+                            missionName={task.missionName}
+                            variant="subtle"
+                          />
+                        </p>
+                      </div>
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="mt-0.5 text-xs font-medium text-accent opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        Open Detail →
+                      </Link>
+                    </div>
                     <p className="mt-1">
-                      <MissionLink
-                        missionId={task.missionId}
-                        missionName={task.missionName}
-                        variant="subtle"
-                      />
                     </p>
                     <div className="mt-3 flex items-center justify-between">
                       <Badge variant="accent">{task.assignedTo}</Badge>
@@ -187,7 +216,7 @@ export function TasksView({ missionFilter }: TasksViewProps) {
 
                     {task.events?.length ? (
                       <p className="mt-3 text-xs text-muted">
-                        Latest: {task.events[task.events.length - 1]}
+                        Latest: {latestEvent(task)?.message}
                       </p>
                     ) : null}
                   </li>

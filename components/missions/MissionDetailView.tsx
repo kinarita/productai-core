@@ -113,7 +113,8 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
       .filter((t) => (t.events?.length ?? 0) > 0)
       .slice(0, 4)
       .map((t) => {
-        const last = t.events?.[t.events.length - 1] ?? `Updated task: ${t.title}`;
+        const lastEvent = t.events?.[t.events.length - 1];
+        const last = lastEvent ? lastEvent.message : `Updated task: ${t.title}`;
         return {
           id: `task-${t.id}`,
           source: "task" as const,
@@ -272,7 +273,12 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                     className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                   >
                     <div>
-                      <p className="text-sm font-medium text-foreground">{task.title}</p>
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="text-sm font-medium text-foreground hover:text-accent"
+                      >
+                        {task.title}
+                      </Link>
                       <p className="mt-0.5 text-xs text-muted">
                         {task.assignedTo} · ETA {task.eta}
                         {task.dependencies.length > 0 &&

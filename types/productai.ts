@@ -74,9 +74,31 @@ export interface Task {
   dependencies: string[];
   eta: string;
   progress: number;
-  /** Lightweight event trail (local-only) */
-  events?: string[];
+  /** Structured event trail (local-only) */
+  events?: TaskEvent[];
   updatedAt?: string;
+}
+
+export type TaskEventType =
+  | "status_change"
+  | "task_started"
+  | "moved_to_review"
+  | "blocked"
+  | "completed"
+  | "reassigned"
+  | "revision_requested"
+  | "note";
+
+export type TaskEventSource = "tasks" | "mission" | "judgment" | "runtime" | "system";
+
+export interface TaskEvent {
+  id: string;
+  type: TaskEventType;
+  message: string;
+  timestamp: string;
+  actor?: AgentRole;
+  agentId?: string;
+  source: TaskEventSource;
 }
 
 export interface Decision {
@@ -139,6 +161,7 @@ export interface OrganizationFeedItem {
   /** Optional richer metadata for UI */
   title?: string;
   agentId?: string;
+  taskId?: string;
   message: string;
   timestamp: string;
   requiresCeoApproval?: boolean;
