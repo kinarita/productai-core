@@ -4,6 +4,7 @@ import { agents } from "@/data/mockData";
 import { taskStoreInitial } from "@/lib/store/initialState";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
+import { createTask, updateTask } from "@/lib/services/taskService";
 import type {
   Agent,
   AgentRole,
@@ -26,6 +27,26 @@ interface TaskState {
   assignTask: (taskId: string, agentId: string) => void;
   addTask: (task: Task) => void;
   addTaskEvent: (taskId: string, event: Omit<TaskEvent, "id" | "timestamp"> & { timestamp?: string }) => void;
+  createTaskRemote: (input: {
+    title: string;
+    missionId: string;
+    status: TaskStatus;
+    assignedAgentId: string;
+    priority?: string;
+    relatedDecisionId?: string | null;
+    createdFrom?: string | null;
+    dependencies?: string[];
+  }) => Promise<void>;
+  updateTaskRemote: (
+    taskId: string,
+    patch: {
+      status?: TaskStatus;
+      assignedAgentId?: string;
+      priority?: string | null;
+      dependencies?: string[];
+      updatedAt?: string;
+    }
+  ) => Promise<void>;
   resetToInitial: () => void;
 }
 
@@ -276,6 +297,12 @@ export const useTaskStore = create<TaskState>()(
               : t
           ),
         })),
+      createTaskRemote: async (input) => {
+        await createTask(input);
+      },
+      updateTaskRemote: async (taskId, patch) => {
+        await updateTask(taskId, patch);
+      },
       resetToInitial: () => set({ ...taskStoreInitial }),
     }),
     {

@@ -5,6 +5,8 @@ import {
   executiveSyncInitial,
   organizationStoreInitial,
 } from "@/lib/store/initialState";
+import { createFeedItem } from "@/lib/services/feedService";
+import { updateDecisionStatus as updateDecisionStatusRemoteService } from "@/lib/services/judgmentService";
 import type {
   Agent,
   AgentRole,
@@ -41,6 +43,17 @@ interface OrganizationState {
   updateFeedItem: (id: string, patch: Partial<OrganizationFeedItem>) => void;
   updateDecisionStatus: (id: string, status: DecisionStatus) => void;
   linkDecisionToTask: (decisionId: string, taskId: string) => void;
+  addFeedRemote: (input: {
+    missionId: string;
+    taskId?: string | null;
+    decisionId?: string | null;
+    type: string;
+    status?: string | null;
+    message: string;
+    author?: string;
+    authorName?: string;
+  }) => Promise<void>;
+  updateDecisionStatusRemote: (decisionId: string, patch: { status: string; selectedOption?: string | null; updatedAt?: string }) => Promise<void>;
   setExecutiveSyncState: (state: Partial<ExecutiveSyncState>) => void;
   rotateDiscussionStatus: () => void;
   resetToInitial: () => void;
@@ -86,6 +99,12 @@ export const useOrganizationStore = create<OrganizationState>()(
             return { ...d, relatedTaskIds: [...existing, taskId] };
           }),
         })),
+      addFeedRemote: async (input) => {
+        await createFeedItem(input);
+      },
+      updateDecisionStatusRemote: async (decisionId, patch) => {
+        await updateDecisionStatusRemoteService(decisionId, patch);
+      },
       setExecutiveSyncState: (patch) =>
         set((state) => ({
           executiveSyncState: { ...state.executiveSyncState, ...patch },

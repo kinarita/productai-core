@@ -17,6 +17,14 @@ function readSchemaSql() {
 
 function applySchema() {
   db.exec(readSchemaSql());
+  const decisionColumns = db.prepare(`PRAGMA table_info(decisions)`).all() as Array<{ name: string }>;
+  if (!decisionColumns.some((c) => c.name === "selected_option")) {
+    db.exec(`ALTER TABLE decisions ADD COLUMN selected_option TEXT`);
+  }
+  const taskColumns = db.prepare(`PRAGMA table_info(tasks)`).all() as Array<{ name: string }>;
+  if (!taskColumns.some((c) => c.name === "assigned_agent_id")) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN assigned_agent_id TEXT`);
+  }
 }
 
 function seedMissions() {
@@ -49,9 +57,9 @@ function seedMissions() {
 function seedDecisions() {
   const insert = db.prepare(`
     INSERT OR IGNORE INTO decisions (
-      id, mission_id, mission_name, title, summary, status, priority, created_at, updated_at
+      id, mission_id, mission_name, title, summary, status, selected_option, priority, created_at, updated_at
     ) VALUES (
-      @id, @missionId, @missionName, @title, @summary, @status, @priority, @createdAt, @updatedAt
+      @id, @missionId, @missionName, @title, @summary, @status, @selectedOption, @priority, @createdAt, @updatedAt
     )
   `);
 
@@ -64,6 +72,7 @@ function seedDecisions() {
         title: decision.title,
         summary: decision.summary,
         status: decision.status,
+        selectedOption: null,
         priority: decision.priority,
         createdAt: nowLabel(),
         updatedAt: nowLabel(),
@@ -77,10 +86,10 @@ function seedTasks() {
   const insert = db.prepare(`
     INSERT OR IGNORE INTO tasks (
       id, mission_id, mission_name, related_decision_id, title, status, priority, created_from,
-      progress, eta, assigned_to, dependencies_json, created_at, updated_at
+      progress, eta, assigned_to, assigned_agent_id, dependencies_json, created_at, updated_at
     ) VALUES (
       @id, @missionId, @missionName, @relatedDecisionId, @title, @status, @priority, @createdFrom,
-      @progress, @eta, @assignedTo, @dependenciesJson, @createdAt, @updatedAt
+      @progress, @eta, @assignedTo, @assignedAgentId, @dependenciesJson, @createdAt, @updatedAt
     )
   `);
 
@@ -98,6 +107,7 @@ function seedTasks() {
         progress: task.progress,
         eta: task.eta,
         assignedTo: task.assignedTo,
+        assignedAgentId: task.assignedAgentId ?? null,
         dependenciesJson: JSON.stringify(task.dependencies ?? []),
         createdAt: task.createdAt ?? nowLabel(),
         updatedAt: task.updatedAt ?? nowLabel(),

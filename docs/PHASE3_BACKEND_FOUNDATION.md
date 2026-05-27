@@ -80,6 +80,54 @@ Each route:
 - reads via repository abstraction,
 - returns JSON for future UI data-loading migration.
 
+## Phase 3-2 write API foundation
+
+Phase 3-2 extends the foundation with backend write capability while preserving current UI behavior.
+
+### Write endpoints added
+
+- Tasks
+  - `POST /api/tasks`
+  - `GET /api/tasks/:taskId`
+  - `PATCH /api/tasks/:taskId`
+- Feed
+  - `POST /api/feed`
+  - `GET /api/feed/:feedId`
+- Judgments
+  - `GET /api/judgments`
+  - `GET /api/judgments/:decisionId`
+  - `PATCH /api/judgments/:decisionId`
+
+### Repository write capabilities
+
+- `taskRepository`: `create`, `update`, `getById`
+- `feedRepository`: `create`, `getById`
+- `judgmentRepository`: `getById`, `updateStatus`
+
+### Service write capabilities
+
+- `taskService`: `createTask`, `updateTask`
+- `feedService`: `createFeedItem`
+- `judgmentService`: `updateDecisionStatus`
+- shared API wrapper: `apiClient`
+
+### API response contract
+
+- success: `{ "ok": true, "data": ... }`
+- failure: `{ "ok": false, "error": "..." }`
+
+### Validation/error baseline
+
+- `400`: invalid payload
+- `404`: entity not found
+- `500`: unexpected server error
+
+### Coexistence status
+
+- Local Zustand state remains active UX path.
+- Write APIs are now available for gradual store migration.
+- No forced UI migration performed in this phase.
+
 ## Store migration path
 
 A service layer (`lib/services`) is introduced as migration prep:

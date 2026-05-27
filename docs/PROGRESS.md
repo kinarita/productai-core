@@ -1,5 +1,53 @@
 # ProductAI Development Progress
 
+## 2026-05-27 — Phase 3-2 write API foundation
+
+### Objective
+
+Establish backend write capability (tasks, judgments, feed) while keeping current UI interaction model stable.
+
+### Implemented in Phase 3-2
+
+- Added Task write API foundation:
+  - `POST /api/tasks`
+  - `GET /api/tasks/:taskId`
+  - `PATCH /api/tasks/:taskId`
+- Added Feed write API foundation:
+  - `POST /api/feed`
+  - `GET /api/feed/:feedId`
+- Added Judgment write API foundation:
+  - `GET /api/judgments`
+  - `GET /api/judgments/:decisionId`
+  - `PATCH /api/judgments/:decisionId`
+- Added repository write methods:
+  - `taskRepository.create/update/getById`
+  - `feedRepository.create/getById`
+  - `judgmentRepository.getById/updateStatus`
+- Added service write methods and shared API client:
+  - `createTask`, `updateTask`
+  - `createFeedItem`
+  - `updateDecisionStatus`
+  - `apiClient` response/error wrapper
+- Added lightweight store migration prep methods:
+  - `taskStore.createTaskRemote/updateTaskRemote`
+  - `organizationStore.addFeedRemote/updateDecisionStatusRemote`
+
+### API response contract (Phase 3-2)
+
+- success: `{ "ok": true, "data": ... }`
+- failure: `{ "ok": false, "error": "..." }`
+- status coverage:
+  - `200/201`
+  - `400` validation
+  - `404` not found
+  - `500` server failure
+
+### Coexistence
+
+- Zustand + localStorage flow remains primary.
+- SQLite write path is now available via API/services.
+- UI behavior and navigation remain unchanged in this phase.
+
 ## 2026-05-27 — Phase 3-1 backend foundation
 
 ### Objective

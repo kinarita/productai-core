@@ -1,4 +1,5 @@
 import type { MissionRecord } from "@/lib/domain/mission";
+import { apiClient } from "@/lib/services/apiClient";
 
 export async function fetchMissionsFromApi(
   params: { missionId?: string; status?: string } = {}
@@ -7,10 +8,6 @@ export async function fetchMissionsFromApi(
   if (params.missionId) query.set("mission", params.missionId);
   if (params.status) query.set("status", params.status);
   const url = `/api/missions${query.size ? `?${query.toString()}` : ""}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch missions: ${res.status}`);
-  }
-  const json = (await res.json()) as { missions: MissionRecord[] };
-  return json.missions;
+  const data = await apiClient<{ missions: MissionRecord[] }>(url);
+  return data.missions;
 }

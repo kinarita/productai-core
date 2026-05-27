@@ -10,6 +10,7 @@ export interface TaskRecord {
   progress: number;
   eta: string;
   assignedTo: string;
+  assignedAgentId: string | null;
   dependencies: string[];
   createdAt: string;
   updatedAt: string;
@@ -36,6 +37,7 @@ export function mapTaskRow(row: {
   progress: number;
   eta: string;
   assigned_to: string;
+  assigned_agent_id: string | null;
   dependencies_json: string;
   created_at: string;
   updated_at: string;
@@ -52,6 +54,7 @@ export function mapTaskRow(row: {
     progress: row.progress,
     eta: row.eta,
     assignedTo: row.assigned_to,
+    assignedAgentId: row.assigned_agent_id,
     dependencies: parseDependencies(row.dependencies_json),
     createdAt: row.created_at,
     updatedAt: row.updated_at,

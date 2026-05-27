@@ -4,6 +4,35 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-27
 
+### Added (Phase 3-2 write foundation)
+
+- Task write endpoints:
+  - `POST /api/tasks`
+  - `GET /api/tasks/:taskId`
+  - `PATCH /api/tasks/:taskId`
+- Feed write endpoints:
+  - `POST /api/feed`
+  - `GET /api/feed/:feedId`
+- Judgment write endpoints:
+  - `GET /api/judgments`
+  - `GET /api/judgments/:decisionId`
+  - `PATCH /api/judgments/:decisionId`
+- Repository write methods for tasks/feed/judgments.
+- Shared API response helpers (`ok` / `fail`) and service API client wrapper.
+- Service write methods:
+  - task create/update
+  - feed create
+  - judgment status update
+- Store migration preparation methods for remote write hooks (non-breaking).
+
+### Changed (Phase 3-2)
+
+- API responses normalized to envelope format:
+  - success: `{ ok: true, data }`
+  - error: `{ ok: false, error }`
+- DB bootstrap extended with lightweight schema-forward migration checks.
+- Task/decision persistence columns extended (`assigned_agent_id`, `selected_option`).
+
 ### Added (Phase 3-1 foundation)
 
 - SQLite persistence base with `better-sqlite3` and local DB bootstrap.
