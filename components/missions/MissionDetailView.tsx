@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { useEffect, useMemo } from "react";
+import { missions as seedMissions } from "@/data/mockData";
 import { ArrowLeft, GitPullRequest } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
@@ -21,7 +21,7 @@ import {
   getReleaseForMissionId,
   getRuntimeSignalsForMission,
   getTasksForMissionId,
-} from "@/lib/mission/missionDetailSelectors";
+} from "@/lib/mission/missionDetailData";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
@@ -64,17 +64,27 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   const setActiveMission = useUiStore((s) => s.setActiveMission);
   const setSelectedMission = useMissionStore((s) => s.setSelectedMission);
 
-  const mission = useMissionStore((s) =>
+  const storeMission = useMissionStore((s) =>
     s.missions.find((m) => m.id === missionId)
   );
-  const missionDecisions = useOrganizationStore((s) =>
-    s.decisions.filter((d) => d.relatedMissionId === missionId)
+  const mission = useMemo(
+    () => storeMission ?? seedMissions.find((m) => m.id === missionId),
+    [storeMission, missionId]
   );
-  const missionFeed = useOrganizationStore((s) =>
-    s.organizationFeedItems.filter((f) => f.missionId === missionId)
-  );
+  const allDecisions = useOrganizationStore((s) => s.decisions);
+  const allFeed = useOrganizationStore((s) => s.organizationFeedItems);
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
   const alerts = useRuntimeStore((s) => s.alerts);
+
+  const missionDecisions = useMemo(
+    () => allDecisions.filter((d) => d.relatedMissionId === missionId),
+    [allDecisions, missionId]
+  );
+
+  const missionFeed = useMemo(
+    () => allFeed.filter((f) => f.missionId === missionId),
+    [allFeed, missionId]
+  );
 
   useEffect(() => {
     setActiveMission(missionId);
@@ -96,7 +106,25 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   }
 
   if (!mission) {
-    notFound();
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-lg py-16 text-center">
+          <h1 className="text-lg font-semibold text-foreground">Mission not found</h1>
+          <p className="mt-2 text-sm text-muted">
+            This mission is not in your local state. Reset from Settings or return to the
+            list.
+          </p>
+          <div className="mt-6 flex justify-center gap-4">
+            <Link href="/missions" className="text-sm font-medium text-accent hover:underline">
+              Back to Missions
+            </Link>
+            <Link href="/settings" className="text-sm font-medium text-accent hover:underline">
+              Settings
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
   }
 
   const pendingDecisions = missionDecisions.filter((d) => d.status === "pending");

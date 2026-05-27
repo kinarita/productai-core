@@ -1,7 +1,15 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { missionStoreInitial } from "@/lib/store/initialState";
+import { mergePersistedMissions } from "@/lib/store/mergePersistedMissions";
 import type { Mission, MissionHealth, MissionStatus } from "@/types/productai";
+
+const PERSIST_VERSION = 1;
+
+interface PersistedMissionSlice {
+  missions?: Mission[];
+  selectedMissionId?: string | null;
+}
 
 export type JudgmentOutcome = "approved" | "rejected" | "revision";
 
@@ -102,11 +110,22 @@ export const useMissionStore = create<MissionState>()(
     }),
     {
       name: "productai-missions",
+      version: PERSIST_VERSION,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         missions: state.missions,
         selectedMissionId: state.selectedMissionId,
       }),
+      migrate: (persisted, version) => {
+        const slice = persisted as PersistedMissionSlice;
+        if (version < PERSIST_VERSION) {
+          return {
+            ...slice,
+            missions: mergePersistedMissions(slice.missions),
+          };
+        }
+        return slice;
+      },
     }
   )
 );

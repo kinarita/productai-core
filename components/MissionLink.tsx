@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { getMissionById } from "@/data/missionHelpers";
 import { cn } from "@/lib/utils";

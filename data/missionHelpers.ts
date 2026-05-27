@@ -15,23 +15,27 @@ import {
 import {
   buildMissionRecentActivity,
   getBranchesForMissionId,
-  getDecisionsForMissionId,
-  getFeedForMissionId,
   getMemoriesForMissionId,
-  getMissionFromStore,
   getPullRequestsForMissionId,
   getReleaseForMissionId,
   getRuntimeSignalsForMission,
   getTasksForMissionId,
-} from "@/lib/mission/missionDetailSelectors";
+  type MissionActivityItem,
+  type RuntimeSignal,
+} from "@/lib/mission/missionDetailData";
+import {
+  getDecisionsForMissionId,
+  getFeedForMissionId,
+  getMissionFromStore,
+} from "@/lib/mission/missionDetailStore";
 import type { Mission } from "@/types/productai";
+
+export type { MissionActivityItem, RuntimeSignal };
 
 export {
   buildMissionRecentActivity,
   getRuntimeSignalsForMission,
-  type MissionActivityItem,
-  type RuntimeSignal,
-} from "@/lib/mission/missionDetailSelectors";
+};
 
 function isClient() {
   return typeof window !== "undefined";
