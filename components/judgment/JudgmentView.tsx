@@ -32,7 +32,7 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
   const updateDecisionStatus = useOrganizationStore((s) => s.updateDecisionStatus);
   const addFeedItem = useOrganizationStore((s) => s.addFeedItem);
   const setSelectedDecision = useUiStore((s) => s.setSelectedDecision);
-  const updateMissionHealth = useMissionStore((s) => s.updateMissionHealth);
+  const applyJudgmentOutcome = useMissionStore((s) => s.applyJudgmentOutcome);
 
   const filtered = missionFilter
     ? decisions.filter((d) => d.relatedMissionId === missionFilter)
@@ -50,6 +50,7 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
 
     updateDecisionStatus(decisionId, status);
     setSelectedDecision(decisionId);
+    applyJudgmentOutcome(decision.relatedMissionId, action);
 
     addFeedItem({
       type: action === "approved" ? "approval_required" : "coordination",
@@ -60,13 +61,6 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
       message: resolveDecisionActionMessage(decision, action),
       requiresCeoApproval: false,
     });
-
-    if (action === "approved" && decision.relatedMissionId === "m-2") {
-      updateMissionHealth("m-2", "stable");
-    }
-    if (action === "rejected" && decision.relatedMissionId === "m-4") {
-      updateMissionHealth("m-4", "risky");
-    }
   };
 
   return (

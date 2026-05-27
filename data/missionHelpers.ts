@@ -1,8 +1,8 @@
 import {
   branches,
-  decisions,
+  decisions as mockDecisions,
   memories,
-  missions,
+  missions as mockMissions,
   organizationFeedItems,
   pullRequests,
   releases,
@@ -19,12 +19,35 @@ import type {
   Task,
 } from "@/types/productai";
 
-export function getMissionById(missionId: string): Mission | undefined {
-  return missions.find((m) => m.id === missionId);
+function getMissionsSource(): Mission[] {
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useMissionStore } = require("@/lib/store/missionStore") as typeof import("@/lib/store/missionStore");
+    return useMissionStore.getState().missions;
+  }
+  return mockMissions;
 }
 
-export function getMissionNameById(missionId: string): string | undefined {
-  return getMissionById(missionId)?.name;
+function getDecisionsSource(): Decision[] {
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useOrganizationStore } = require("@/lib/store/organizationStore") as typeof import("@/lib/store/organizationStore");
+    return useOrganizationStore.getState().decisions;
+  }
+  return mockDecisions;
+}
+
+function getFeedSource(): OrganizationFeedItem[] {
+  if (typeof window !== "undefined") {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useOrganizationStore } = require("@/lib/store/organizationStore") as typeof import("@/lib/store/organizationStore");
+    return useOrganizationStore.getState().organizationFeedItems;
+  }
+  return organizationFeedItems;
+}
+
+export function getMissionById(missionId: string): Mission | undefined {
+  return getMissionsSource().find((m) => m.id === missionId);
 }
 
 export function getTasksForMission(mission: Mission): Task[] {
@@ -32,7 +55,7 @@ export function getTasksForMission(mission: Mission): Task[] {
 }
 
 export function getDecisionsForMission(mission: Mission): Decision[] {
-  return decisions.filter((d) => mission.decisionIds.includes(d.id));
+  return getDecisionsSource().filter((d) => mission.decisionIds.includes(d.id));
 }
 
 export function getMemoriesForMission(mission: Mission): MemoryItem[] {
@@ -48,11 +71,15 @@ export function getPullRequestsForMission(mission: Mission): PullRequest[] {
 }
 
 export function getActivitiesForMission(mission: Mission): OrganizationFeedItem[] {
-  return organizationFeedItems.filter((f) => mission.activityIds.includes(f.id));
+  return getFeedSource().filter((f) => mission.activityIds.includes(f.id));
 }
 
 export function getReleaseForMission(mission: Mission): ReleaseItem | undefined {
   return releases.find(
     (r) => r.relatedMissionId === mission.id && r.state !== "production"
   );
+}
+
+export function getMissionNameById(missionId: string): string | undefined {
+  return getMissionById(missionId)?.name;
 }
