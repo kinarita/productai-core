@@ -12,6 +12,7 @@ import { useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useTaskStore } from "@/lib/store/taskStore";
 import { getDependencyWarnings } from "@/lib/task/taskDependencies";
 import { getImportantTasks, getRecentlyCreatedTasks } from "@/lib/task/taskSelectors";
+import { getBlockerAge } from "@/lib/task/missionExecutionInsights";
 import { StatusPill } from "@/components/StatusPill";
 import type { TaskStatus } from "@/types/productai";
 import { agents } from "@/data/mockData";
@@ -245,6 +246,7 @@ export function CeoHomeView() {
                   const runtimeHit = (task.events ?? []).some(
                     (e) => e.source === "runtime" || /runtime|latency|provider/i.test(e.message)
                   );
+                  const blockedAge = getBlockerAge(task);
                   return (
                     <li key={task.id} className="rounded-lg border border-border bg-surface p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -258,6 +260,7 @@ export function CeoHomeView() {
                         <span> · root blocker: {rootBlocker}</span>
                         <span> · deps: {task.dependencies.length}</span>
                         <span> · runtime: {runtimeHit ? "impacted" : "stable"}</span>
+                        <span> · blocked for {blockedAge}</span>
                       </p>
                       <div className="mt-1 flex flex-wrap gap-3 text-xs">
                         <Link href={`/tasks/${task.id}`} className="font-medium text-accent hover:underline">

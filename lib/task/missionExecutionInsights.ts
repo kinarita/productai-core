@@ -19,6 +19,14 @@ export interface MissionExecutionCounts {
 export interface WaitingChain {
   blockedTask: Task;
   blockedBy: Task;
+  ageLabel: string;
+}
+
+export function getOperationalAgeLabel(value?: string) {
+  if (!value) return "recent";
+  if (value === "Just now") return "just now";
+  if (value.includes("m ago") || value.includes("h ago")) return value;
+  return `${value}`;
 }
 
 export function getMissionExecutionCounts(
@@ -47,7 +55,11 @@ export function getMissionWaitingChains(missionTasks: Task[], allTasks: Task[]):
   for (const task of missionTasks) {
     const blockedDeps = getBlockedDependencies(task, allTasks);
     for (const dep of blockedDeps) {
-      chains.push({ blockedTask: task, blockedBy: dep });
+      chains.push({
+        blockedTask: task,
+        blockedBy: dep,
+        ageLabel: getOperationalAgeLabel(task.updatedAt),
+      });
     }
   }
   return chains;
@@ -97,6 +109,13 @@ export function getMissionDependencyInsights(missionTasks: Task[], allTasks: Tas
     downstreamLinked,
     causeTags: Array.from(causeTags),
   };
+}
+
+export function getBlockerAge(task: Task) {
+  const event = [...(task.events ?? [])]
+    .reverse()
+    .find((e) => e.type === "blocked" || e.message.toLowerCase().includes("waiting"));
+  return getOperationalAgeLabel(event?.timestamp ?? task.updatedAt);
 }
 
 export function getMissionExecutionFeed(

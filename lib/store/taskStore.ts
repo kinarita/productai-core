@@ -164,6 +164,7 @@ export const useTaskStore = create<TaskState>()(
           title: existing.title,
           missionId,
           missionName,
+          status,
           message,
           requiresCeoApproval: false,
         });
@@ -244,6 +245,7 @@ export const useTaskStore = create<TaskState>()(
           title: task.title,
           missionId: task.missionId,
           missionName: task.missionName,
+          status: task.status,
           message: `Assigned ${agent.name} to task: ${task.title}`,
           requiresCeoApproval: false,
         });

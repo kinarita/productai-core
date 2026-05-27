@@ -34,6 +34,7 @@ import {
   getRecentlyUpdatedTask,
 } from "@/lib/task/taskSelectors";
 import {
+  getBlockerAge,
   getMissionDependencyInsights,
   getMissionExecutionCounts,
   getMissionExecutionFeed,
@@ -309,6 +310,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                       >
                         {chain.blockedBy.title}
                       </Link>
+                      <span className="text-muted"> · blocked for {chain.ageLabel}</span>
                     </li>
                   ))}
                 </ul>
@@ -424,6 +426,12 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
               </li>
               <li className="rounded-lg border border-border bg-surface px-3 py-2 text-muted">
                 {dependencyInsights.runtimeImpacted} tasks show runtime-related execution impact.
+              </li>
+              <li className="rounded-lg border border-border bg-surface px-3 py-2 text-muted">
+                Longest blocker age:{" "}
+                {dependencyInsights.waitingChains.length > 0
+                  ? getBlockerAge(dependencyInsights.waitingChains[0].blockedTask)
+                  : "none"}
               </li>
             </ul>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -655,19 +663,25 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
               title="Runtime Signals"
               description="Operational provider health affecting this mission"
             />
-            <ul className="space-y-2">
-              {runtimeSignals.map((signal) => (
-                <li
-                  key={signal.id}
-                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
-                >
-                  <StatusPill variant={signalVariant[signal.severity]} className="mb-1">
-                    {signal.severity}
-                  </StatusPill>
-                  <span className="text-muted">{signal.message}</span>
-                </li>
-              ))}
-            </ul>
+            {runtimeSignals.length === 0 ? (
+              <p className="text-sm text-muted">
+                No runtime alerts are currently affecting this mission.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {runtimeSignals.map((signal) => (
+                  <li
+                    key={signal.id}
+                    className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+                  >
+                    <StatusPill variant={signalVariant[signal.severity]} className="mb-1">
+                      {signal.severity}
+                    </StatusPill>
+                    <span className="text-muted">{signal.message}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <Link
               href="/runtime-cost"
               className="mt-3 inline-block text-xs font-medium text-accent hover:underline"

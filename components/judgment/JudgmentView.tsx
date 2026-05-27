@@ -96,11 +96,13 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
     }
 
     addFeedItem({
-      type: action === "approved" ? "approval_required" : "coordination",
+      type: "judgment",
       author: "COO",
       authorName: "Nova",
       missionId: decision.relatedMissionId,
       missionName: decision.missionName,
+      decisionId: decision.id,
+      status,
       message: resolveDecisionActionMessage(decision, action),
       requiresCeoApproval: false,
     });

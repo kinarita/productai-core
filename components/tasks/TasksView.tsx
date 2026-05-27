@@ -51,6 +51,9 @@ export function TasksView({ missionFilter, statusFilter }: TasksViewProps) {
     return true;
   });
 
+  const filterChipClass =
+    "rounded-md border border-border bg-surface px-2 py-1 text-muted";
+
   return (
     <AppShell
       title="Tasks & Execution"
@@ -62,16 +65,19 @@ export function TasksView({ missionFilter, statusFilter }: TasksViewProps) {
       {(missionFilter || normalizedStatus) && (
         <div className="mb-4 flex flex-wrap gap-2 text-xs">
           {missionFilter ? (
-            <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">
+            <span className={filterChipClass}>
               mission: {missionFilter}
             </span>
           ) : null}
           {normalizedStatus ? (
-            <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">
+            <span className={filterChipClass}>
               status: {normalizedStatus}
             </span>
           ) : null}
-          <Link href="/tasks" className="rounded-md border border-border bg-background px-2 py-1 text-accent hover:bg-surface">
+          <Link
+            href="/tasks"
+            className="rounded-md border border-border bg-background px-2 py-1 text-accent hover:bg-surface"
+          >
             Clear filters
           </Link>
         </div>
@@ -141,7 +147,9 @@ export function TasksView({ missionFilter, statusFilter }: TasksViewProps) {
                   </li>
                 ))}
                 {columnTasks.length === 0 && (
-                  <p className="text-sm text-muted">No tasks</p>
+                  <p className="text-sm text-muted">
+                    No tasks match this column with the current filters.
+                  </p>
                 )}
               </ul>
             </Card>

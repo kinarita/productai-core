@@ -17,6 +17,7 @@ import { ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const typeLabels: Record<string, string> = {
+  judgment: "Judgment",
   coordination: "Coordination",
   task_assignment: "Task Assignment",
   task_creation: "Task Creation",
@@ -26,9 +27,11 @@ const typeLabels: Record<string, string> = {
   escalation: "Escalation",
   approval_required: "Approval Required",
   runtime: "Runtime Signal",
+  memory: "Memory",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
+  judgment: "accent",
   coordination: "default",
   task_assignment: "info",
   task_creation: "info",
@@ -38,6 +41,7 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   escalation: "warning",
   approval_required: "danger",
   runtime: "warning",
+  memory: "accent",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
@@ -53,6 +57,7 @@ function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): bool
   if (filter === "all") return true;
   if (filter === "decisions") {
     return (
+      item.type === "judgment" ||
       item.type === "architecture" ||
       item.type === "approval_required" ||
       item.type === "coordination" ||
@@ -68,10 +73,7 @@ function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): bool
     );
   }
   if (filter === "runtime") {
-    return (
-      item.type === "runtime" ||
-      /runtime|latency|token|provider|claude|openai/i.test(item.message)
-    );
+    return item.type === "runtime";
   }
   if (filter === "escalations") return item.type === "escalation";
   if (filter === "qa") return item.type === "qa_review";
@@ -88,14 +90,15 @@ interface OrganizationFeedViewProps {
 function matchesStatus(item: OrganizationFeedItem, status?: string) {
   if (!status) return true;
   const normalized = status.toLowerCase();
+  if (item.status) return item.status.toLowerCase() === normalized;
   if (normalized === "blocked") {
-    return item.type === "escalation" || /block|waiting|dependency/i.test(item.message);
+    return item.type === "escalation";
   }
   if (normalized === "in_review") {
-    return item.type === "qa_review" || /review|validation/i.test(item.message);
+    return item.type === "qa_review";
   }
   if (normalized === "completed") {
-    return item.type === "implementation" && /complete|done|shipped|ready/i.test(item.message);
+    return item.type === "implementation";
   }
   if (normalized === "active") {
     return item.type === "task_assignment" || item.type === "task_creation";
@@ -115,6 +118,8 @@ export function OrganizationFeedView({
   const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
   const activeFeedFilter = useUiStore((s) => s.activeFeedFilter);
   const setFeedFilter = useUiStore((s) => s.setFeedFilter);
+  const filterChipClass =
+    "rounded-md border border-border bg-surface px-2 py-1 text-muted";
 
   let filtered = feedItems;
 
@@ -141,10 +146,11 @@ export function OrganizationFeedView({
       )}
       {(missionFilter || taskFilter || typeFilter || statusFilter) && (
         <div className="mb-3 flex flex-wrap gap-2 text-xs">
-          {missionFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">mission: {missionFilter}</span> : null}
-          {taskFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">task: {taskFilter}</span> : null}
-          {typeFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">type: {typeFilter}</span> : null}
-          {statusFilter ? <span className="rounded-md border border-border bg-surface px-2 py-1 text-muted">status: {statusFilter}</span> : null}
+          {missionFilter ? <span className={filterChipClass}>mission: {missionFilter}</span> : null}
+          {taskFilter ? <span className={filterChipClass}>task: {taskFilter}</span> : null}
+          {typeFilter ? <span className={filterChipClass}>type: {typeFilter}</span> : null}
+          {statusFilter ? <span className={filterChipClass}>status: {statusFilter}</span> : null}
+          <span className={filterChipClass}>view: {activeFeedFilter}</span>
           <Link href="/organization-feed" className="rounded-md border border-border bg-background px-2 py-1 text-accent hover:bg-surface">
             Clear filters
           </Link>
@@ -233,7 +239,9 @@ export function OrganizationFeedView({
             </li>
           ))}
           {filtered.length === 0 && (
-            <p className="text-sm text-muted">No feed items match the current filters.</p>
+            <p className="text-sm text-muted">
+              No organization activity matches the selected filters.
+            </p>
           )}
         </ul>
       </Card>

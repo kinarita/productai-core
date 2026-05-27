@@ -121,7 +121,7 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
             <span>&gt;</span>
             <Link href={`/missions/${task.missionId}`} className="hover:text-accent">{task.missionName}</Link>
             <span>&gt;</span>
-            <Link href={`/tasks?mission=${task.missionId}`} className="hover:text-accent">Task</Link>
+            <Link href={`/tasks?mission=${task.missionId}`} className="hover:text-accent">Task Execution</Link>
             <span>&gt;</span>
             <span className="text-foreground">Execution</span>
           </nav>

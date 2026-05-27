@@ -97,6 +97,7 @@ export function createTaskFromJudgment(input: CreateTaskFromJudgmentInput): stri
     missionName: input.missionName,
     taskId,
     decisionId: input.relatedDecisionId,
+    status: "active",
     title: input.title,
     message: input.isFollowUp
       ? `COO created follow-up implementation task from decision "${input.decisionTitle}".`

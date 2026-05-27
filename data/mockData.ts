@@ -225,7 +225,7 @@ export const operationalAlerts: OperationalAlert[] = [
 export const organizationFeedItems: OrganizationFeedItem[] = [
   {
     id: "f-1",
-    type: "coordination",
+    type: "judgment",
     author: "COO",
     authorName: "Nova",
     missionId: "m-1",
@@ -292,7 +292,7 @@ export const organizationFeedItems: OrganizationFeedItem[] = [
   },
   {
     id: "f-7",
-    type: "approval_required",
+    type: "judgment",
     author: "COO",
     authorName: "Nova",
     missionId: "m-3",
@@ -300,6 +300,7 @@ export const organizationFeedItems: OrganizationFeedItem[] = [
     taskId: "t-3",
     message: "Release 1.2.0 ready for CEO approval. All critical paths verified.",
     timestamp: "12:30 PM",
+    status: "pending",
     requiresCeoApproval: true,
   },
 ];

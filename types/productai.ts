@@ -156,6 +156,7 @@ export interface ReleaseItem {
 export interface OrganizationFeedItem {
   id: string;
   type:
+    | "judgment"
     | "coordination"
     | "task_assignment"
     | "task_creation"
@@ -164,7 +165,8 @@ export interface OrganizationFeedItem {
     | "qa_review"
     | "escalation"
     | "approval_required"
-    | "runtime";
+    | "runtime"
+    | "memory";
   author: AgentRole;
   authorName: string;
   missionId: string;
@@ -174,6 +176,8 @@ export interface OrganizationFeedItem {
   agentId?: string;
   taskId?: string;
   decisionId?: string;
+  /** Optional status keyword for precise filtering */
+  status?: TaskStatus | DecisionStatus;
   message: string;
   timestamp: string;
   requiresCeoApproval?: boolean;
