@@ -4,7 +4,7 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
-  description?: string;
+  description?: React.ReactNode;
   action?: React.ReactNode;
 }
 

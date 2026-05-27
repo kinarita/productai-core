@@ -1,0 +1,154 @@
+"use client";
+
+import { AppShell } from "@/components/AppShell";
+import { Card } from "@/components/Card";
+import { Badge } from "@/components/Badge";
+import { AgentAvatar } from "@/components/AgentAvatar";
+import { MissionLink } from "@/components/MissionLink";
+import { MissionFilterBanner } from "@/components/MissionFilterBanner";
+import { useLiveOrganizationFeed } from "@/lib/hooks/useLiveOrganizationFeed";
+import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
+import { useOrganizationStore } from "@/lib/store/organizationStore";
+import { useUiStore } from "@/lib/store/uiStore";
+import type { FeedFilter } from "@/lib/store/uiStore";
+import { ShieldAlert } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const typeLabels: Record<string, string> = {
+  coordination: "Coordination",
+  task_assignment: "Task Assignment",
+  implementation: "Implementation Update",
+  architecture: "Architecture Recommendation",
+  qa_review: "QA Review",
+  escalation: "Escalation",
+  approval_required: "Approval Required",
+};
+
+const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
+  coordination: "default",
+  task_assignment: "info",
+  implementation: "info",
+  architecture: "accent",
+  qa_review: "default",
+  escalation: "warning",
+  approval_required: "danger",
+};
+
+const feedFilters: { key: FeedFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "approvals", label: "Approvals" },
+  { key: "escalations", label: "Escalations" },
+  { key: "implementation", label: "Implementation" },
+];
+
+interface OrganizationFeedViewProps {
+  missionFilter?: string;
+}
+
+export function OrganizationFeedView({ missionFilter }: OrganizationFeedViewProps) {
+  useMissionFilterFromUrl(missionFilter);
+  useLiveOrganizationFeed(true);
+
+  const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
+  const activeFeedFilter = useUiStore((s) => s.activeFeedFilter);
+  const setFeedFilter = useUiStore((s) => s.setFeedFilter);
+
+  let filtered = feedItems;
+
+  if (missionFilter) {
+    filtered = filtered.filter((f) => f.missionId === missionFilter);
+  }
+
+  if (activeFeedFilter === "approvals") {
+    filtered = filtered.filter(
+      (f) => f.requiresCeoApproval || f.type === "approval_required"
+    );
+  } else if (activeFeedFilter === "escalations") {
+    filtered = filtered.filter((f) => f.type === "escalation");
+  } else if (activeFeedFilter === "implementation") {
+    filtered = filtered.filter(
+      (f) => f.type === "implementation" || f.type === "task_assignment"
+    );
+  }
+
+  return (
+    <AppShell
+      title="Organization Feed"
+      description="Live stream of AI organizational collaboration"
+    >
+      {missionFilter && (
+        <MissionFilterBanner missionId={missionFilter} basePath="/organization-feed" />
+      )}
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted">Filter:</span>
+        {feedFilters.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setFeedFilter(key)}
+            className={cn(
+              "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+              activeFeedFilter === key
+                ? "border-accent bg-indigo-50 text-accent"
+                : "border-border bg-background text-muted hover:bg-surface"
+            )}
+          >
+            {label}
+          </button>
+        ))}
+        <span className="ml-auto flex items-center gap-1.5 text-xs text-muted">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-40" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
+          </span>
+          Live
+        </span>
+      </div>
+
+      <Card>
+        <ul className="space-y-6">
+          {filtered.map((item, index) => (
+            <li
+              key={item.id}
+              className={cn(
+                "flex gap-4 border-b border-border pb-6 last:border-0 last:pb-0",
+                index === 0 && item.id.startsWith("f-live-") && "animate-[fadeIn_0.4s_ease-out]"
+              )}
+            >
+              <AgentAvatar
+                role={item.author}
+                name={item.authorName}
+                showStatus
+                status="active"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={typeVariant[item.type] ?? "default"}>
+                    {typeLabels[item.type]}
+                  </Badge>
+                  <MissionLink
+                    missionId={item.missionId}
+                    missionName={item.missionName}
+                    variant="pill"
+                  />
+                  <span className="text-xs text-muted">· {item.timestamp}</span>
+                  {item.requiresCeoApproval && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-warning">
+                      <ShieldAlert className="h-3 w-3" />
+                      CEO approval required
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-foreground">{item.message}</p>
+              </div>
+            </li>
+          ))}
+          {filtered.length === 0 && (
+            <p className="text-sm text-muted">No feed items match the current filters.</p>
+          )}
+        </ul>
+      </Card>
+    </AppShell>
+  );
+}

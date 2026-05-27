@@ -77,11 +77,17 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
         </Link>
         <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
           <span className="text-muted">Related:</span>
-          <Link href="/tasks" className="transition-colors hover:text-accent">
+          <Link
+            href={`/tasks?mission=${missionId}`}
+            className="transition-colors hover:text-accent"
+          >
             Tasks
           </Link>
           {hasPendingDecisions && (
-            <Link href="/judgment" className="transition-colors hover:text-accent">
+            <Link
+              href={`/judgment?mission=${missionId}`}
+              className="transition-colors hover:text-accent"
+            >
               Judgment
             </Link>
           )}
@@ -91,7 +97,10 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
             </Link>
           )}
           {activities.length > 0 && (
-            <Link href="/organization-feed" className="transition-colors hover:text-accent">
+            <Link
+              href={`/organization-feed?mission=${missionId}`}
+              className="transition-colors hover:text-accent"
+            >
               Organization Feed
             </Link>
           )}
@@ -185,7 +194,7 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
                     </div>
                     <p className="mt-1 text-sm text-muted">{d.summary}</p>
                     <Link
-                      href="/judgment"
+                      href={`/judgment?mission=${missionId}`}
                       className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
                     >
                       Open in Judgment Center →
@@ -319,7 +328,7 @@ export default async function MissionDetailPage({ params }: MissionDetailPagePro
             )}
             {activities.length > 0 && (
               <Link
-                href="/organization-feed"
+                href={`/organization-feed?mission=${missionId}`}
                 className="mt-3 inline-block text-xs font-medium text-accent hover:underline"
               >
                 View full Organization Feed →
