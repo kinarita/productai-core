@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
@@ -11,35 +12,71 @@ import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useUiStore } from "@/lib/store/uiStore";
 import type { FeedFilter } from "@/lib/store/uiStore";
+import type { OrganizationFeedItem } from "@/types/productai";
 import { ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const typeLabels: Record<string, string> = {
   coordination: "Coordination",
   task_assignment: "Task Assignment",
+  task_creation: "Task Creation",
   implementation: "Implementation Update",
   architecture: "Architecture Recommendation",
   qa_review: "QA Review",
   escalation: "Escalation",
   approval_required: "Approval Required",
+  runtime: "Runtime Signal",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
   coordination: "default",
   task_assignment: "info",
+  task_creation: "info",
   implementation: "info",
   architecture: "accent",
   qa_review: "default",
   escalation: "warning",
   approval_required: "danger",
+  runtime: "warning",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "approvals", label: "Approvals" },
+  { key: "decisions", label: "Decisions" },
+  { key: "tasks", label: "Tasks" },
+  { key: "runtime", label: "Runtime" },
   { key: "escalations", label: "Escalations" },
-  { key: "implementation", label: "Implementation" },
+  { key: "qa", label: "QA" },
 ];
+
+function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "decisions") {
+    return (
+      item.type === "architecture" ||
+      item.type === "approval_required" ||
+      item.type === "coordination" ||
+      Boolean(item.decisionId)
+    );
+  }
+  if (filter === "tasks") {
+    return (
+      item.type === "task_creation" ||
+      item.type === "task_assignment" ||
+      item.type === "implementation" ||
+      Boolean(item.taskId)
+    );
+  }
+  if (filter === "runtime") {
+    return (
+      item.type === "runtime" ||
+      /runtime|latency|token|provider|claude|openai/i.test(item.message)
+    );
+  }
+  if (filter === "escalations") return item.type === "escalation";
+  if (filter === "qa") return item.type === "qa_review";
+  return true;
+}
 
 interface OrganizationFeedViewProps {
   missionFilter?: string;
@@ -59,17 +96,7 @@ export function OrganizationFeedView({ missionFilter }: OrganizationFeedViewProp
     filtered = filtered.filter((f) => f.missionId === missionFilter);
   }
 
-  if (activeFeedFilter === "approvals") {
-    filtered = filtered.filter(
-      (f) => f.requiresCeoApproval || f.type === "approval_required"
-    );
-  } else if (activeFeedFilter === "escalations") {
-    filtered = filtered.filter((f) => f.type === "escalation");
-  } else if (activeFeedFilter === "implementation") {
-    filtered = filtered.filter(
-      (f) => f.type === "implementation" || f.type === "task_assignment"
-    );
-  }
+  filtered = filtered.filter((f) => matchesFeedFilter(f, activeFeedFilter));
 
   return (
     <AppShell
@@ -125,7 +152,7 @@ export function OrganizationFeedView({ missionFilter }: OrganizationFeedViewProp
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={typeVariant[item.type] ?? "default"}>
-                    {typeLabels[item.type]}
+                    {typeLabels[item.type] ?? item.type}
                   </Badge>
                   <MissionLink
                     missionId={item.missionId}
@@ -141,6 +168,23 @@ export function OrganizationFeedView({ missionFilter }: OrganizationFeedViewProp
                   )}
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-foreground">{item.message}</p>
+                {(item.taskId || item.decisionId) && (
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                    {item.taskId ? (
+                      <Link href={`/tasks/${item.taskId}`} className="font-medium text-accent hover:underline">
+                        View task →
+                      </Link>
+                    ) : null}
+                    {item.decisionId ? (
+                      <Link
+                        href={`/judgment?mission=${item.missionId}`}
+                        className="font-medium text-accent hover:underline"
+                      >
+                        View decision →
+                      </Link>
+                    ) : null}
+                  </div>
+                )}
               </div>
             </li>
           ))}

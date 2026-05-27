@@ -13,9 +13,12 @@ import { missions as seedMissions } from "@/data/mockData";
 import { getRuntimeSignalsForMission } from "@/lib/mission/missionDetailData";
 import {
   executeSuggestedAction,
-  getSuggestedActionsForStatus,
+  getSuggestedActionsForTask,
 } from "@/lib/task/suggestedTaskActions";
+import { isWaitingOnDependency } from "@/lib/task/taskDependencies";
 import { agentName, sourceBadgeClass } from "@/lib/task/taskUi";
+import { TaskDependenciesPanel } from "@/components/tasks/TaskDependenciesPanel";
+import { TaskWorkflowSteps } from "@/components/tasks/TaskWorkflowSteps";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
@@ -64,6 +67,9 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
 
   const relatedDecision = useMemo(() => {
     if (!task) return undefined;
+    if (task.relatedDecisionId) {
+      return decisions.find((d) => d.id === task.relatedDecisionId);
+    }
     return decisions.find((d) => d.relatedTaskIds?.includes(task.id));
   }, [decisions, task]);
 
@@ -103,7 +109,8 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
     notFound();
   }
 
-  const suggestions = getSuggestedActionsForStatus(task.status);
+  const suggestions = getSuggestedActionsForTask(task, tasks);
+  const waitingOnDep = isWaitingOnDependency(task, tasks);
 
   return (
     <AppShell>
@@ -142,6 +149,13 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
         </div>
       ) : null}
 
+      {waitingOnDep ? (
+        <div className="mb-6 rounded-lg border border-warning/30 bg-amber-50/50 px-4 py-3 text-sm text-foreground">
+          <span className="font-medium text-warning">Waiting on dependency</span>
+          <span className="text-muted"> — upstream task must be unblocked before execution can proceed.</span>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card>
@@ -154,13 +168,22 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                 </Link>
               </p>
               <p className="text-muted">ETA: {task.eta}</p>
-              {task.dependencies.length ? (
-                <p className="text-muted">Dependencies: {task.dependencies.join(", ")}</p>
-              ) : (
-                <p className="text-muted">Dependencies: None</p>
-              )}
+              {task.priority ? <p className="text-muted">Priority: {task.priority}</p> : null}
+              {task.createdFrom ? (
+                <p className="text-muted">Origin: {task.createdFrom}</p>
+              ) : null}
               <p className="text-muted">Progress: {task.progress}%</p>
             </div>
+          </Card>
+
+          <Card>
+            <SectionHeader title="Workflow" description="Judgment to mission progress" />
+            <TaskWorkflowSteps task={task} hasDecision={Boolean(relatedDecision)} />
+          </Card>
+
+          <Card>
+            <SectionHeader title="Dependencies" description="Depends on and blocking relationships" />
+            <TaskDependenciesPanel task={task} allTasks={tasks} />
           </Card>
 
           <Card>
@@ -237,11 +260,22 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
           </Card>
 
           <Card>
-            <SectionHeader title="Related Decision" />
+            <SectionHeader
+              title="Originating Decision"
+              description="Judgment that spawned or governs this work"
+            />
             {relatedDecision ? (
               <div className="rounded-lg border border-border bg-surface p-4">
-                <p className="text-sm font-medium text-foreground">{relatedDecision.title}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">{relatedDecision.title}</p>
+                  <StatusPill variant={relatedDecision.status === "approved" ? "success" : relatedDecision.status === "rejected" ? "danger" : "warning"}>
+                    {relatedDecision.status}
+                  </StatusPill>
+                </div>
                 <p className="mt-1 text-sm text-muted">{relatedDecision.summary}</p>
+                {task.createdFrom === "judgment" ? (
+                  <p className="mt-2 text-xs text-muted">This task was created from judgment.</p>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-3 text-xs">
                   <Link
                     href={`/judgment?mission=${task.missionId}`}
@@ -258,7 +292,7 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted">No explicit decision link for this task.</p>
+              <p className="text-sm text-muted">No originating decision linked to this task.</p>
             )}
           </Card>
         </div>

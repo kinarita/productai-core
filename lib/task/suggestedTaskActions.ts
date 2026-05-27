@@ -2,6 +2,7 @@ import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useTaskStore } from "@/lib/store/taskStore";
 import { agentName } from "@/lib/task/taskUi";
+import { getBlockedDependencies, isWaitingOnDependency } from "@/lib/task/taskDependencies";
 import type { Task, TaskStatus } from "@/types/productai";
 
 export type SuggestedActionKey =
@@ -13,12 +14,28 @@ export type SuggestedActionKey =
   | "update_mission_status"
   | "record_learning"
   | "clarify_next_step"
-  | "move_to_review_when_ready";
+  | "move_to_review_when_ready"
+  | "resolve_dependency_blocker";
 
 export interface SuggestedActionItem {
   key: SuggestedActionKey;
   title: string;
   description: string;
+}
+
+export function getSuggestedActionsForTask(task: Task, allTasks: Task[]): SuggestedActionItem[] {
+  const base = getSuggestedActionsForStatus(task.status);
+  if (!isWaitingOnDependency(task, allTasks)) return base;
+  const blocked = getBlockedDependencies(task, allTasks);
+  const depLabel = blocked.map((d) => d.title).join(", ");
+  return [
+    {
+      key: "resolve_dependency_blocker",
+      title: "Resolve dependency blocker",
+      description: `Unblock or escalate: ${depLabel}.`,
+    },
+    ...base,
+  ];
 }
 
 export function getSuggestedActionsForStatus(status: TaskStatus): SuggestedActionItem[] {
@@ -237,5 +254,37 @@ export function executeSuggestedAction(task: Task, key: SuggestedActionKey) {
     case "move_to_review_when_ready":
       updateTaskStatus(task.id, "in_review");
       break;
+
+    case "resolve_dependency_blocker": {
+      const blocked = getBlockedDependencies(
+        task,
+        useTaskStore.getState().tasks
+      );
+      const first = blocked[0];
+      if (first) {
+        addFeedItem({
+          type: "escalation",
+          author: "COO",
+          authorName: "Nova",
+          missionId: task.missionId,
+          missionName: task.missionName,
+          taskId: task.id,
+          title: task.title,
+          message: `Dependency escalation: "${task.title}" waiting on blocked task "${first.title}".`,
+          requiresCeoApproval: false,
+        });
+        addTaskEvent(task.id, {
+          type: "note",
+          actor: "COO",
+          message: `Escalated dependency blocker — waiting on "${first.title}".`,
+          source: "system",
+        });
+        touchMissionActivity(
+          task.missionId,
+          `Dependency blocker escalated — ${first.title} blocking ${task.title}.`
+        );
+      }
+      break;
+    }
   }
 }

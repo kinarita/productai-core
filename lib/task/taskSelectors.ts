@@ -51,3 +51,22 @@ export function getImportantTasks(tasks: Task[], limit = 6): Task[] {
 export function isImportantTask(task: Task) {
   return importantStatuses.includes(task.status) || task.updatedAt === "Just now";
 }
+
+export function getRecentlyCreatedTasks(tasks: Task[], limit = 5): Task[] {
+  return [...tasks]
+    .filter((t) => t.createdFrom === "judgment")
+    .sort((a, b) => {
+      const score = (t: Task) => (t.createdAt === "Just now" || t.updatedAt === "Just now" ? 2 : 1);
+      return score(b) - score(a);
+    })
+    .slice(0, limit);
+}
+
+export function countJudgmentSpawnedTasks(tasks: Task[], missionId: string): number {
+  return tasks.filter((t) => t.missionId === missionId && t.createdFrom === "judgment").length;
+}
+
+export function getLinkedTasksForDecision(tasks: Task[], decisionId: string, relatedTaskIds?: string[]) {
+  const ids = new Set(relatedTaskIds ?? []);
+  return tasks.filter((t) => ids.has(t.id) || t.relatedDecisionId === decisionId);
+}

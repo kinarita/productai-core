@@ -18,6 +18,10 @@ export type MissionStatus = "planning" | "active" | "on_hold" | "completed";
 
 export type TaskStatus = "active" | "in_review" | "blocked" | "completed";
 
+export type TaskPriority = "high" | "medium" | "low";
+
+export type TaskCreatedFrom = "judgment" | "manual" | "mission";
+
 export type DecisionStatus = "pending" | "approved" | "rejected";
 
 export type ReleaseState = "candidate" | "staging" | "production" | "rolled_back";
@@ -71,12 +75,17 @@ export interface Task {
   assignedTo: AgentRole;
   /** Optional agent identity for assignment */
   assignedAgentId?: string;
+  /** Task IDs (t-*) or free-text dependency labels */
   dependencies: string[];
   eta: string;
   progress: number;
+  priority?: TaskPriority;
+  relatedDecisionId?: string;
+  createdFrom?: TaskCreatedFrom;
   /** Structured event trail (local-only) */
   events?: TaskEvent[];
   updatedAt?: string;
+  createdAt?: string;
 }
 
 export type TaskEventType =
@@ -149,11 +158,13 @@ export interface OrganizationFeedItem {
   type:
     | "coordination"
     | "task_assignment"
+    | "task_creation"
     | "implementation"
     | "architecture"
     | "qa_review"
     | "escalation"
-    | "approval_required";
+    | "approval_required"
+    | "runtime";
   author: AgentRole;
   authorName: string;
   missionId: string;
@@ -162,6 +173,7 @@ export interface OrganizationFeedItem {
   title?: string;
   agentId?: string;
   taskId?: string;
+  decisionId?: string;
   message: string;
   timestamp: string;
   requiresCeoApproval?: boolean;

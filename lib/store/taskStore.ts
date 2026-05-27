@@ -18,7 +18,7 @@ import type {
 
 type TaskStatusAction = "start" | "review" | "block" | "complete";
 
-const PERSIST_VERSION = 1;
+const PERSIST_VERSION = 2;
 
 interface TaskState {
   tasks: Task[];
@@ -292,6 +292,7 @@ export const useTaskStore = create<TaskState>()(
             tasks: slice.tasks.map((t) => ({
               ...t,
               events: normalizeTaskEvents(t.events, t.updatedAt),
+              dependencies: t.dependencies ?? [],
             })),
           };
         }

@@ -26,7 +26,12 @@ import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useTaskStore } from "@/lib/store/taskStore";
-import { countTasksByStatus, getRecentlyUpdatedTask } from "@/lib/task/taskSelectors";
+import {
+  countJudgmentSpawnedTasks,
+  countTasksByStatus,
+  getLinkedTasksForDecision,
+  getRecentlyUpdatedTask,
+} from "@/lib/task/taskSelectors";
 import { useUiStore } from "@/lib/store/uiStore";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
@@ -161,6 +166,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   const activeTasks = missionTasks.filter((t) => t.status !== "completed");
   const taskCounts = countTasksByStatus(tasks, missionId);
   const recentlyUpdatedTask = getRecentlyUpdatedTask(missionTasks, missionId);
+  const judgmentSpawnedCount = countJudgmentSpawnedTasks(tasks, missionId);
   const relatedBranches = getBranchesForMissionId(mission);
   const relatedPrs = getPullRequestsForMissionId(mission);
   const memoryInsights = getMemoriesForMissionId(mission);
@@ -345,31 +351,60 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
           </Card>
 
           <Card>
-            <SectionHeader title="Pending Decisions" />
+            <SectionHeader
+              title="Pending Decisions"
+              description={
+                judgmentSpawnedCount > 0
+                  ? `${judgmentSpawnedCount} task(s) created from judgment on this mission`
+                  : undefined
+              }
+            />
             {pendingDecisions.length === 0 ? (
               <p className="text-sm text-muted">No decisions awaiting CEO judgment.</p>
             ) : (
               <ul className="space-y-3">
-                {pendingDecisions.map((d) => (
-                  <li
-                    key={d.id}
-                    className="rounded-lg border border-border bg-surface p-4"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">{d.title}</p>
-                      <StatusPill variant={d.priority === "high" ? "danger" : "warning"}>
-                        {d.priority}
-                      </StatusPill>
-                    </div>
-                    <p className="mt-1 text-sm text-muted">{d.summary}</p>
-                    <Link
-                      href={`/judgment?mission=${missionId}`}
-                      className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
+                {pendingDecisions.map((d) => {
+                  const linkedCount = getLinkedTasksForDecision(
+                    missionTasks,
+                    d.id,
+                    d.relatedTaskIds
+                  ).length;
+                  return (
+                    <li
+                      key={d.id}
+                      className="rounded-lg border border-border bg-surface p-4"
                     >
-                      Open in Judgment Center →
-                    </Link>
-                  </li>
-                ))}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground">{d.title}</p>
+                        <StatusPill variant={d.priority === "high" ? "danger" : "warning"}>
+                          {d.priority}
+                        </StatusPill>
+                      </div>
+                      <p className="mt-1 text-sm text-muted">{d.summary}</p>
+                      {linkedCount > 0 ? (
+                        <p className="mt-2 text-xs text-muted">
+                          {linkedCount} linked task{linkedCount === 1 ? "" : "s"}
+                        </p>
+                      ) : null}
+                      <div className="mt-2 flex flex-wrap gap-3">
+                        <Link
+                          href={`/judgment?mission=${missionId}`}
+                          className="text-xs font-medium text-accent hover:underline"
+                        >
+                          Open in Judgment Center →
+                        </Link>
+                        {linkedCount > 0 ? (
+                          <Link
+                            href={`/tasks?mission=${missionId}`}
+                            className="text-xs font-medium text-accent hover:underline"
+                          >
+                            Open Tasks →
+                          </Link>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Card>

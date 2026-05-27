@@ -10,7 +10,8 @@ import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useTaskStore } from "@/lib/store/taskStore";
-import { getImportantTasks } from "@/lib/task/taskSelectors";
+import { getDependencyWarnings } from "@/lib/task/taskDependencies";
+import { getImportantTasks, getRecentlyCreatedTasks } from "@/lib/task/taskSelectors";
 import { StatusPill } from "@/components/StatusPill";
 import type { TaskStatus } from "@/types/productai";
 import { agents } from "@/data/mockData";
@@ -36,6 +37,8 @@ export function CeoHomeView() {
   const runtimeAlerts = useRuntimeStore((s) => s.alerts);
   const tasks = useTaskStore((s) => s.tasks);
   const importantTasks = getImportantTasks(tasks, 6);
+  const recentlyCreated = getRecentlyCreatedTasks(tasks, 5);
+  const dependencyWarnings = getDependencyWarnings(tasks).slice(0, 5);
 
   const orgHealth = computeOrganizationHealth(missions, runtimeAlerts);
   const activeMissions = missions.filter((m) => m.status === "active" || m.status === "planning");
@@ -91,6 +94,62 @@ export function CeoHomeView() {
             subtext="Tasks completed vs planned"
             trend="up"
           />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card title="Recently Created Tasks" description="Work spawned from judgment and coordination">
+            {recentlyCreated.length === 0 ? (
+              <p className="text-sm text-muted">No judgment-driven tasks yet. Create one from Judgment Center.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {recentlyCreated.map((task) => (
+                  <li key={task.id}>
+                    <Link
+                      href={`/tasks/${task.id}`}
+                      className="group flex items-center justify-between gap-4 py-3 transition-colors first:pt-0 last:pb-0 hover:bg-surface/50"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground group-hover:text-accent">{task.title}</p>
+                        <p className="mt-0.5 text-xs text-muted">
+                          <MissionLink missionId={task.missionId} missionName={task.missionName} variant="pill" />
+                          {task.createdAt ? ` · ${task.createdAt}` : ""}
+                        </p>
+                      </div>
+                      <StatusPill variant={taskStatusVariant[task.status]}>{task.status}</StatusPill>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link href="/judgment" className="mt-3 inline-block text-xs font-medium text-accent hover:underline">
+              Judgment Center →
+            </Link>
+          </Card>
+
+          <Card title="Dependency Warnings" description="Tasks waiting on blocked upstream work">
+            {dependencyWarnings.length === 0 ? (
+              <p className="text-sm text-muted">No dependency blockers detected.</p>
+            ) : (
+              <ul className="space-y-3">
+                {dependencyWarnings.map(({ task, blockedDependency }) => (
+                  <li key={`${task.id}-${blockedDependency.id}`} className="rounded-lg border border-border bg-surface p-3">
+                    <p className="text-sm text-foreground">
+                      <Link href={`/tasks/${task.id}`} className="font-medium hover:text-accent">
+                        {task.title}
+                      </Link>
+                      <span className="text-muted"> waiting on </span>
+                      <Link href={`/tasks/${blockedDependency.id}`} className="font-medium hover:text-accent">
+                        {blockedDependency.title}
+                      </Link>
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      Blocker status: {blockedDependency.status}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
         </div>
 
         <Card title="Important Tasks" description="Blocked, in review, and recently updated work">

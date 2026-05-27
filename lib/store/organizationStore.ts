@@ -40,6 +40,7 @@ interface OrganizationState {
   addFeedItem: (item: Omit<OrganizationFeedItem, "id" | "timestamp">) => void;
   updateFeedItem: (id: string, patch: Partial<OrganizationFeedItem>) => void;
   updateDecisionStatus: (id: string, status: DecisionStatus) => void;
+  linkDecisionToTask: (decisionId: string, taskId: string) => void;
   setExecutiveSyncState: (state: Partial<ExecutiveSyncState>) => void;
   rotateDiscussionStatus: () => void;
   resetToInitial: () => void;
@@ -75,6 +76,15 @@ export const useOrganizationStore = create<OrganizationState>()(
       updateDecisionStatus: (id, status) =>
         set((state) => ({
           decisions: state.decisions.map((d) => (d.id === id ? { ...d, status } : d)),
+        })),
+      linkDecisionToTask: (decisionId, taskId) =>
+        set((state) => ({
+          decisions: state.decisions.map((d) => {
+            if (d.id !== decisionId) return d;
+            const existing = d.relatedTaskIds ?? [];
+            if (existing.includes(taskId)) return d;
+            return { ...d, relatedTaskIds: [...existing, taskId] };
+          }),
         })),
       setExecutiveSyncState: (patch) =>
         set((state) => ({

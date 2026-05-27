@@ -2,7 +2,13 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { uiStoreInitial } from "@/lib/store/initialState";
 
-export type FeedFilter = "all" | "approvals" | "escalations" | "implementation";
+export type FeedFilter =
+  | "all"
+  | "decisions"
+  | "tasks"
+  | "runtime"
+  | "escalations"
+  | "qa";
 
 interface UiState {
   sidebarCollapsed: boolean;
@@ -34,6 +40,21 @@ export const useUiStore = create<UiState>()(
         selectedDecisionId: state.selectedDecisionId,
         activeFeedFilter: state.activeFeedFilter,
       }),
+      migrate: (persisted) => {
+        const slice = persisted as { activeFeedFilter?: string };
+        const valid: FeedFilter[] = ["all", "decisions", "tasks", "runtime", "escalations", "qa"];
+        if (slice.activeFeedFilter && !valid.includes(slice.activeFeedFilter as FeedFilter)) {
+          const legacy: Record<string, FeedFilter> = {
+            approvals: "decisions",
+            implementation: "tasks",
+          };
+          return {
+            ...slice,
+            activeFeedFilter: legacy[slice.activeFeedFilter] ?? "all",
+          };
+        }
+        return persisted;
+      },
     }
   )
 );

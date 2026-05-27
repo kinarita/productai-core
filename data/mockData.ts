@@ -396,9 +396,9 @@ export const decisions: Decision[] = [
 
 export const tasks: Task[] = [
   { id: "t-1", title: "Implement session refresh", missionId: "m-1", missionName: "Customer Portal v2", status: "active", assignedTo: "Engineer", dependencies: ["OAuth callback"], eta: "2 days", progress: 35 },
-  { id: "t-2", title: "API boundary documentation", missionId: "m-2", missionName: "Analytics Pipeline", status: "active", assignedTo: "Architect", dependencies: [], eta: "1 day", progress: 60 },
+  { id: "t-2", title: "API boundary documentation", missionId: "m-2", missionName: "Analytics Pipeline", status: "blocked", assignedTo: "Architect", dependencies: [], eta: "1 day", progress: 60 },
   { id: "t-3", title: "E2E regression suite", missionId: "m-3", missionName: "Mobile Onboarding", status: "in_review", assignedTo: "QA", dependencies: ["UI polish"], eta: "4h", progress: 95 },
-  { id: "t-4", title: "Stakeholder requirements sync", missionId: "m-4", missionName: "Internal Admin Tools", status: "blocked", assignedTo: "COO", dependencies: ["CEO scope decision"], eta: "—", progress: 10 },
+  { id: "t-4", title: "Stakeholder requirements sync", missionId: "m-4", missionName: "Internal Admin Tools", status: "blocked", assignedTo: "COO", dependencies: ["t-2", "CEO scope decision"], eta: "—", progress: 10 },
   { id: "t-5", title: "Billing widget integration", missionId: "m-1", missionName: "Customer Portal v2", status: "completed", assignedTo: "Engineer", dependencies: [], eta: "Done", progress: 100 },
   { id: "t-6", title: "Performance profiling — onboarding", missionId: "m-3", missionName: "Mobile Onboarding", status: "completed", assignedTo: "QA", dependencies: [], eta: "Done", progress: 100 },
 ];
