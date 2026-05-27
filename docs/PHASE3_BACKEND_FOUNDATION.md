@@ -254,6 +254,27 @@ To prepare future conflict resolution:
 
 This phase does not introduce heavy conflict-resolution logic; it only standardizes metadata shape.
 
+## Phase 3-6 sync policy hardening
+
+Phase 3-6 formalizes persistence policy before remote source-of-truth work begins.
+
+### Policy document
+
+- `docs/PHASE3_SYNC_POLICY.md` defines:
+  - local / hybrid / remote behavior
+  - read/write priority
+  - failure and fallback rules
+  - syncedAt strategy
+  - future conflict resolution and multi-user direction
+
+### Operational hardening
+
+- Sync warning deduplication (`type + message` fingerprint, count + lastSeenAt)
+- Display-only retry guidance from `pendingHydrationCount`
+- `lib/services/syncMetadata.ts` for syncedAt helpers
+- `lib/services/syncPolicyUi.ts` for calm operational labels
+- sync store persist migration (v2) for warning shape compatibility
+
 ## Store migration path
 
 A service layer (`lib/services`) is introduced as migration prep:

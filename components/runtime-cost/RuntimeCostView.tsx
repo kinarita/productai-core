@@ -6,6 +6,10 @@ import { Badge } from "@/components/Badge";
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
+import {
+  formatBackendHealthLabel,
+  getSuggestedRetryLabel,
+} from "@/lib/services/syncPolicyUi";
 import { runtimeCosts } from "@/data/mockData";
 
 export function RuntimeCostView() {
@@ -35,15 +39,8 @@ export function RuntimeCostView() {
 
   const gemini = providerHealth.find((p) => p.provider === "Google Gemini");
   const persistenceMode = getPersistenceMode();
-  const recentWarnings = [...readFailures, ...writeFailures].slice(0, 4);
-  const derivedWarnings = [
-    ...(hydrationStatus === "failed"
-      ? ["Hydration retry delayed due to backend timeout."]
-      : []),
-    ...(backendHealth === "unavailable"
-      ? ["Backend unavailable. Local execution continuity maintained."]
-      : []),
-  ];
+  const backendLabel = formatBackendHealthLabel(backendHealth);
+  const retryLabel = getSuggestedRetryLabel(pendingHydrationCount);
   const healthBadgeVariant =
     hydrationStatus === "failed" || backendHealth === "unavailable"
       ? "warning"
@@ -206,13 +203,13 @@ export function RuntimeCostView() {
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <Badge variant={healthBadgeVariant}>Operational sync</Badge>
-              <span className="text-xs text-muted">quiet continuity mode</span>
+              <span className="text-xs text-muted">{retryLabel}</span>
             </div>
             <p className="text-muted">
               Persistence mode: <span className="text-foreground">{persistenceMode}</span>
             </p>
             <p className="text-muted">
-              Backend health: <span className="text-foreground">{backendHealth}</span>
+              Backend health: <span className="text-foreground">{backendLabel}</span>
             </p>
             <p className="text-muted">
               Hydration status: <span className="text-foreground">{hydrationStatus}</span>
@@ -230,21 +227,19 @@ export function RuntimeCostView() {
               Pending retries: <span className="text-foreground">{pendingHydrationCount}</span>
             </p>
           </div>
-          {recentWarnings.length > 0 ? (
+          {(readFailures.length > 0 || writeFailures.length > 0) && (
             <ul className="mt-3 space-y-2">
-              {recentWarnings.map((entry) => (
+              {[...readFailures, ...writeFailures].slice(0, 4).map((entry) => (
                 <li
                   key={entry.id}
                   className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted"
                 >
                   <span className="font-medium text-foreground">{entry.label}</span>
                   {" · "}
-                  {entry.error}
+                  Backend synchronization delayed — local continuity maintained.
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="mt-3 text-xs text-muted">Recent sync warnings: none</p>
           )}
         </Card>
 
@@ -257,7 +252,12 @@ export function RuntimeCostView() {
                   className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted"
                 >
                   <span className="font-medium text-foreground">{warning.message}</span>
-                  <span className="ml-2 text-muted">({warning.createdAt})</span>
+                  {(warning.count ?? 1) > 1 ? (
+                    <span className="ml-2 text-muted">×{warning.count}</span>
+                  ) : null}
+                  <span className="ml-2 text-muted">
+                    · last {warning.lastSeenAt ?? warning.createdAt}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -266,18 +266,6 @@ export function RuntimeCostView() {
               No active sync advisories. Local execution continuity is maintained.
             </p>
           )}
-          {derivedWarnings.length > 0 ? (
-            <ul className="mt-3 space-y-2">
-              {derivedWarnings.map((message) => (
-                <li
-                  key={message}
-                  className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted"
-                >
-                  {message}
-                </li>
-              ))}
-            </ul>
-          ) : null}
         </Card>
       </div>
     </AppShell>

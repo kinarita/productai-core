@@ -1,4 +1,5 @@
 import { agents } from "@/data/mockData";
+import { markSyncedAt, withSyncedAt } from "@/lib/services/syncMetadata";
 import type { FeedItemRecord } from "@/lib/domain/feed";
 import type { JudgmentRecord } from "@/lib/domain/judgment";
 import type { MissionRecord } from "@/lib/domain/mission";
@@ -99,7 +100,7 @@ export function mapMissionRecordToMission(record: MissionRecord, base?: Mission)
     progress: record.progress,
     createdAt: record.createdAt ?? base?.createdAt,
     updatedAt: record.updatedAt,
-    syncedAt: record.updatedAt,
+    syncedAt: markSyncedAt(),
   };
 }
 
@@ -139,7 +140,7 @@ export function mapTaskRecordToTask(record: TaskRecord, base?: Task): Task {
     createdFrom: (record.createdFrom as Task["createdFrom"]) ?? base?.createdFrom ?? "manual",
     updatedAt: record.updatedAt,
     createdAt: record.createdAt,
-    syncedAt: record.updatedAt,
+    syncedAt: markSyncedAt(),
   };
 }
 
@@ -174,7 +175,7 @@ export function mapFeedRecordToFeedItem(
     timestamp: record.createdAt,
     createdAt: record.createdAt,
     updatedAt: record.createdAt,
-    syncedAt: record.createdAt,
+    syncedAt: markSyncedAt(),
   };
 }
 
@@ -208,6 +209,11 @@ export function mapJudgmentRecordToDecision(record: JudgmentRecord, base?: Decis
     priority: (record.priority as Decision["priority"]) ?? base?.priority ?? "medium",
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
-    syncedAt: record.updatedAt,
+    syncedAt: markSyncedAt(),
   };
+}
+
+/** Apply syncedAt when merging hydrated remote payloads into store-ready entities. */
+export function withHydratedSyncMetadata<T extends { syncedAt?: string }>(entity: T): T {
+  return withSyncedAt(entity);
 }

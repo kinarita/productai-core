@@ -101,7 +101,7 @@ export async function hydrateProductAIState() {
     useSyncStore.getState().addWarning({
       type: "backend",
       severity: "warning",
-      message: "Backend unavailable. Local execution continuity maintained.",
+      message: "Backend unavailable — local continuity maintained.",
     });
   }
 

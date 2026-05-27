@@ -7,6 +7,9 @@ export type HydrationStatus = "idle" | "hydrating" | "success" | "failed";
 export type SyncWarningType = "read" | "write" | "hydration" | "backend";
 export type BackendHealthStatus = "healthy" | "degraded" | "unavailable";
 
+const SYNC_PERSIST_VERSION = 2;
+const WARNING_DEDUP_WINDOW_MS = 2 * 60 * 1000;
+
 export interface SyncLogEntry {
   id: string;
   label: string;
@@ -20,6 +23,8 @@ export interface SyncWarning {
   message: string;
   createdAt: string;
   severity: "info" | "warning";
+  count?: number;
+  lastSeenAt?: string;
 }
 
 interface SyncState {
@@ -41,7 +46,7 @@ interface SyncState {
   setLastHydratedAt: (timestamp: string) => void;
   incrementPendingHydration: () => void;
   resetPendingHydration: () => void;
-  addWarning: (warning: Omit<SyncWarning, "id" | "createdAt">) => void;
+  addWarning: (warning: Omit<SyncWarning, "id" | "createdAt" | "count" | "lastSeenAt">) => void;
   clearWarnings: () => void;
   clearWarningsByType: (type: SyncWarningType) => void;
   setBackendHealth: (status: BackendHealthStatus) => void;
@@ -69,12 +74,56 @@ function nowTimestamp() {
   });
 }
 
-function makeWarning(warning: Omit<SyncWarning, "id" | "createdAt">): SyncWarning {
+export function warningFingerprint(type: SyncWarningType, message: string): string {
+  return `${type}::${message}`;
+}
+
+function parseWarningTime(value?: string): number | null {
+  if (!value) return null;
+  const n = Date.parse(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function makeWarning(
+  warning: Omit<SyncWarning, "id" | "createdAt" | "count" | "lastSeenAt">
+): SyncWarning {
+  const ts = nowTimestamp();
   return {
     ...warning,
     id: `warn-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`,
-    createdAt: nowTimestamp(),
+    createdAt: ts,
+    lastSeenAt: ts,
+    count: 1,
   };
+}
+
+function upsertWarning(
+  existing: SyncWarning[],
+  incoming: Omit<SyncWarning, "id" | "createdAt" | "count" | "lastSeenAt">
+): SyncWarning[] {
+  const fp = warningFingerprint(incoming.type, incoming.message);
+  const now = Date.now();
+  const idx = existing.findIndex(
+    (w) => warningFingerprint(w.type, w.message) === fp
+  );
+
+  if (idx >= 0) {
+    const prev = existing[idx];
+    const lastSeen = parseWarningTime(prev.lastSeenAt ?? prev.createdAt);
+    if (lastSeen !== null && now - lastSeen <= WARNING_DEDUP_WINDOW_MS) {
+      const updated: SyncWarning = {
+        ...prev,
+        count: (prev.count ?? 1) + 1,
+        lastSeenAt: nowTimestamp(),
+        severity: incoming.severity,
+      };
+      const next = [...existing];
+      next[idx] = updated;
+      return next;
+    }
+  }
+
+  return [makeWarning(incoming), ...existing].slice(0, 12);
 }
 
 function toMessage(error: unknown): string {
@@ -89,6 +138,14 @@ function makeLog(label: string, error: unknown): SyncLogEntry {
     label,
     error: toMessage(error),
     timestamp: nowTimestamp(),
+  };
+}
+
+function normalizePersistedWarning(w: SyncWarning): SyncWarning {
+  return {
+    ...w,
+    count: w.count ?? 1,
+    lastSeenAt: w.lastSeenAt ?? w.createdAt,
   };
 }
 
@@ -119,11 +176,13 @@ export const useSyncStore = create<SyncState>()(
         set({ lastSuccessfulReadAt: timestamp ?? nowTimestamp() }),
       setLastHydratedAt: (timestamp) => set({ lastHydratedAt: timestamp }),
       incrementPendingHydration: () =>
-        set((state) => ({ pendingHydrationCount: Math.min(20, state.pendingHydrationCount + 1) })),
+        set((state) => ({
+          pendingHydrationCount: Math.min(20, state.pendingHydrationCount + 1),
+        })),
       resetPendingHydration: () => set({ pendingHydrationCount: 0 }),
       addWarning: (warning) =>
         set((state) => ({
-          syncWarnings: [makeWarning(warning), ...state.syncWarnings].slice(0, 12),
+          syncWarnings: upsertWarning(state.syncWarnings, warning),
         })),
       clearWarnings: () => set({ syncWarnings: [] }),
       clearWarningsByType: (type) =>
@@ -142,6 +201,7 @@ export const useSyncStore = create<SyncState>()(
     }),
     {
       name: "productai-sync",
+      version: SYNC_PERSIST_VERSION,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         lastHydratedAt: state.lastHydratedAt,
@@ -155,6 +215,15 @@ export const useSyncStore = create<SyncState>()(
         readFailures: state.readFailures,
         syncWarnings: state.syncWarnings,
       }),
+      migrate: (persisted, version) => {
+        if (version >= SYNC_PERSIST_VERSION) return persisted as typeof syncStoreInitial;
+        const slice = persisted as { syncWarnings?: SyncWarning[] };
+        const warnings = slice.syncWarnings ?? [];
+        return {
+          ...slice,
+          syncWarnings: warnings.map(normalizePersistedWarning),
+        } as typeof syncStoreInitial;
+      },
     }
   )
 );

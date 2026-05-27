@@ -1,14 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { organizationSettings } from "@/data/mockData";
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { refreshBackendHealth } from "@/lib/services/backendHealth";
 import { hydrateProductAIState, runSyncRetry } from "@/lib/services/readHydrationService";
+import {
+  formatBackendHealthLabel,
+  getRemoteModeExplanation,
+  getSuggestedRetryLabel,
+} from "@/lib/services/syncPolicyUi";
 import { useSyncStore } from "@/lib/store/syncStore";
 import { resetAllProductAIState } from "@/lib/store/resetProductAIState";
-import { useState } from "react";
 
 export function SettingsView() {
   const [runningAction, setRunningAction] = useState<string | null>(null);
@@ -17,10 +22,15 @@ export function SettingsView() {
   const hydrationStatus = useSyncStore((state) => state.hydrationStatus);
   const lastHydratedAt = useSyncStore((state) => state.lastHydratedAt);
   const lastSuccessfulWriteAt = useSyncStore((state) => state.lastSuccessfulWriteAt);
+  const lastSuccessfulReadAt = useSyncStore((state) => state.lastSuccessfulReadAt);
   const pendingHydrationCount = useSyncStore((state) => state.pendingHydrationCount);
   const backendHealth = useSyncStore((state) => state.backendHealth);
+  const syncWarnings = useSyncStore((state) => state.syncWarnings);
   const clearSyncLog = useSyncStore((state) => state.clearSyncLog);
   const clearWarnings = useSyncStore((state) => state.clearWarnings);
+
+  const retryLabel = getSuggestedRetryLabel(pendingHydrationCount);
+  const backendLabel = formatBackendHealthLabel(backendHealth);
 
   const runManualAction = async (action: "refresh" | "hydrate" | "retry") => {
     setRunningAction(action);
@@ -120,20 +130,56 @@ export function SettingsView() {
           </ul>
         </Card>
 
-        <Card title="Local Data">
+        <Card title="Sync Operations">
           <p className="text-sm text-muted">
-            ProductAI stores mission, organization, and runtime state in your browser.
-            Reset to restore the initial demo dataset.
+            Operational persistence controls for ProductAI hybrid sync.
           </p>
           <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
-            <p>Persistence mode: {persistenceMode}</p>
-            <p className="mt-1">Backend sync: operational</p>
-            <p className="mt-1">Backend health: {backendHealth}</p>
-            <p className="mt-1">Hydration status: {hydrationStatus}</p>
-            <p className="mt-1">Last hydration: {lastHydratedAt ?? "Not yet"}</p>
-            <p className="mt-1">Last successful write: {lastSuccessfulWriteAt ?? "Not yet"}</p>
-            <p className="mt-1">Pending retries: {pendingHydrationCount}</p>
+            <p>
+              Persistence: <span className="text-foreground">{persistenceMode}</span>
+            </p>
+            <p className="mt-1">
+              Backend sync: <span className="text-foreground">operational</span>
+            </p>
+            <p className="mt-1">
+              Backend health: <span className="text-foreground">{backendLabel}</span>
+            </p>
+            <p className="mt-1">
+              Last hydration: <span className="text-foreground">{lastHydratedAt ?? "Not yet"}</span>
+            </p>
+            <p className="mt-1">
+              Last read / write:{" "}
+              <span className="text-foreground">
+                {lastSuccessfulReadAt ?? "N/A"} / {lastSuccessfulWriteAt ?? "N/A"}
+              </span>
+            </p>
+            <p className="mt-1">
+              Pending retries: <span className="text-foreground">{pendingHydrationCount}</span>
+            </p>
+            <p className="mt-1">
+              Retry guidance: <span className="text-foreground">{retryLabel}</span>
+            </p>
+            <p className="mt-1">
+              Hydration status: <span className="text-foreground">{hydrationStatus}</span>
+            </p>
           </div>
+          <p className="mt-3 text-xs text-muted">{getRemoteModeExplanation(persistenceMode)}</p>
+          {syncWarnings.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {syncWarnings.slice(0, 4).map((warning) => (
+                <li
+                  key={warning.id}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted"
+                >
+                  <span className="text-foreground">{warning.message}</span>
+                  {(warning.count ?? 1) > 1 ? (
+                    <span className="ml-2 text-muted">×{warning.count}</span>
+                  ) : null}
+                  <span className="ml-2 text-muted">· last {warning.lastSeenAt ?? warning.createdAt}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
@@ -154,7 +200,7 @@ export function SettingsView() {
             <button
               type="button"
               onClick={() => void runManualAction("refresh")}
-              disabled={runningAction !== null}
+              disabled={runningAction !== null || persistenceMode === "local"}
               className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
             >
               Refresh from backend
@@ -162,7 +208,7 @@ export function SettingsView() {
             <button
               type="button"
               onClick={() => void runManualAction("hydrate")}
-              disabled={runningAction !== null}
+              disabled={runningAction !== null || persistenceMode === "local"}
               className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
             >
               Run hydration
@@ -170,12 +216,19 @@ export function SettingsView() {
             <button
               type="button"
               onClick={() => void runManualAction("retry")}
-              disabled={runningAction !== null}
+              disabled={runningAction !== null || persistenceMode === "local"}
               className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
             >
               Retry sync
             </button>
           </div>
+        </Card>
+
+        <Card title="Local Data">
+          <p className="text-sm text-muted">
+            ProductAI stores mission, organization, and runtime state in your browser.
+            Reset to restore the initial demo dataset.
+          </p>
           <button
             type="button"
             onClick={() => resetAllProductAIState()}

@@ -4,6 +4,21 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-27
 
+### Added (Phase 3-6 sync policy hardening)
+
+- Formal sync policy document: `docs/PHASE3_SYNC_POLICY.md`.
+- Sync warning deduplication with fingerprint, `count`, and `lastSeenAt`.
+- Display-only retry guidance derived from `pendingHydrationCount`.
+- Sync metadata helpers (`syncMetadata.ts`) and operational UI labels (`syncPolicyUi.ts`).
+- Settings sync operations card with remote mode explanation and warning summaries.
+- sync store persist migration for warning metadata compatibility.
+
+### Changed (Phase 3-6)
+
+- Hydration mappers apply `syncedAt` via centralized metadata helpers.
+- Runtime/Settings backend health wording normalized to calm operational tone.
+- Manual hydration controls disabled in `local` persistence mode.
+
 ### Added (Phase 3-5 sync operational layer)
 
 - Manual sync operations in Settings:

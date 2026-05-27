@@ -1,5 +1,28 @@
 # ProductAI Development Progress
 
+## 2026-05-27 — Phase 3-6 sync policy hardening
+
+### Objective
+
+Formalize persistence sync policy and stabilize operational telemetry before remote mode, multi-user, and orchestration work.
+
+### Implemented in Phase 3-6
+
+- Added `docs/PHASE3_SYNC_POLICY.md` covering local/hybrid/remote modes, read/write priority, fallback, syncedAt policy, and future conflict resolution.
+- Added sync warning deduplication in `syncStore` (fingerprint + count + lastSeenAt).
+- Added display-only retry guidance from `pendingHydrationCount` (no automatic scheduler).
+- Added `lib/services/syncMetadata.ts` (`markSyncedAt`, `withSyncedAt`, `getMostRecentSyncTime`).
+- Added `lib/services/syncPolicyUi.ts` for operational labels (backend health, retry guidance, remote mode explanation).
+- Hydration mappers now stamp `syncedAt` via sync metadata helpers.
+- Settings / Runtime sync UI polish: warning counts, last seen, retry guidance, calm tone.
+- sync store persist migration v2 for backward-compatible warning shape.
+
+### Coexistence status
+
+- local-first UX unchanged.
+- No full remote source-of-truth migration.
+- No conflict resolution UI in this phase.
+
 ## 2026-05-27 — Phase 3-5 sync operational layer
 
 ### Objective
