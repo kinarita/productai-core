@@ -1,133 +1,35 @@
-export type MissionLifecycle =
-  | "Idea"
-  | "Requirements"
-  | "Specification"
-  | "Architecture"
-  | "UI/UX"
-  | "Implementation"
-  | "Review"
-  | "Release";
+import type {
+  Agent,
+  AgentRole,
+  Branch,
+  Commit,
+  Decision,
+  MemoryItem,
+  Mission,
+  OrganizationFeedItem,
+  PullRequest,
+  ReleaseItem,
+  RuntimeCost,
+  Task,
+} from "@/types/productai";
 
-export type AgentRole = "COO" | "Architect" | "Engineer" | "QA";
-
-export interface Agent {
-  id: string;
-  name: string;
-  role: AgentRole;
-  status: "active" | "idle" | "analyzing" | "reviewing";
-  currentTask?: string;
-}
-
-export interface Mission {
-  id: string;
-  name: string;
-  description: string;
-  lifecycle: MissionLifecycle;
-  progress: number;
-  health: "stable" | "delayed" | "risky" | "blocked";
-  assignedAgents: AgentRole[];
-  blockers: string[];
-  recentActivity: string;
-  updatedAt: string;
-}
-
-export interface OrganizationFeedItem {
-  id: string;
-  type:
-    | "coordination"
-    | "task_assignment"
-    | "implementation"
-    | "architecture"
-    | "qa_review"
-    | "escalation"
-    | "approval_required";
-  author: AgentRole;
-  authorName: string;
-  mission: string;
-  message: string;
-  timestamp: string;
-  requiresCeoApproval?: boolean;
-}
-
-export interface Decision {
-  id: string;
-  title: string;
-  mission: string;
-  summary: string;
-  optionA: { label: string; description: string };
-  optionB: { label: string; description: string };
-  risks: string[];
-  costImpact: string;
-  timeImpact: string;
-  teamOpinions: { role: AgentRole; opinion: string; stance: "support" | "neutral" | "concern" }[];
-  status: "pending" | "approved" | "rejected";
-  priority: "high" | "medium" | "low";
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  mission: string;
-  status: "active" | "in_review" | "blocked" | "completed";
-  assignedTo: AgentRole;
-  dependencies: string[];
-  eta: string;
-  progress: number;
-}
-
-export interface Release {
-  id: string;
-  version: string;
-  mission: string;
-  branch: string;
-  state: "candidate" | "staging" | "production" | "rolled_back";
-  deployedAt?: string;
-}
-
-export interface PullRequest {
-  id: string;
-  number: number;
-  title: string;
-  branch: string;
-  status: "open" | "merged" | "draft";
-  author: string;
-  reviews: number;
-}
-
-export interface Commit {
-  id: string;
-  sha: string;
-  message: string;
-  author: string;
-  branch: string;
-  timestamp: string;
-}
-
-export interface Branch {
-  name: string;
-  mission: string;
-  ahead: number;
-  behind: number;
-  lastCommit: string;
-}
-
-export interface Memory {
-  id: string;
-  category: "learning" | "architecture" | "incident" | "pattern";
-  title: string;
-  summary: string;
-  mission?: string;
-  createdAt: string;
-  tags: string[];
-}
-
-export interface RuntimeCost {
-  provider: string;
-  tokensUsed: number;
-  costUsd: number;
-  trend: "up" | "down" | "stable";
-  health: "healthy" | "degraded" | "down";
-}
+export type {
+  Agent,
+  AgentRole,
+  Branch,
+  Commit,
+  Decision,
+  MemoryItem,
+  Mission,
+  MissionHealth,
+  MissionLifecyclePhase,
+  MissionStatus,
+  OrganizationFeedItem,
+  PullRequest,
+  ReleaseItem,
+  RuntimeCost,
+  Task,
+} from "@/types/productai";
 
 export interface PendingApproval {
   id: string;
@@ -144,6 +46,15 @@ export interface OperationalAlert {
   mission?: string;
   timestamp: string;
 }
+
+/** @deprecated Use MemoryItem */
+export type Memory = MemoryItem;
+
+/** @deprecated Use ReleaseItem */
+export type Release = ReleaseItem;
+
+/** @deprecated Use MissionLifecyclePhase */
+export type MissionLifecycle = import("@/types/productai").MissionLifecyclePhase;
 
 export const organizationSettings = {
   organizationName: "Acme Product Labs",
@@ -179,6 +90,7 @@ export const missions: Mission[] = [
     id: "m-1",
     name: "Customer Portal v2",
     description: "Self-service portal for enterprise customers with billing and support.",
+    status: "active",
     lifecycle: "Implementation",
     progress: 68,
     health: "stable",
@@ -186,11 +98,28 @@ export const missions: Mission[] = [
     blockers: [],
     recentActivity: "Flux completed OAuth callback handler",
     updatedAt: "2h ago",
+    requirementsSummary:
+      "Enterprise SSO, self-service billing, support ticket integration, and role-based access for admin vs member users. MVP targets 500 concurrent sessions.",
+    architectureSummary:
+      "Next.js frontend, BFF API layer, PostgreSQL for tenancy data. OAuth 2.0 with session refresh. Tenant-scoped Redis cache. Event bus for billing webhooks.",
+    releaseReadiness: {
+      score: 62,
+      label: "In progress",
+      summary: "Auth path nearly complete; staging deploy had config drift incident.",
+      blockers: ["Session refresh not merged", "Staging validation pending"],
+    },
+    relatedBranches: ["feat/portal-auth", "main"],
+    relatedPullRequests: ["pr-1", "pr-2"],
+    memoryInsightIds: ["mem-2", "mem-3"],
+    decisionIds: [],
+    taskIds: ["t-1", "t-5"],
+    activityIds: ["f-1", "f-2", "f-3"],
   },
   {
     id: "m-2",
     name: "Analytics Pipeline",
     description: "Real-time event ingestion and CEO dashboard metrics.",
+    status: "active",
     lifecycle: "Architecture",
     progress: 42,
     health: "delayed",
@@ -198,11 +127,28 @@ export const missions: Mission[] = [
     blockers: ["Schema versioning decision pending"],
     recentActivity: "Sage proposed stream partitioning strategy",
     updatedAt: "4h ago",
+    requirementsSummary:
+      "Ingest product events at 12K/sec peak, sub-5s freshness for CEO dashboard widgets, 90-day retention with tiered storage.",
+    architectureSummary:
+      "Managed stream ingestion with tenant partitioning under evaluation. Option A: single topic. Option B: per-tenant topics with retention tiers.",
+    releaseReadiness: {
+      score: 28,
+      label: "Not ready",
+      summary: "Architecture decision blocks implementation start.",
+      blockers: ["CEO decision on partitioning", "RFC not finalized"],
+    },
+    relatedBranches: ["feat/analytics-partition"],
+    relatedPullRequests: ["pr-3"],
+    memoryInsightIds: [],
+    decisionIds: ["d-1"],
+    taskIds: ["t-2"],
+    activityIds: ["f-4"],
   },
   {
     id: "m-3",
     name: "Mobile Onboarding",
     description: "Guided onboarding flow for iOS and Android apps.",
+    status: "active",
     lifecycle: "Review",
     progress: 91,
     health: "stable",
@@ -210,11 +156,28 @@ export const missions: Mission[] = [
     blockers: [],
     recentActivity: "Lens flagged animation performance on low-end devices",
     updatedAt: "1h ago",
+    requirementsSummary:
+      "5-step guided onboarding, skip option for returning users, analytics on drop-off per step, accessibility AA compliance.",
+    architectureSummary:
+      "Shared React Native module with platform-specific animation drivers. Feature-flagged rollout pattern from Memory Vault.",
+    releaseReadiness: {
+      score: 88,
+      label: "Ready for approval",
+      summary: "Release candidate built; one non-blocking flaky E2E test.",
+      blockers: ["CEO release approval pending"],
+    },
+    relatedBranches: ["release/mobile-1.2.0"],
+    relatedPullRequests: ["pr-4"],
+    memoryInsightIds: ["mem-4"],
+    decisionIds: ["d-3"],
+    taskIds: ["t-3", "t-6"],
+    activityIds: ["f-5", "f-7"],
   },
   {
     id: "m-4",
     name: "Internal Admin Tools",
     description: "Operations console for support and mission management.",
+    status: "planning",
     lifecycle: "Specification",
     progress: 24,
     health: "risky",
@@ -222,6 +185,22 @@ export const missions: Mission[] = [
     blockers: ["Scope creep from stakeholder requests"],
     recentActivity: "Nova scheduled executive sync for scope alignment",
     updatedAt: "6h ago",
+    requirementsSummary:
+      "Mission list, status dashboard, worker visibility. Stakeholders requested CRM hooks and billing — deferred pending scope decision.",
+    architectureSummary:
+      "Planned as extension of ProductAI dashboard patterns. Reduced MVP: read-only mission board + status API.",
+    releaseReadiness: {
+      score: 12,
+      label: "Early stage",
+      summary: "Specification incomplete; scope alignment required before architecture.",
+      blockers: ["Scope decision", "Stakeholder sign-off"],
+    },
+    relatedBranches: [],
+    relatedPullRequests: [],
+    memoryInsightIds: ["mem-1"],
+    decisionIds: ["d-2"],
+    taskIds: ["t-4"],
+    activityIds: ["f-6"],
   },
 ];
 
@@ -419,13 +398,13 @@ export const commits: Commit[] = [
   { id: "c-3", sha: "b1c9e7d", message: "fix: onboarding step animation", author: "Lens", branch: "release/mobile-1.2.0", timestamp: "1h ago" },
 ];
 
-export const releases: Release[] = [
+export const releases: ReleaseItem[] = [
   { id: "r-1", version: "2.4.1", mission: "Customer Portal v2", branch: "main", state: "production", deployedAt: "3 days ago" },
   { id: "r-2", version: "1.2.0-rc.1", mission: "Mobile Onboarding", branch: "release/mobile-1.2.0", state: "candidate" },
   { id: "r-3", version: "0.9.0", mission: "Analytics Pipeline", branch: "feat/analytics-partition", state: "staging" },
 ];
 
-export const memories: Memory[] = [
+export const memories: MemoryItem[] = [
   {
     id: "mem-1",
     category: "learning",

@@ -1,4 +1,4 @@
-import type { AgentRole } from "@/data/mockData";
+import type { AgentRole } from "@/types/productai";
 import { cn } from "@/lib/utils";
 
 const roleColors: Record<AgentRole, string> = {
