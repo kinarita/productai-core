@@ -3,7 +3,9 @@
 import { AppShell } from "@/components/AppShell";
 import { Card, StatCard } from "@/components/Card";
 import { Badge } from "@/components/Badge";
+import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
+import { useSyncStore } from "@/lib/store/syncStore";
 import { runtimeCosts } from "@/data/mockData";
 
 export function RuntimeCostView() {
@@ -13,6 +15,10 @@ export function RuntimeCostView() {
   const projectedMonthlyUsd = useRuntimeStore((s) => s.projectedMonthlyUsd);
   const budgetUsd = useRuntimeStore((s) => s.budgetUsd);
   const alerts = useRuntimeStore((s) => s.alerts);
+  const hydrationStatus = useSyncStore((s) => s.hydrationStatus);
+  const lastHydratedAt = useSyncStore((s) => s.lastHydratedAt);
+  const readFailures = useSyncStore((s) => s.readFailures);
+  const writeFailures = useSyncStore((s) => s.writeFailures);
 
   const apiHealth = getOverallApiHealth(providerHealth);
   const budgetUsed = Math.round((totalCostUsd / budgetUsd) * 100);
@@ -23,6 +29,8 @@ export function RuntimeCostView() {
   });
 
   const gemini = providerHealth.find((p) => p.provider === "Google Gemini");
+  const persistenceMode = getPersistenceMode();
+  const recentWarnings = [...readFailures, ...writeFailures].slice(0, 4);
 
   return (
     <AppShell
@@ -175,6 +183,30 @@ export function RuntimeCostView() {
               Projected ${projectedMonthlyUsd} of ${budgetUsd} monthly budget
             </p>
           </div>
+        </Card>
+
+        <Card title="Sync Health">
+          <div className="space-y-2 text-sm">
+            <p className="text-muted">Persistence mode: <span className="text-foreground">{persistenceMode}</span></p>
+            <p className="text-muted">Hydration status: <span className="text-foreground">{hydrationStatus}</span></p>
+            <p className="text-muted">Last hydrated: <span className="text-foreground">{lastHydratedAt ?? "Not yet"}</span></p>
+          </div>
+          {recentWarnings.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {recentWarnings.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted"
+                >
+                  <span className="font-medium text-foreground">{entry.label}</span>
+                  {" · "}
+                  {entry.error}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-xs text-muted">Recent sync warnings: none</p>
+          )}
         </Card>
       </div>
     </AppShell>

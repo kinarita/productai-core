@@ -4,11 +4,15 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { organizationSettings } from "@/data/mockData";
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
+import { useSyncStore } from "@/lib/store/syncStore";
 import { resetAllProductAIState } from "@/lib/store/resetProductAIState";
 
 export function SettingsView() {
   const s = organizationSettings;
   const persistenceMode = getPersistenceMode();
+  const hydrationStatus = useSyncStore((state) => state.hydrationStatus);
+  const lastHydratedAt = useSyncStore((state) => state.lastHydratedAt);
+  const clearSyncLog = useSyncStore((state) => state.clearSyncLog);
 
   return (
     <AppShell
@@ -99,7 +103,18 @@ export function SettingsView() {
           </p>
           <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
             <p>Persistence mode: {persistenceMode}</p>
-            <p className="mt-1">Backend sync: best effort (hybrid bridge)</p>
+            <p className="mt-1">Backend sync mode: best effort</p>
+            <p className="mt-1">Hydration status: {hydrationStatus}</p>
+            <p className="mt-1">Last hydration: {lastHydratedAt ?? "Not yet"}</p>
+          </div>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => clearSyncLog()}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground"
+            >
+              Clear sync log
+            </button>
           </div>
           <button
             type="button"

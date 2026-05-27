@@ -1,5 +1,10 @@
 import { agents } from "@/data/mockData";
+import type { FeedItemRecord } from "@/lib/domain/feed";
+import type { JudgmentRecord } from "@/lib/domain/judgment";
+import type { MissionRecord } from "@/lib/domain/mission";
+import type { TaskRecord } from "@/lib/domain/task";
 import type { Agent, OrganizationFeedItem, Task } from "@/types/productai";
+import type { Decision, Mission } from "@/types/productai";
 
 export function mapTaskToCreatePayload(task: Task) {
   const agent = agents.find((a) => a.role === task.assignedTo);
@@ -51,4 +56,140 @@ export function mapFeedItemToCreatePayload(item: Omit<OrganizationFeedItem, "id"
 
 export function mapAgentToAssignedPatch(agent?: Agent) {
   return agent ? { assignedAgentId: agent.id } : {};
+}
+
+export function mapMissionRecordToMission(record: MissionRecord, base?: Mission): Mission {
+  return {
+    ...(base ?? {
+      id: record.id,
+      name: record.name,
+      description: record.description,
+      summary: record.summary,
+      status: "planning",
+      lifecycle: "Requirements",
+      progress: 0,
+      health: "stable",
+      assignedAgents: ["COO", "Architect", "Engineer", "QA"],
+      blockers: [],
+      recentActivity: "Hydrated from backend.",
+      updatedAt: record.updatedAt,
+      requirementsSummary: record.summary,
+      architectureSummary: record.summary,
+      releaseReadiness: {
+        score: 50,
+        label: "In progress",
+        summary: "Hydrated from backend data.",
+        blockers: [],
+      },
+      relatedBranches: [],
+      relatedPullRequests: [],
+      memoryInsightIds: [],
+      decisionIds: [],
+      taskIds: [],
+      activityIds: [],
+    }),
+    id: record.id,
+    name: record.name,
+    description: record.description,
+    summary: record.summary,
+    status: (record.status as Mission["status"]) ?? base?.status ?? "planning",
+    health: (record.health as Mission["health"]) ?? base?.health ?? "stable",
+    progress: record.progress,
+    updatedAt: record.updatedAt,
+  };
+}
+
+export function mapTaskRecordToTask(record: TaskRecord, base?: Task): Task {
+  return {
+    ...(base ?? {
+      id: record.id,
+      title: record.title,
+      missionId: record.missionId,
+      missionName: record.missionName,
+      status: "active",
+      assignedTo: "Engineer",
+      assignedAgentId: record.assignedAgentId ?? undefined,
+      dependencies: [],
+      eta: record.eta,
+      progress: 0,
+      priority: "medium",
+      relatedDecisionId: record.relatedDecisionId ?? undefined,
+      createdFrom: "manual",
+      updatedAt: record.updatedAt,
+      createdAt: record.createdAt,
+      events: [],
+    }),
+    id: record.id,
+    title: record.title,
+    missionId: record.missionId,
+    missionName: record.missionName,
+    status: (record.status as Task["status"]) ?? base?.status ?? "active",
+    assignedTo: (record.assignedTo as Task["assignedTo"]) ?? base?.assignedTo ?? "Engineer",
+    assignedAgentId: record.assignedAgentId ?? base?.assignedAgentId,
+    dependencies: record.dependencies,
+    eta: record.eta,
+    progress: record.progress,
+    priority: (record.priority as Task["priority"]) ?? base?.priority ?? "medium",
+    relatedDecisionId: record.relatedDecisionId ?? base?.relatedDecisionId,
+    createdFrom: (record.createdFrom as Task["createdFrom"]) ?? base?.createdFrom ?? "manual",
+    updatedAt: record.updatedAt,
+    createdAt: record.createdAt,
+  };
+}
+
+export function mapFeedRecordToFeedItem(
+  record: FeedItemRecord,
+  base?: OrganizationFeedItem
+): OrganizationFeedItem {
+  return {
+    ...(base ?? {
+      id: record.id,
+      type: "implementation",
+      author: "COO",
+      authorName: record.authorName,
+      missionId: record.missionId,
+      missionName: record.missionName,
+      message: record.message,
+      timestamp: record.createdAt,
+    }),
+    id: record.id,
+    missionId: record.missionId,
+    missionName: record.missionName,
+    taskId: record.taskId ?? undefined,
+    decisionId: record.decisionId ?? undefined,
+    type: (record.type as OrganizationFeedItem["type"]) ?? base?.type ?? "implementation",
+    status: (record.status as OrganizationFeedItem["status"]) ?? base?.status,
+    author: (record.author as OrganizationFeedItem["author"]) ?? base?.author ?? "COO",
+    authorName: record.authorName,
+    message: record.message,
+    timestamp: record.createdAt,
+  };
+}
+
+export function mapJudgmentRecordToDecision(record: JudgmentRecord, base?: Decision): Decision {
+  return {
+    ...(base ?? {
+      id: record.id,
+      title: record.title,
+      relatedMissionId: record.missionId,
+      missionName: record.missionName,
+      summary: record.summary,
+      optionA: { label: "Option A", description: "See decision context." },
+      optionB: { label: "Option B", description: "See decision context." },
+      risks: [],
+      costImpact: "TBD",
+      timeImpact: "TBD",
+      teamOpinions: [],
+      status: "pending",
+      priority: "medium",
+      relatedTaskIds: [],
+    }),
+    id: record.id,
+    title: record.title,
+    relatedMissionId: record.missionId,
+    missionName: record.missionName,
+    summary: record.summary,
+    status: (record.status as Decision["status"]) ?? base?.status ?? "pending",
+    priority: (record.priority as Decision["priority"]) ?? base?.priority ?? "medium",
+  };
 }

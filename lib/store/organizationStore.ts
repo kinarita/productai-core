@@ -42,6 +42,8 @@ interface OrganizationState {
   activeAgents: Agent[];
   decisions: Decision[];
   executiveSyncState: ExecutiveSyncState;
+  mergeFeedFromRemote: (feedItems: OrganizationFeedItem[]) => void;
+  mergeDecisionsFromRemote: (decisions: Decision[]) => void;
   addFeedItem: (item: Omit<OrganizationFeedItem, "id" | "timestamp">) => void;
   addFeedItemWithSync: (item: Omit<OrganizationFeedItem, "id" | "timestamp">) => void;
   updateFeedItem: (id: string, patch: Partial<OrganizationFeedItem>) => void;
@@ -64,6 +66,21 @@ interface OrganizationState {
   resetToInitial: () => void;
 }
 
+function parseUpdatedAt(value?: string): number | null {
+  if (!value) return null;
+  const n = Date.parse(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function shouldPreferRemote(localUpdatedAt?: string, remoteUpdatedAt?: string): boolean {
+  if (!remoteUpdatedAt) return false;
+  const localTs = parseUpdatedAt(localUpdatedAt);
+  const remoteTs = parseUpdatedAt(remoteUpdatedAt);
+  if (remoteTs === null) return false;
+  if (localTs === null) return true;
+  return remoteTs >= localTs;
+}
+
 export const useOrganizationStore = create<OrganizationState>()(
   persist(
     (set) => ({
@@ -71,6 +88,37 @@ export const useOrganizationStore = create<OrganizationState>()(
       activeAgents: agents,
       decisions: organizationStoreInitial.decisions,
       executiveSyncState: executiveSyncInitial,
+      mergeFeedFromRemote: (feedItems) =>
+        set((state) => {
+          const localById = new Map(state.organizationFeedItems.map((f) => [f.id, f]));
+          const mergedRemote = feedItems.map((remote) => {
+            const local = localById.get(remote.id);
+            if (!local) return remote;
+            if (shouldPreferRemote(local.timestamp, remote.timestamp)) {
+              return { ...local, ...remote };
+            }
+            return local;
+          });
+          const remoteIds = new Set(mergedRemote.map((f) => f.id));
+          const localOnly = state.organizationFeedItems.filter((f) => !remoteIds.has(f.id));
+          return {
+            organizationFeedItems: [...mergedRemote, ...localOnly],
+          };
+        }),
+      mergeDecisionsFromRemote: (decisions) =>
+        set((state) => {
+          const localById = new Map(state.decisions.map((d) => [d.id, d]));
+          const mergedRemote = decisions.map((remote) => {
+            const local = localById.get(remote.id);
+            if (!local) return remote;
+            return { ...local, ...remote };
+          });
+          const remoteIds = new Set(mergedRemote.map((d) => d.id));
+          const localOnly = state.decisions.filter((d) => !remoteIds.has(d.id));
+          return {
+            decisions: [...mergedRemote, ...localOnly],
+          };
+        }),
       addFeedItem: (item) =>
         set((state) => ({
           organizationFeedItems: [

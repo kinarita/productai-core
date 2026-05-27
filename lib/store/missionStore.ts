@@ -16,6 +16,7 @@ export type JudgmentOutcome = "approved" | "rejected" | "revision";
 interface MissionState {
   missions: Mission[];
   selectedMissionId: string | null;
+  mergeMissionsFromRemote: (missions: Mission[]) => void;
   setSelectedMission: (missionId: string | null) => void;
   updateMissionStatus: (missionId: string, status: MissionStatus) => void;
   updateMissionHealth: (missionId: string, health: MissionHealth) => void;
@@ -27,10 +28,42 @@ function touchMission(mission: Mission, patch: Partial<Mission>): Mission {
   return { ...mission, ...patch, updatedAt: "Just now" };
 }
 
+function parseUpdatedAt(value?: string): number | null {
+  if (!value) return null;
+  const n = Date.parse(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function shouldPreferRemote(localUpdatedAt?: string, remoteUpdatedAt?: string): boolean {
+  if (!remoteUpdatedAt) return false;
+  const localTs = parseUpdatedAt(localUpdatedAt);
+  const remoteTs = parseUpdatedAt(remoteUpdatedAt);
+  if (remoteTs === null) return false;
+  if (localTs === null) return true;
+  return remoteTs >= localTs;
+}
+
 export const useMissionStore = create<MissionState>()(
   persist(
     (set) => ({
       ...missionStoreInitial,
+      mergeMissionsFromRemote: (missions) =>
+        set((state) => {
+          const localById = new Map(state.missions.map((m) => [m.id, m]));
+          const mergedRemote = missions.map((remote) => {
+            const local = localById.get(remote.id);
+            if (!local) return remote;
+            if (shouldPreferRemote(local.updatedAt, remote.updatedAt)) {
+              return { ...local, ...remote };
+            }
+            return local;
+          });
+          const remoteIds = new Set(mergedRemote.map((m) => m.id));
+          const localOnly = state.missions.filter((m) => !remoteIds.has(m.id));
+          return {
+            missions: [...mergedRemote, ...localOnly],
+          };
+        }),
       setSelectedMission: (missionId) => set({ selectedMissionId: missionId }),
       updateMissionStatus: (missionId, status) =>
         set((state) => ({

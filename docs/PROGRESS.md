@@ -1,5 +1,38 @@
 # ProductAI Development Progress
 
+## 2026-05-27 — Phase 3-4 read hydration bridge
+
+### Objective
+
+Extend hybrid persistence from write-only sync to mode-aware read hydration while preserving local-first UX.
+
+### Implemented in Phase 3-4
+
+- Added read hydration service (`lib/services/readHydrationService.ts`) with mode-aware behavior:
+  - `local`: skip backend hydration
+  - `hybrid`: show local state first, then hydrate quietly from backend
+  - `remote`: backend-read-ready foundation
+- Added global one-time client hydration effect:
+  - `components/ProductAIReadHydration.tsx`
+  - mounted in `app/layout.tsx`
+- Added merge actions for remote data coexistence:
+  - `missionStore.mergeMissionsFromRemote`
+  - `taskStore.mergeTasksFromRemote`
+  - `organizationStore.mergeFeedFromRemote`
+  - `organizationStore.mergeDecisionsFromRemote`
+- Added sync status store (`lib/store/syncStore.ts`) with persisted lightweight diagnostics:
+  - hydration status / last hydrated timestamp
+  - small read and write failure logs
+- Connected write sync failure handling to sync store (`recordWriteFailure`).
+- Added sync health visibility in Runtime & Cost and Settings views.
+
+### Coexistence status
+
+- localStorage remains first-class for immediate UX.
+- Backend reads supplement local state in hybrid mode.
+- Local-only items are preserved during merge.
+- Hydration failures are logged softly and do not break UI.
+
 ## 2026-05-27 — Phase 3-3 hybrid persistence sync layer
 
 ### Objective

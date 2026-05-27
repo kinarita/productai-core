@@ -4,6 +4,27 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-27
 
+### Added (Phase 3-4 read hydration bridge)
+
+- Mode-aware read hydration service for missions/tasks/feed/judgments.
+- Global client hydration trigger mounted from layout (quiet, no blocking UI).
+- Sync diagnostics store (`productai-sync`) with hydration status and small read/write warning logs.
+- Runtime & Cost sync health panel:
+  - persistence mode
+  - hydration status
+  - last hydration timestamp
+  - recent sync warnings
+- Settings sync details:
+  - persistence mode / backend sync mode
+  - hydration status / last hydration
+  - clear sync log action
+
+### Changed (Phase 3-4)
+
+- Store slices now support backend-to-local merge actions for hybrid coexistence.
+- Remote write failures are recorded in sync store while keeping warn-only non-blocking behavior.
+- Reset flow clears sync persisted state (`productai-sync`) together with existing local stores.
+
 ### Added (Phase 3-3 hybrid persistence)
 
 - Persistence mode feature flag:

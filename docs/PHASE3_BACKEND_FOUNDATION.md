@@ -169,6 +169,49 @@ Key operational paths now call sync actions:
 
 This keeps UX unchanged while backend write adoption begins incrementally.
 
+## Phase 3-4 read hydration bridge
+
+Phase 3-4 adds mode-aware backend reads and safe store merge actions.
+
+### Read hydration strategy
+
+- `local`:
+  - no backend fetch
+  - localStorage only
+- `hybrid`:
+  - render local persisted state immediately
+  - hydrate in background from backend
+  - merge remote records into local stores without destructive reset
+- `remote`:
+  - foundation prepared for backend-priority reads (full remote mode deferred)
+
+### Hydration service and lifecycle
+
+- New: `lib/services/readHydrationService.ts`
+  - `hydrateProductAIState`
+  - `hydrateMissions`
+  - `hydrateTasks`
+  - `hydrateFeed`
+  - `hydrateJudgments`
+- New global hydration effect:
+  - `components/ProductAIReadHydration.tsx`
+  - mounted in `app/layout.tsx`
+
+### Merge semantics
+
+- id-based merge with local coexistence
+- prefer newer `updatedAt` when available
+- preserve local-only entities
+- avoid heavy conflict-resolution logic in this phase
+
+### Sync observability
+
+- New sync store (`productai-sync`) tracks:
+  - hydration status
+  - last hydrated timestamp
+  - recent read/write failures
+- Runtime/Settings surfaces show lightweight sync health without intrusive UI.
+
 ## Store migration path
 
 A service layer (`lib/services`) is introduced as migration prep:

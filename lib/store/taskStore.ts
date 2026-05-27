@@ -25,6 +25,7 @@ const PERSIST_VERSION = 2;
 
 interface TaskState {
   tasks: Task[];
+  mergeTasksFromRemote: (tasks: Task[]) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus, actor?: Agent) => void;
   updateTaskStatusWithSync: (taskId: string, status: TaskStatus, actor?: Agent) => void;
   assignTask: (taskId: string, agentId: string) => void;
@@ -143,10 +144,46 @@ function normalizeTaskEvents(events: Task["events"] | undefined, fallbackTimesta
   return events as TaskEvent[];
 }
 
+function parseUpdatedAt(value?: string): number | null {
+  if (!value) return null;
+  const n = Date.parse(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function shouldPreferRemote(localUpdatedAt?: string, remoteUpdatedAt?: string): boolean {
+  if (!remoteUpdatedAt) return false;
+  const localTs = parseUpdatedAt(localUpdatedAt);
+  const remoteTs = parseUpdatedAt(remoteUpdatedAt);
+  if (remoteTs === null) return false;
+  if (localTs === null) return true;
+  return remoteTs >= localTs;
+}
+
 export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
       ...taskStoreInitial,
+      mergeTasksFromRemote: (tasks) =>
+        set((state) => {
+          const localById = new Map(state.tasks.map((t) => [t.id, t]));
+          const mergedRemote = tasks.map((remote) => {
+            const local = localById.get(remote.id);
+            if (!local) return { ...remote, events: normalizeTaskEvents(remote.events, remote.updatedAt) };
+            if (shouldPreferRemote(local.updatedAt, remote.updatedAt)) {
+              return {
+                ...local,
+                ...remote,
+                events: normalizeTaskEvents(local.events, remote.updatedAt),
+              };
+            }
+            return local;
+          });
+          const remoteIds = new Set(mergedRemote.map((t) => t.id));
+          const localOnly = state.tasks.filter((t) => !remoteIds.has(t.id));
+          return {
+            tasks: [...mergedRemote, ...localOnly],
+          };
+        }),
       updateTaskStatus: (taskId, status, actor) => {
         const state = get();
         const existing = state.tasks.find((t) => t.id === taskId);

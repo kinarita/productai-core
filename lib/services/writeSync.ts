@@ -1,4 +1,5 @@
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
+import { useSyncStore } from "@/lib/store/syncStore";
 
 export function syncWrite(
   label: string,
@@ -16,6 +17,7 @@ export function syncWrite(
   if (!remoteFn || mode === "local") return;
 
   void remoteFn().catch((error) => {
+    useSyncStore.getState().recordWriteFailure(label, error);
     console.warn(`[ProductAI sync:${label}] remote write failed`, error);
   });
 }

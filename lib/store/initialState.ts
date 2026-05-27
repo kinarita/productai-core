@@ -88,4 +88,5 @@ export const PERSIST_KEYS = [
   "productai-organization",
   "productai-runtime",
   "productai-tasks",
+  "productai-sync",
 ] as const;

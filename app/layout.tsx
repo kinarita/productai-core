@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ProductAILiveEffects } from "@/components/ProductAILiveEffects";
+import { ProductAIReadHydration } from "@/components/ProductAIReadHydration";
 import { bootstrapDatabase } from "@/lib/server/db/bootstrap";
 import "./globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ProductAILiveEffects />
+        <ProductAIReadHydration />
         {children}
       </body>
     </html>
