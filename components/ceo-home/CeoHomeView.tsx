@@ -39,6 +39,11 @@ export function CeoHomeView() {
   const importantTasks = getImportantTasks(tasks, 6);
   const recentlyCreated = getRecentlyCreatedTasks(tasks, 5);
   const dependencyWarnings = getDependencyWarnings(tasks).slice(0, 5);
+  const blockedMissions = missions.filter((m) => m.health === "blocked" || m.health === "risky");
+  const reviewBottlenecks = tasks.filter((t) => t.status === "in_review").length;
+  const runtimeImpacted = tasks.filter((t) =>
+    (t.events ?? []).some((e) => e.source === "runtime" || /runtime|latency|provider/i.test(e.message))
+  ).length;
 
   const orgHealth = computeOrganizationHealth(missions, runtimeAlerts);
   const activeMissions = missions.filter((m) => m.status === "active" || m.status === "planning");
@@ -190,6 +195,41 @@ export function CeoHomeView() {
           >
             View all tasks →
           </Link>
+        </Card>
+
+        <Card title="Execution Risk Overview" description="Where mission flow is currently constrained">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Missions with blockers</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">{blockedMissions.length}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Blocked dependencies</p>
+              <p className="mt-1 text-2xl font-semibold text-warning">{dependencyWarnings.length}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Review bottlenecks</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">{reviewBottlenecks}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Runtime-impacted tasks</p>
+              <p className="mt-1 text-2xl font-semibold text-danger">{runtimeImpacted}</p>
+            </div>
+          </div>
+          {blockedMissions.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {blockedMissions.slice(0, 4).map((mission) => (
+                <li key={mission.id} className="rounded-lg border border-border bg-surface px-3 py-2">
+                  <Link href={`/missions/${mission.id}`} className="text-sm font-medium text-foreground hover:text-accent">
+                    {mission.name}
+                  </Link>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {mission.health} · {mission.recentActivity}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">

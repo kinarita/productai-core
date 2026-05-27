@@ -12,6 +12,7 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { SectionHeader } from "@/components/SectionHeader";
 import { StatusPill } from "@/components/StatusPill";
 import { MissionDetailSkeleton } from "@/components/missions/MissionDetailSkeleton";
+import { MissionExecutionFlow } from "@/components/missions/MissionExecutionFlow";
 import { useStoreHydration } from "@/lib/hooks/useStoreHydration";
 import {
   buildMissionRecentActivity,
@@ -32,6 +33,16 @@ import {
   getLinkedTasksForDecision,
   getRecentlyUpdatedTask,
 } from "@/lib/task/taskSelectors";
+import {
+  getMissionDependencyInsights,
+  getMissionExecutionCounts,
+  getMissionExecutionFeed,
+} from "@/lib/task/missionExecutionInsights";
+import {
+  dependencyStatusLabel,
+  getBlockingTasks,
+  getDependsOnTasks,
+} from "@/lib/task/taskDependencies";
 import { useUiStore } from "@/lib/store/uiStore";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
@@ -167,6 +178,13 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   const taskCounts = countTasksByStatus(tasks, missionId);
   const recentlyUpdatedTask = getRecentlyUpdatedTask(missionTasks, missionId);
   const judgmentSpawnedCount = countJudgmentSpawnedTasks(tasks, missionId);
+  const executionCounts = getMissionExecutionCounts(missionTasks, missionDecisions.length);
+  const dependencyInsights = getMissionDependencyInsights(missionTasks, tasks);
+  const executionFeed = getMissionExecutionFeed(
+    allFeed,
+    missionId,
+    missionTasks.map((t) => t.id)
+  );
   const relatedBranches = getBranchesForMissionId(mission);
   const relatedPrs = getPullRequestsForMissionId(mission);
   const memoryInsights = getMemoriesForMissionId(mission);
@@ -246,6 +264,47 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
             <LifecycleStepper currentPhase={mission.lifecycle} />
           </Card>
 
+          <Card>
+            <SectionHeader
+              title="Mission Execution Map"
+              description="Judgment → Tasks → Dependencies → QA → Mission readiness"
+            />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <MissionExecutionFlow counts={executionCounts} />
+              <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
+                <p className="text-xs font-medium uppercase text-muted">Execution Health</p>
+                <p className="text-sm text-muted">
+                  Dependencies tracked: {executionCounts.dependencyRefs}
+                </p>
+                <p className="text-sm text-muted">
+                  Blocked tasks: {executionCounts.blockedCount}
+                </p>
+                <p className="text-sm text-muted">
+                  In review: {executionCounts.reviewCount}
+                </p>
+              </div>
+            </div>
+            {dependencyInsights.waitingChains.length > 0 ? (
+              <div className="mt-4 rounded-lg border border-warning/30 bg-amber-50/40 px-4 py-3">
+                <p className="text-sm font-medium text-warning">Dependency Blocker</p>
+                <ul className="mt-2 space-y-1">
+                  {dependencyInsights.waitingChains.slice(0, 3).map((chain) => (
+                    <li key={`${chain.blockedTask.id}-${chain.blockedBy.id}`} className="text-sm text-foreground">
+                      <span className="font-medium">{chain.blockedTask.title}</span>
+                      <span className="text-muted"> is waiting on </span>
+                      <Link
+                        href={`/tasks/${chain.blockedBy.id}`}
+                        className="font-medium text-accent hover:underline"
+                      >
+                        {chain.blockedBy.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </Card>
+
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <SectionHeader title="Requirements Summary" />
@@ -309,6 +368,53 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
             >
               Open all tasks →
             </Link>
+            <div className="mt-4 rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Task distribution</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background">
+                {taskCounts.total > 0 ? (
+                  <div className="flex h-full w-full">
+                    <div
+                      className="bg-blue-300"
+                      style={{ width: `${(taskCounts.active / taskCounts.total) * 100}%` }}
+                    />
+                    <div
+                      className="bg-amber-300"
+                      style={{ width: `${(taskCounts.in_review / taskCounts.total) * 100}%` }}
+                    />
+                    <div
+                      className="bg-red-300"
+                      style={{ width: `${(taskCounts.blocked / taskCounts.total) * 100}%` }}
+                    />
+                    <div
+                      className="bg-green-300"
+                      style={{ width: `${(taskCounts.completed / taskCounts.total) * 100}%` }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <p className="mt-2 text-xs text-muted">
+                Active {taskCounts.active} · Review {taskCounts.in_review} · Blocked {taskCounts.blocked} · Completed{" "}
+                {taskCounts.completed}
+              </p>
+            </div>
+          </Card>
+
+          <Card>
+            <SectionHeader title="Dependency Insights" description="What is slowing execution flow" />
+            <ul className="space-y-2 text-sm">
+              <li className="rounded-lg border border-border bg-surface px-3 py-2 text-muted">
+                {dependencyInsights.warningsCount} tasks currently waiting on blocked dependencies.
+              </li>
+              <li className="rounded-lg border border-border bg-surface px-3 py-2 text-muted">
+                {dependencyInsights.architectureWaiting} tasks waiting on architecture-owned dependencies.
+              </li>
+              <li className="rounded-lg border border-border bg-surface px-3 py-2 text-muted">
+                {dependencyInsights.downstreamLinked} downstream task links across this mission.
+              </li>
+              <li className="rounded-lg border border-border bg-surface px-3 py-2 text-muted">
+                {dependencyInsights.runtimeImpacted} tasks show runtime-related execution impact.
+              </li>
+            </ul>
           </Card>
 
           <Card>
@@ -334,6 +440,30 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                         {task.dependencies.length > 0 &&
                           ` · Depends: ${task.dependencies.join(", ")}`}
                       </p>
+                      <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                        {getDependsOnTasks(task, tasks).slice(0, 2).map((dep) => (
+                          <Link
+                            key={`${task.id}-dep-${dep.id}`}
+                            href={`/tasks/${dep.id}`}
+                            className={`rounded border px-2 py-0.5 ${
+                              dep.status === "blocked"
+                                ? "border-warning/40 bg-amber-50 text-warning"
+                                : "border-border bg-background text-muted"
+                            }`}
+                          >
+                            Depends on: {dep.title} ({dependencyStatusLabel(dep.status)})
+                          </Link>
+                        ))}
+                        {getBlockingTasks(task, missionTasks).slice(0, 1).map((down) => (
+                          <Link
+                            key={`${task.id}-block-${down.id}`}
+                            href={`/tasks/${down.id}`}
+                            className="rounded border border-border bg-background px-2 py-0.5 text-muted"
+                          >
+                            Blocking: {down.title}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                     <StatusPill variant={taskStatusVariant[task.status]}>
                       {task.status}
@@ -562,6 +692,32 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
               >
                 View full Organization Feed →
               </Link>
+            )}
+          </Card>
+
+          <Card>
+            <SectionHeader title="Execution Activity Stream" description="Feed items linked to execution path" />
+            {executionFeed.length === 0 ? (
+              <p className="text-sm text-muted">No execution feed items for this mission yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {executionFeed.map((item) => (
+                  <li key={item.id} className="rounded-lg border border-border bg-surface p-3">
+                    <p className="text-xs text-muted">
+                      {item.authorName} · {item.timestamp}
+                    </p>
+                    <p className="mt-1 text-sm text-foreground">{item.message}</p>
+                    {item.taskId ? (
+                      <Link
+                        href={`/tasks/${item.taskId}`}
+                        className="mt-1 inline-block text-xs font-medium text-accent hover:underline"
+                      >
+                        Open Task →
+                      </Link>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             )}
           </Card>
 
