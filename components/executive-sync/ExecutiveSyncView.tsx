@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { MissionLink } from "@/components/MissionLink";
 import { useLiveExecutiveSync } from "@/lib/hooks/useLiveExecutiveSync";
+import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
+import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { Gavel } from "lucide-react";
 
@@ -12,6 +15,51 @@ export function ExecutiveSyncView() {
   useLiveExecutiveSync(true);
 
   const ctx = useOrganizationStore((s) => s.executiveSyncState);
+  const setExecutiveSyncState = useOrganizationStore((s) => s.setExecutiveSyncState);
+  const addFeedItemWithSync = useOrganizationStore((s) => s.addFeedItemWithSync);
+  const [operationalSummary, setOperationalSummary] = useState<string | null>(null);
+
+  const generateDiscussion = async () => {
+    const orchestrator = getProductAIOrchestrator();
+    const context = buildOrchestrationContext();
+    const discussion = await orchestrator.generateExecutiveSync(ctx.missionId, context);
+    setExecutiveSyncState({
+      aiOpinions: discussion.opinions.map((op) => ({
+        role: op.role,
+        name:
+          op.role === "COO"
+            ? "Nova"
+            : op.role === "Architect"
+              ? "Sage"
+              : op.role === "QA"
+                ? "Lens"
+                : op.role === "Runtime Observer"
+                  ? "Pulse"
+                  : "Alex",
+        opinion: op.message,
+      })),
+      recommendation: discussion.operationalSummary,
+      isLive: true,
+    });
+  };
+
+  const generateOperationalSummary = async () => {
+    const orchestrator = getProductAIOrchestrator();
+    const context = buildOrchestrationContext();
+    const risk = await orchestrator.summarizeExecutionRisk(ctx.missionId, context);
+    const summary = `${risk.summary} Risk level: ${risk.riskLevel}.`;
+    setOperationalSummary(summary);
+    addFeedItemWithSync({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: ctx.missionId,
+      missionName: ctx.mission,
+      message: `COO operational review: ${summary}`,
+      status: "active",
+      requiresCeoApproval: false,
+    });
+  };
 
   return (
     <AppShell
@@ -105,6 +153,31 @@ export function ExecutiveSyncView() {
                   Recommendation
                 </p>
                 <p className="mt-2 text-sm text-foreground">{ctx.recommendation}</p>
+              </div>
+              {operationalSummary ? (
+                <div className="rounded-lg border border-border bg-surface p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                    Operational Summary
+                  </p>
+                  <p className="mt-2 text-sm text-foreground">{operationalSummary}</p>
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void generateDiscussion()}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+                >
+                  Generate AI Discussion
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void generateOperationalSummary()}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+                >
+                  Generate Operational Summary
+                </button>
               </div>
 
               <button

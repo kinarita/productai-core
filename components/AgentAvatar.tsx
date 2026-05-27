@@ -2,17 +2,21 @@ import type { AgentRole } from "@/types/productai";
 import { cn } from "@/lib/utils";
 
 const roleColors: Record<AgentRole, string> = {
+  CEO: "bg-slate-800 text-white",
   COO: "bg-accent text-white",
   Architect: "bg-indigo-100 text-accent",
   Engineer: "bg-slate-100 text-slate-700",
   QA: "bg-emerald-100 text-emerald-800",
+  "Runtime Observer": "bg-amber-100 text-amber-800",
 };
 
 const roleLabels: Record<AgentRole, string> = {
+  CEO: "CEO",
   COO: "COO",
   Architect: "Architect",
   Engineer: "Engineer",
   QA: "QA",
+  "Runtime Observer": "Runtime Observer",
 };
 
 interface AgentAvatarProps {

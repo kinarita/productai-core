@@ -9,6 +9,8 @@ import { MissionLink } from "@/components/MissionLink";
 import { MissionFilterBanner } from "@/components/MissionFilterBanner";
 import { useLiveOrganizationFeed } from "@/lib/hooks/useLiveOrganizationFeed";
 import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
+import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
+import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useUiStore } from "@/lib/store/uiStore";
 import type { FeedFilter } from "@/lib/store/uiStore";
@@ -116,6 +118,7 @@ export function OrganizationFeedView({
   useLiveOrganizationFeed(true);
 
   const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
+  const addFeedItemWithSync = useOrganizationStore((s) => s.addFeedItemWithSync);
   const activeFeedFilter = useUiStore((s) => s.activeFeedFilter);
   const setFeedFilter = useUiStore((s) => s.setFeedFilter);
   const filterChipClass =
@@ -135,6 +138,33 @@ export function OrganizationFeedView({
 
   filtered = filtered.filter((f) => matchesFeedFilter(f, activeFeedFilter));
   filtered = filtered.filter((f) => matchesStatus(f, statusFilter));
+
+  const generateAIEvent = async () => {
+    const orchestrator = getProductAIOrchestrator();
+    const context = buildOrchestrationContext();
+    const event = await orchestrator.generateOperationalFeedEvent(context);
+    const mission = context.missions[0];
+    addFeedItemWithSync({
+      type: event.type,
+      author:
+        event.author === "Runtime Observer"
+          ? "Runtime Observer"
+          : event.author,
+      authorName:
+        event.author === "COO"
+          ? "Nova"
+          : event.author === "Architect"
+            ? "Sage"
+            : event.author === "QA"
+              ? "Lens"
+              : "Pulse",
+      missionId: mission?.id ?? "m-1",
+      missionName: mission?.name ?? "Operational Overview",
+      message: event.message,
+      status: "active",
+      requiresCeoApproval: false,
+    });
+  };
 
   return (
     <AppShell
@@ -181,6 +211,13 @@ export function OrganizationFeedView({
           </span>
           Live
         </span>
+        <button
+          type="button"
+          onClick={() => void generateAIEvent()}
+          className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface"
+        >
+          Generate AI Event
+        </button>
       </div>
 
       <Card>

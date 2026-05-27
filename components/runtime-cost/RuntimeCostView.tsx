@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card, StatCard } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
+import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
+import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
 import {
@@ -13,6 +16,7 @@ import {
 import { runtimeCosts } from "@/data/mockData";
 
 export function RuntimeCostView() {
+  const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
   const tokenUsage = useRuntimeStore((s) => s.tokenUsage);
   const totalCostUsd = useRuntimeStore((s) => s.totalCostUsd);
@@ -45,6 +49,13 @@ export function RuntimeCostView() {
     hydrationStatus === "failed" || backendHealth === "unavailable"
       ? "warning"
       : "success";
+
+  const generateRuntimeInsight = async () => {
+    const orchestrator = getProductAIOrchestrator();
+    const context = buildOrchestrationContext();
+    const insight = await orchestrator.generateRuntimeObserverInsight(context);
+    setRuntimeInsight(insight);
+  };
 
   return (
     <AppShell
@@ -241,6 +252,23 @@ export function RuntimeCostView() {
               ))}
             </ul>
           )}
+        </Card>
+
+        <Card title="Runtime Observer Insight">
+          {runtimeInsight ? (
+            <p className="text-sm text-foreground">{runtimeInsight}</p>
+          ) : (
+            <p className="text-sm text-muted">
+              Generate a concise operational insight from Runtime Observer.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => void generateRuntimeInsight()}
+            className="mt-3 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface"
+          >
+            Generate Runtime Insight
+          </button>
         </Card>
 
         <Card title="Sync Warnings">

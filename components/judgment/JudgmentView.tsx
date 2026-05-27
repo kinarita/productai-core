@@ -9,6 +9,8 @@ import { MissionLink } from "@/components/MissionLink";
 import { MissionFilterBanner } from "@/components/MissionFilterBanner";
 import { CreateTaskFromDecisionForm } from "@/components/judgment/CreateTaskFromDecisionForm";
 import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
+import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
+import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
 import {
   resolveDecisionActionMessage,
   useOrganizationStore,
@@ -44,6 +46,17 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
 
   const [createFormFor, setCreateFormFor] = useState<string | null>(null);
   const [followUpFormFor, setFollowUpFormFor] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<
+    Record<
+      string,
+      {
+        recommendedOption: "optionA" | "optionB";
+        rationale: string;
+        executionRisk: string;
+        dependencyConcerns: string[];
+      }
+    >
+  >({});
 
   const filtered = missionFilter
     ? decisions.filter((d) => d.relatedMissionId === missionFilter)
@@ -108,6 +121,16 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
     });
   };
 
+  const handleRecommendation = async (decisionId: string) => {
+    const orchestrator = getProductAIOrchestrator();
+    const context = buildOrchestrationContext();
+    const recommendation = await orchestrator.reviewDecision(decisionId, context);
+    setRecommendations((prev) => ({
+      ...prev,
+      [decisionId]: recommendation,
+    }));
+  };
+
   return (
     <AppShell
       title="Judgment Center"
@@ -127,6 +150,7 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
         <div className="space-y-6">
           {filtered.map((decision) => {
             const isResolved = decision.status !== "pending";
+            const aiRecommendation = recommendations[decision.id];
             const linkedTasks = getLinkedTasksForDecision(
               tasks,
               decision.id,
@@ -167,6 +191,44 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
                 </div>
 
                 <p className="mt-4 text-sm text-muted">{decision.summary}</p>
+
+                <div className="mt-4 rounded-lg border border-border bg-surface p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium uppercase text-muted">AI Recommendation</p>
+                    <button
+                      type="button"
+                      onClick={() => void handleRecommendation(decision.id)}
+                      className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface"
+                    >
+                      Generate Recommendation
+                    </button>
+                  </div>
+                  {aiRecommendation ? (
+                    <div className="mt-3 space-y-2 text-sm">
+                      <p className="text-foreground">
+                        Recommended option:{" "}
+                        <span className="font-medium">
+                          {aiRecommendation.recommendedOption === "optionA"
+                            ? decision.optionA.label
+                            : decision.optionB.label}
+                        </span>
+                      </p>
+                      <p className="text-muted">{aiRecommendation.rationale}</p>
+                      <p className="text-muted">Execution risk: {aiRecommendation.executionRisk}</p>
+                      <ul className="space-y-1">
+                        {aiRecommendation.dependencyConcerns.map((concern) => (
+                          <li key={concern} className="text-muted">
+                            · {concern}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted">
+                      Generate operational recommendation to support CEO judgment.
+                    </p>
+                  )}
+                </div>
 
                 {linkedTasks.length > 0 ? (
                   <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs">

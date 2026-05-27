@@ -8,7 +8,13 @@ export type MissionLifecyclePhase =
   | "Review"
   | "Release";
 
-export type AgentRole = "COO" | "Architect" | "Engineer" | "QA";
+export type AgentRole =
+  | "CEO"
+  | "COO"
+  | "Architect"
+  | "Engineer"
+  | "QA"
+  | "Runtime Observer";
 
 export type AgentStatus = "active" | "idle" | "analyzing" | "reviewing";
 
