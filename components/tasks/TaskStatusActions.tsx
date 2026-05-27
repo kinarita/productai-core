@@ -10,8 +10,8 @@ interface TaskStatusActionsProps {
 }
 
 export function TaskStatusActions({ task, compact }: TaskStatusActionsProps) {
-  const updateTaskStatus = useTaskStore((s) => s.updateTaskStatus);
-  const addTaskEvent = useTaskStore((s) => s.addTaskEvent);
+  const updateTaskStatus = useTaskStore((s) => s.updateTaskStatusWithSync);
+  const addTaskEvent = useTaskStore((s) => s.addTaskEventWithSync);
 
   const handleStatus = (status: TaskStatus) => {
     const actor = findAgentByRole(task.assignedTo);

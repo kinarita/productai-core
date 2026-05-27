@@ -3,10 +3,12 @@
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { organizationSettings } from "@/data/mockData";
+import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { resetAllProductAIState } from "@/lib/store/resetProductAIState";
 
 export function SettingsView() {
   const s = organizationSettings;
+  const persistenceMode = getPersistenceMode();
 
   return (
     <AppShell
@@ -95,6 +97,10 @@ export function SettingsView() {
             ProductAI stores mission, organization, and runtime state in your browser.
             Reset to restore the initial demo dataset.
           </p>
+          <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
+            <p>Persistence mode: {persistenceMode}</p>
+            <p className="mt-1">Backend sync: best effort (hybrid bridge)</p>
+          </div>
           <button
             type="button"
             onClick={() => resetAllProductAIState()}

@@ -4,7 +4,9 @@ import { agents } from "@/data/mockData";
 import { taskStoreInitial } from "@/lib/store/initialState";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
+import { mapTaskPatchPayload, mapTaskToCreatePayload } from "@/lib/services/mappers";
 import { createTask, updateTask } from "@/lib/services/taskService";
+import { syncWrite } from "@/lib/services/writeSync";
 import type {
   Agent,
   AgentRole,
@@ -24,9 +26,15 @@ const PERSIST_VERSION = 2;
 interface TaskState {
   tasks: Task[];
   updateTaskStatus: (taskId: string, status: TaskStatus, actor?: Agent) => void;
+  updateTaskStatusWithSync: (taskId: string, status: TaskStatus, actor?: Agent) => void;
   assignTask: (taskId: string, agentId: string) => void;
   addTask: (task: Task) => void;
+  addTaskWithSync: (task: Task) => void;
   addTaskEvent: (taskId: string, event: Omit<TaskEvent, "id" | "timestamp"> & { timestamp?: string }) => void;
+  addTaskEventWithSync: (
+    taskId: string,
+    event: Omit<TaskEvent, "id" | "timestamp"> & { timestamp?: string }
+  ) => void;
   createTaskRemote: (input: {
     title: string;
     missionId: string;
@@ -176,7 +184,7 @@ export const useTaskStore = create<TaskState>()(
         const authorName = actor?.name ?? findAgentNameByRole(authorRole);
 
         // Feed event
-        useOrganizationStore.getState().addFeedItem({
+        useOrganizationStore.getState().addFeedItemWithSync({
           type: inferFeedType(action),
           author: authorRole,
           authorName,
@@ -230,6 +238,24 @@ export const useTaskStore = create<TaskState>()(
           }),
         }));
       },
+      updateTaskStatusWithSync: (taskId, status, actor) => {
+        const before = get().tasks.find((t) => t.id === taskId);
+        syncWrite(
+          "update-task-status",
+          () => get().updateTaskStatus(taskId, status, actor),
+          async () => {
+            const current = get().tasks.find((t) => t.id === taskId);
+            if (!current) return;
+            const payload = mapTaskPatchPayload(current, {
+              status,
+              updatedAt: "Just now",
+              assignedAgentId: actor?.id ?? current.assignedAgentId,
+            });
+            await updateTask(taskId, payload);
+          }
+        );
+        if (!before) return;
+      },
       assignTask: (taskId, agentId) => {
         const agent = findAgentById(agentId);
         if (!agent) return;
@@ -257,7 +283,7 @@ export const useTaskStore = create<TaskState>()(
         }));
         const task = get().tasks.find((t) => t.id === taskId);
         if (!task) return;
-        useOrganizationStore.getState().addFeedItem({
+        useOrganizationStore.getState().addFeedItemWithSync({
           type: "task_assignment",
           author: "COO",
           authorName: findAgentNameByRole("COO"),
@@ -282,6 +308,15 @@ export const useTaskStore = create<TaskState>()(
             ...state.tasks,
           ],
         })),
+      addTaskWithSync: (task) => {
+        syncWrite(
+          "create-task",
+          () => get().addTask(task),
+          async () => {
+            await createTask(mapTaskToCreatePayload(task));
+          }
+        );
+      },
       addTaskEvent: (taskId, event) =>
         set((state) => ({
           tasks: state.tasks.map((t) =>
@@ -297,6 +332,17 @@ export const useTaskStore = create<TaskState>()(
               : t
           ),
         })),
+      addTaskEventWithSync: (taskId, event) => {
+        syncWrite(
+          "add-task-event",
+          () => get().addTaskEvent(taskId, event),
+          async () => {
+            const task = get().tasks.find((t) => t.id === taskId);
+            if (!task) return;
+            await updateTask(taskId, mapTaskPatchPayload(task, { updatedAt: "Just now" }));
+          }
+        );
+      },
       createTaskRemote: async (input) => {
         await createTask(input);
       },

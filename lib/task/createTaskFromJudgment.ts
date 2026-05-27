@@ -66,9 +66,9 @@ export function createTaskFromJudgment(input: CreateTaskFromJudgmentInput): stri
     createdAt: nowLabel(),
   };
 
-  useTaskStore.getState().addTask(task);
+  useTaskStore.getState().addTaskWithSync(task);
 
-  useTaskStore.getState().addTaskEvent(taskId, {
+  useTaskStore.getState().addTaskEventWithSync(taskId, {
     type: "note",
     actor: "COO",
     agentId: agent?.id,
@@ -79,7 +79,7 @@ export function createTaskFromJudgment(input: CreateTaskFromJudgmentInput): stri
   });
 
   if (input.note?.trim()) {
-    useTaskStore.getState().addTaskEvent(taskId, {
+    useTaskStore.getState().addTaskEventWithSync(taskId, {
       type: "note",
       actor: "COO",
       message: input.note.trim(),
@@ -89,7 +89,7 @@ export function createTaskFromJudgment(input: CreateTaskFromJudgmentInput): stri
 
   useOrganizationStore.getState().linkDecisionToTask(input.relatedDecisionId, taskId);
 
-  useOrganizationStore.getState().addFeedItem({
+  useOrganizationStore.getState().addFeedItemWithSync({
     type: "task_creation",
     author: "COO",
     authorName: "Nova",
@@ -122,7 +122,7 @@ export function createTaskFromJudgment(input: CreateTaskFromJudgmentInput): stri
     .filter((t): t is Task => Boolean(t && t.status === "blocked"));
 
   if (blockedDeps.length > 0) {
-    useTaskStore.getState().addTaskEvent(taskId, {
+    useTaskStore.getState().addTaskEventWithSync(taskId, {
       type: "note",
       actor: "COO",
       message: `Waiting on dependency: ${blockedDeps.map((d) => d.title).join(", ")}.`,

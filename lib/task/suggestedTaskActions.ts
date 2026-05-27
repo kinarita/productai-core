@@ -109,9 +109,9 @@ function touchMissionActivity(missionId: string, recentActivity: string) {
 }
 
 export function executeSuggestedAction(task: Task, key: SuggestedActionKey) {
-  const addFeedItem = useOrganizationStore.getState().addFeedItem;
-  const addTaskEvent = useTaskStore.getState().addTaskEvent;
-  const updateTaskStatus = useTaskStore.getState().updateTaskStatus;
+  const addFeedItem = useOrganizationStore.getState().addFeedItemWithSync;
+  const addTaskEvent = useTaskStore.getState().addTaskEventWithSync;
+  const updateTaskStatus = useTaskStore.getState().updateTaskStatusWithSync;
 
   switch (key) {
     case "escalate_coo":

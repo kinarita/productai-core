@@ -35,12 +35,12 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
 
   const decisions = useOrganizationStore((s) => s.decisions);
   const tasks = useTaskStore((s) => s.tasks);
-  const updateDecisionStatus = useOrganizationStore((s) => s.updateDecisionStatus);
-  const addFeedItem = useOrganizationStore((s) => s.addFeedItem);
+  const updateDecisionStatus = useOrganizationStore((s) => s.updateDecisionStatusWithSync);
+  const addFeedItem = useOrganizationStore((s) => s.addFeedItemWithSync);
   const setSelectedDecision = useUiStore((s) => s.setSelectedDecision);
   const applyJudgmentOutcome = useMissionStore((s) => s.applyJudgmentOutcome);
-  const updateTaskStatus = useTaskStore((s) => s.updateTaskStatus);
-  const addTaskEvent = useTaskStore((s) => s.addTaskEvent);
+  const updateTaskStatus = useTaskStore((s) => s.updateTaskStatusWithSync);
+  const addTaskEvent = useTaskStore((s) => s.addTaskEventWithSync);
 
   const [createFormFor, setCreateFormFor] = useState<string | null>(null);
   const [followUpFormFor, setFollowUpFormFor] = useState<string | null>(null);

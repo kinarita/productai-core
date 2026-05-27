@@ -5,8 +5,11 @@ import {
   executiveSyncInitial,
   organizationStoreInitial,
 } from "@/lib/store/initialState";
+import { mapFeedItemToCreatePayload } from "@/lib/services/mappers";
 import { createFeedItem } from "@/lib/services/feedService";
+import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { updateDecisionStatus as updateDecisionStatusRemoteService } from "@/lib/services/judgmentService";
+import { syncWrite } from "@/lib/services/writeSync";
 import type {
   Agent,
   AgentRole,
@@ -40,8 +43,10 @@ interface OrganizationState {
   decisions: Decision[];
   executiveSyncState: ExecutiveSyncState;
   addFeedItem: (item: Omit<OrganizationFeedItem, "id" | "timestamp">) => void;
+  addFeedItemWithSync: (item: Omit<OrganizationFeedItem, "id" | "timestamp">) => void;
   updateFeedItem: (id: string, patch: Partial<OrganizationFeedItem>) => void;
   updateDecisionStatus: (id: string, status: DecisionStatus) => void;
+  updateDecisionStatusWithSync: (id: string, status: DecisionStatus) => void;
   linkDecisionToTask: (decisionId: string, taskId: string) => void;
   addFeedRemote: (input: {
     missionId: string;
@@ -80,6 +85,27 @@ export const useOrganizationStore = create<OrganizationState>()(
             ...state.organizationFeedItems,
           ],
         })),
+      addFeedItemWithSync: (item) => {
+        syncWrite(
+          "add-feed-item",
+          () => set((state) => ({
+            organizationFeedItems: [
+              {
+                ...item,
+                id: `f-live-${Date.now()}`,
+                timestamp: new Date().toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                }),
+              },
+              ...state.organizationFeedItems,
+            ],
+          })),
+          async () => {
+            await createFeedItem(mapFeedItemToCreatePayload(item));
+          }
+        );
+      },
       updateFeedItem: (id, patch) =>
         set((state) => ({
           organizationFeedItems: state.organizationFeedItems.map((f) =>
@@ -90,6 +116,18 @@ export const useOrganizationStore = create<OrganizationState>()(
         set((state) => ({
           decisions: state.decisions.map((d) => (d.id === id ? { ...d, status } : d)),
         })),
+      updateDecisionStatusWithSync: (id, status) => {
+        syncWrite(
+          "update-decision-status",
+          () => set((state) => ({
+            decisions: state.decisions.map((d) => (d.id === id ? { ...d, status } : d)),
+          })),
+          async () => {
+            if (getPersistenceMode() === "local") return;
+            await updateDecisionStatusRemoteService(id, { status, updatedAt: "Just now" });
+          }
+        );
+      },
       linkDecisionToTask: (decisionId, taskId) =>
         set((state) => ({
           decisions: state.decisions.map((d) => {

@@ -4,6 +4,28 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-27
 
+### Added (Phase 3-3 hybrid persistence)
+
+- Persistence mode feature flag:
+  - `NEXT_PUBLIC_PRODUCTAI_PERSISTENCE_MODE`
+  - values: `local`, `hybrid`, `remote` (default: `hybrid`)
+- Best-effort write sync helper:
+  - local-first updates
+  - async backend writes
+  - non-blocking warn-only failure handling
+- Sync-capable store bridge actions:
+  - task status/task create/task event write sync
+  - feed create write sync
+  - judgment status write sync
+- Service payload mappers for task/feed write calls.
+- Settings visibility for persistence mode and sync policy.
+
+### Changed (Phase 3-3)
+
+- Judgment, Task status, suggested task actions, and decision->task creation flows now use sync bridge actions.
+- Existing local store actions remain intact as fallback-safe behavior.
+- UI/UX flow preserved while backend persistence is introduced incrementally.
+
 ### Added (Phase 3-2 write foundation)
 
 - Task write endpoints:

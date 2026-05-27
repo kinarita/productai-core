@@ -128,6 +128,47 @@ Phase 3-2 extends the foundation with backend write capability while preserving 
 - Write APIs are now available for gradual store migration.
 - No forced UI migration performed in this phase.
 
+## Phase 3-3 hybrid sync bridge
+
+Phase 3-3 introduces the migration bridge between local-first store actions and backend write APIs.
+
+### Feature flag
+
+- `NEXT_PUBLIC_PRODUCTAI_PERSISTENCE_MODE`
+  - `local`: local-only writes
+  - `hybrid`: local immediate write + best-effort backend write
+  - `remote`: reserved for future full remote-first mode
+
+Default mode is `hybrid`.
+
+### Sync helper model
+
+- `syncWrite(label, localFn, remoteFn)` executes:
+  1. local update first
+  2. remote write asynchronously (mode-based)
+  3. warn on remote failure without breaking UX
+
+### Store bridge actions
+
+- Task store:
+  - `updateTaskStatusWithSync`
+  - `addTaskWithSync`
+  - `addTaskEventWithSync`
+- Organization store:
+  - `addFeedItemWithSync`
+  - `updateDecisionStatusWithSync`
+
+### UI migration scope (partial)
+
+Key operational paths now call sync actions:
+
+- task status buttons
+- judgment approve/reject/revision actions
+- create task from judgment
+- suggested action executions
+
+This keeps UX unchanged while backend write adoption begins incrementally.
+
 ## Store migration path
 
 A service layer (`lib/services`) is introduced as migration prep:

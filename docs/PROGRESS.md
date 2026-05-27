@@ -1,5 +1,41 @@
 # ProductAI Development Progress
 
+## 2026-05-27 — Phase 3-3 hybrid persistence sync layer
+
+### Objective
+
+Build a safe bridge from local-first store actions to backend write APIs without changing the current UX.
+
+### Implemented in Phase 3-3
+
+- Added persistence feature flag (`local` / `hybrid` / `remote`) with environment override:
+  - `NEXT_PUBLIC_PRODUCTAI_PERSISTENCE_MODE`
+- Added generic write sync helper (`syncWrite`) for:
+  - local immediate update
+  - best-effort remote write in hybrid/remote mode
+  - non-blocking error handling (`console.warn`)
+- Added synchronized store actions:
+  - `taskStore.updateTaskStatusWithSync`
+  - `taskStore.addTaskWithSync`
+  - `taskStore.addTaskEventWithSync`
+  - `organizationStore.addFeedItemWithSync`
+  - `organizationStore.updateDecisionStatusWithSync`
+- Migrated key UI write paths to sync actions:
+  - Judgment decision actions
+  - Task status actions
+  - Judgment -> Task creation
+  - Suggested task actions
+- Added service payload mappers to keep UI/store code clean.
+- Added small settings visibility:
+  - persistence mode
+  - backend sync policy (best effort)
+
+### Coexistence status
+
+- Local state remains source of immediate UX behavior.
+- Remote persistence writes happen in the background when mode is `hybrid`.
+- Backend write failures do not break UI flow.
+
 ## 2026-05-27 — Phase 3-2 write API foundation
 
 ### Objective
