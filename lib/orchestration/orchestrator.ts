@@ -1,8 +1,13 @@
 import { getAIProvider } from "@/lib/ai/aiProvider";
 import { orchestrationAgents } from "@/lib/orchestration/agentRegistry";
+import { enrichJudgmentRecommendation } from "@/lib/orchestration/governanceHelpers";
+import { governanceFeedMessage } from "@/lib/orchestration/governanceFeed";
 import { buildExecutiveSyncPrompt } from "@/lib/orchestration/prompts/executiveSyncPrompt";
 import { buildJudgmentReviewPrompt } from "@/lib/orchestration/prompts/judgmentReviewPrompt";
 import { buildMissionRiskPrompt } from "@/lib/orchestration/prompts/missionRiskPrompt";
+import { createExecutiveSyncProposals } from "@/lib/orchestration/policy/orchestrationPolicy";
+import type { AIProposal, ExecutionPlan } from "@/lib/orchestration/policy/policyTypes";
+import { getExecutionPolicy } from "@/lib/orchestration/policy/executionPolicy";
 import type {
   ExecutiveDiscussion,
   ExecutionRiskSummary,
@@ -48,13 +53,13 @@ class MockProductAIOrchestrator implements ProductAIOrchestrator {
   async reviewDecision(decisionId: string, context: OrchestrationContext): Promise<JudgmentRecommendation> {
     const decision = context.decisions.find((d) => d.id === decisionId);
     if (!decision) {
-      return {
+      return enrichJudgmentRecommendation({
         decisionId,
         recommendedOption: "optionA",
         rationale: "Insufficient context; maintain conservative path.",
         executionRisk: "medium",
         dependencyConcerns: ["Decision context is missing in current state."],
-      };
+      });
     }
     const prompt = buildJudgmentReviewPrompt(decision);
     const provider = getAIProvider();
@@ -62,7 +67,7 @@ class MockProductAIOrchestrator implements ProductAIOrchestrator {
     const recommendB = /scale|partition|stability|headroom/i.test(
       `${decision.title} ${decision.optionB.label} ${decision.summary}`
     );
-    return {
+    return enrichJudgmentRecommendation({
       decisionId,
       recommendedOption: recommendB ? "optionB" : "optionA",
       rationale,
@@ -71,7 +76,7 @@ class MockProductAIOrchestrator implements ProductAIOrchestrator {
         decision.relatedTaskIds?.length
           ? [`${decision.relatedTaskIds.length} linked execution tasks require synchronized rollout.`]
           : ["No explicit task link yet; ensure execution owner is assigned."],
-    };
+    });
   }
 
   async summarizeExecutionRisk(
@@ -126,9 +131,9 @@ class MockProductAIOrchestrator implements ProductAIOrchestrator {
   async generateRuntimeObserverInsight(context: OrchestrationContext): Promise<string> {
     const warnings = context.syncWarnings.length;
     if (warnings === 0) {
-      return "Runtime Observer: synchronization signals are stable with no active anomaly pressure.";
+      return "Runtime Observer: synchronization signals are stable with no active anomaly pressure. Recommendation only — automated recovery is disabled.";
     }
-    return "Runtime Observer: retry and hydration warnings are elevated; local execution continuity remains stable.";
+    return "Runtime Observer: retry and hydration warnings are elevated; stabilization is recommended after executive review. Local execution continuity remains stable. No automated recovery will be initiated.";
   }
 
   async generateOperationalFeedEvent(context: OrchestrationContext): Promise<{
@@ -155,6 +160,111 @@ class MockProductAIOrchestrator implements ProductAIOrchestrator {
       author: "COO",
       type: "coordination",
       message: "COO operational review: mission execution cadence remains stable this cycle.",
+    };
+  }
+
+  async generateExecutiveProposals(
+    missionId: string,
+    context: OrchestrationContext
+  ): Promise<Omit<AIProposal, "id" | "status" | "createdAt">[]> {
+    return createExecutiveSyncProposals(context, missionId);
+  }
+
+  async generateExecutionPlan(
+    missionId: string,
+    proposal: AIProposal,
+    context: OrchestrationContext
+  ): Promise<ExecutionPlan> {
+    const mission = missionById(context, missionId);
+    const blocked = context.tasks.filter((t) => t.missionId === missionId && t.status === "blocked");
+    const inReview = context.tasks.filter((t) => t.missionId === missionId && t.status === "in_review");
+
+    const proposedTasks: ExecutionPlan["proposedTasks"] = [
+      {
+        title: `Coordinate dependency resolution — ${proposal.summary}`,
+        assignedRole: "COO",
+        reason: "Stabilize sequencing before scope expansion.",
+      },
+      {
+        title: "Validate architecture alignment for dependent workstreams",
+        assignedRole: "Architect",
+        reason: "Reduce rework from schema or interface drift.",
+      },
+      {
+        title: "Sequence QA validation checkpoints for rollout readiness",
+        assignedRole: "QA",
+        reason: "Protect release quality under current review load.",
+      },
+    ];
+
+    if (blocked.length === 0) {
+      proposedTasks.push({
+        title: `Engineering implementation slice for ${mission?.name ?? "mission"}`,
+        assignedRole: "Engineer",
+        reason: "Maintain delivery momentum on approved path.",
+      });
+    }
+
+    return {
+      id: `plan-${Date.now()}`,
+      proposalId: proposal.id,
+      missionId,
+      summary: `Advisory execution plan for: ${proposal.summary}`,
+      proposedTasks,
+      dependencyNotes: blocked.length
+        ? [`${blocked.length} blocked task(s) should be resolved before parallel expansion.`]
+        : ["No blocked dependencies detected; standard sequencing applies."],
+      reviewRequirements: [
+        "Executive approval recorded before task creation.",
+        "Architect sign-off on interface changes.",
+      ],
+      qaCheckpoints: [
+        `${inReview.length} task(s) currently in review — align validation order.`,
+        "Regression pass before release sequencing.",
+      ],
+      runtimeConsiderations: context.syncWarnings.length
+        ? ["Elevated sync warnings — monitor hydration and retry posture."]
+        : ["Runtime signals stable; standard operational monitoring."],
+      status: "execution_planned",
+      createdAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      governanceNote: getExecutionPolicy().boundaryMessage,
+    };
+  }
+
+  async generateGovernanceFeedEvent(
+    context: OrchestrationContext,
+    kind: "approval" | "architect_review" | "runtime_recommendation"
+  ): Promise<{
+    author: "COO" | "Architect" | "Runtime Observer";
+    type: "approval_required" | "architecture" | "runtime";
+    message: string;
+    requiresCeoApproval: boolean;
+  }> {
+    if (kind === "runtime_recommendation" || context.syncWarnings.length > 0) {
+      return {
+        author: "Runtime Observer",
+        type: "runtime",
+        message: governanceFeedMessage("runtime_recommendation"),
+        requiresCeoApproval: true,
+      };
+    }
+    if (kind === "architect_review") {
+      return {
+        author: "Architect",
+        type: "architecture",
+        message: "Architect proposal requires executive review before execution planning proceeds.",
+        requiresCeoApproval: true,
+      };
+    }
+    return {
+      author: "COO",
+      type: "approval_required",
+      message: governanceFeedMessage("approval_requested", {
+        summary: "execution planning",
+        sourceAgent: "COO",
+        proposalType: "dependency_escalation",
+      }),
+      requiresCeoApproval: true,
     };
   }
 }

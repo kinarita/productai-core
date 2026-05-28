@@ -146,10 +146,7 @@ export function OrganizationFeedView({
     const mission = context.missions[0];
     addFeedItemWithSync({
       type: event.type,
-      author:
-        event.author === "Runtime Observer"
-          ? "Runtime Observer"
-          : event.author,
+      author: event.author,
       authorName:
         event.author === "COO"
           ? "Nova"
@@ -163,6 +160,29 @@ export function OrganizationFeedView({
       message: event.message,
       status: "active",
       requiresCeoApproval: false,
+    });
+  };
+
+  const generateGovernanceEvent = async () => {
+    const orchestrator = getProductAIOrchestrator();
+    const context = buildOrchestrationContext();
+    const kind =
+      context.syncWarnings.length > 0
+        ? "runtime_recommendation"
+        : context.tasks.some((t) => t.status === "blocked")
+          ? "architect_review"
+          : "approval";
+    const event = await orchestrator.generateGovernanceFeedEvent(context, kind);
+    const mission = context.missions[0];
+    addFeedItemWithSync({
+      type: event.type,
+      author: event.author,
+      authorName: event.author === "Architect" ? "Sage" : event.author === "COO" ? "Nova" : "Pulse",
+      missionId: mission?.id ?? "m-1",
+      missionName: mission?.name ?? "Operational Overview",
+      message: event.message,
+      status: "active",
+      requiresCeoApproval: event.requiresCeoApproval,
     });
   };
 
@@ -217,6 +237,13 @@ export function OrganizationFeedView({
           className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface"
         >
           Generate AI Event
+        </button>
+        <button
+          type="button"
+          onClick={() => void generateGovernanceEvent()}
+          className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface"
+        >
+          Generate Governance Event
         </button>
       </div>
 

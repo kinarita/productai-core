@@ -6,7 +6,9 @@ import { Card, StatCard } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
+import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
+import { getExecutionPolicy } from "@/lib/orchestration/policy/executionPolicy";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
 import {
@@ -262,6 +264,13 @@ export function RuntimeCostView() {
               Generate a concise operational insight from Runtime Observer.
             </p>
           )}
+          <div className="mt-3">
+            <GovernanceNote>
+              Runtime Observer outputs are recommendation-only. Automated recovery, deploy actions,
+              and background remediation remain disabled under execution policy.
+            </GovernanceNote>
+          </div>
+          <p className="mt-2 text-xs text-muted">{getExecutionPolicy().boundaryMessage}</p>
           <button
             type="button"
             onClick={() => void generateRuntimeInsight()}

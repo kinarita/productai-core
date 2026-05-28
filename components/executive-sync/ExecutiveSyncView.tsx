@@ -5,10 +5,16 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { MissionLink } from "@/components/MissionLink";
+import { ProposalCard } from "@/components/orchestration/ProposalCard";
+import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { useLiveExecutiveSync } from "@/lib/hooks/useLiveExecutiveSync";
 import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
+import { governanceFeedMessage, feedTypeForProposalStatus } from "@/lib/orchestration/governanceFeed";
 import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
+import { getExecutionPolicy } from "@/lib/orchestration/policy/executionPolicy";
+import type { AIProposal } from "@/lib/orchestration/policy/policyTypes";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
+import { useProposalStore } from "@/lib/store/proposalStore";
 import { Gavel } from "lucide-react";
 
 export function ExecutiveSyncView() {
@@ -17,7 +23,33 @@ export function ExecutiveSyncView() {
   const ctx = useOrganizationStore((s) => s.executiveSyncState);
   const setExecutiveSyncState = useOrganizationStore((s) => s.setExecutiveSyncState);
   const addFeedItemWithSync = useOrganizationStore((s) => s.addFeedItemWithSync);
+  const proposals = useProposalStore((s) => s.getProposalsForMission(ctx.missionId));
+  const executionPlans = useProposalStore((s) => s.executionPlans);
+  const addProposal = useProposalStore((s) => s.addProposal);
+  const updateProposalStatus = useProposalStore((s) => s.updateProposalStatus);
+  const addExecutionPlan = useProposalStore((s) => s.addExecutionPlan);
+  const getProposal = useProposalStore((s) => s.getProposal);
+
   const [operationalSummary, setOperationalSummary] = useState<string | null>(null);
+  const [planLoadingId, setPlanLoadingId] = useState<string | null>(null);
+
+  const executionPolicy = getExecutionPolicy();
+
+  const pushGovernanceFeed = (
+    action: Parameters<typeof governanceFeedMessage>[0],
+    proposal?: Pick<AIProposal, "summary" | "sourceAgent" | "proposalType">
+  ) => {
+    addFeedItemWithSync({
+      type: proposal ? feedTypeForProposalStatus("approval_required") : "coordination",
+      author: proposal?.sourceAgent === "Architect" ? "Architect" : "COO",
+      authorName: proposal?.sourceAgent === "Architect" ? "Sage" : "Nova",
+      missionId: ctx.missionId,
+      missionName: ctx.mission,
+      message: governanceFeedMessage(action, proposal),
+      status: "active",
+      requiresCeoApproval: action === "approval_requested" || action === "proposal_created",
+    });
+  };
 
   const generateDiscussion = async () => {
     const orchestrator = getProductAIOrchestrator();
@@ -59,6 +91,83 @@ export function ExecutiveSyncView() {
       status: "active",
       requiresCeoApproval: false,
     });
+  };
+
+  const generateProposals = async () => {
+    const orchestrator = getProductAIOrchestrator();
+    const context = buildOrchestrationContext();
+    const drafts = await orchestrator.generateExecutiveProposals(ctx.missionId, context);
+    drafts.forEach((draft) => {
+      const created = addProposal(draft);
+      pushGovernanceFeed("proposal_created", {
+        summary: created.summary,
+        sourceAgent: created.sourceAgent,
+        proposalType: created.proposalType,
+      });
+      if (created.requiresCEOApproval) {
+        pushGovernanceFeed("approval_requested", {
+          summary: created.summary,
+          sourceAgent: created.sourceAgent,
+          proposalType: created.proposalType,
+        });
+      }
+    });
+  };
+
+  const handleApprove = (id: string) => {
+    const proposal = getProposal(id);
+    updateProposalStatus(id, "approved");
+    if (proposal) {
+      pushGovernanceFeed("approved", {
+        summary: proposal.summary,
+        sourceAgent: proposal.sourceAgent,
+        proposalType: proposal.proposalType,
+      });
+    }
+  };
+
+  const handleRevision = (id: string) => {
+    const proposal = getProposal(id);
+    updateProposalStatus(id, "revision_requested");
+    if (proposal) {
+      pushGovernanceFeed("revision_requested", {
+        summary: proposal.summary,
+        sourceAgent: proposal.sourceAgent,
+        proposalType: proposal.proposalType,
+      });
+    }
+  };
+
+  const handleReject = (id: string) => {
+    const proposal = getProposal(id);
+    updateProposalStatus(id, "rejected");
+    if (proposal) {
+      pushGovernanceFeed("rejected", {
+        summary: proposal.summary,
+        sourceAgent: proposal.sourceAgent,
+        proposalType: proposal.proposalType,
+      });
+    }
+  };
+
+  const handleGeneratePlan = async (proposalId: string) => {
+    const proposal = getProposal(proposalId);
+    if (!proposal) return;
+    setPlanLoadingId(proposalId);
+    try {
+      const orchestrator = getProductAIOrchestrator();
+      const context = buildOrchestrationContext();
+      const plan = await orchestrator.generateExecutionPlan(ctx.missionId, proposal, context);
+      addExecutionPlan(plan);
+      updateProposalStatus(proposalId, "execution_planned");
+      pushGovernanceFeed("execution_planned", {
+        summary: proposal.summary,
+        sourceAgent: proposal.sourceAgent,
+        proposalType: proposal.proposalType,
+      });
+    } finally {
+      setPlanLoadingId(null);
+    }
   };
 
   return (
@@ -163,6 +272,8 @@ export function ExecutiveSyncView() {
                 </div>
               ) : null}
 
+              <GovernanceNote>{executionPolicy.boundaryMessage}</GovernanceNote>
+
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -178,7 +289,38 @@ export function ExecutiveSyncView() {
                 >
                   Generate Operational Summary
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void generateProposals()}
+                  className="inline-flex items-center gap-2 rounded-lg border border-accent/30 bg-indigo-50/50 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-indigo-50"
+                >
+                  Generate Structured Proposals
+                </button>
               </div>
+
+              {proposals.length > 0 ? (
+                <div className="space-y-4 border-t border-border pt-6">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                    Structured Proposals
+                  </p>
+                  {proposals.map((proposal) => (
+                    <ProposalCard
+                      key={proposal.id}
+                      proposal={proposal}
+                      executionPlan={executionPlans.find((p) => p.proposalId === proposal.id)}
+                      onApprove={() => handleApprove(proposal.id)}
+                      onRevision={() => handleRevision(proposal.id)}
+                      onReject={() => handleReject(proposal.id)}
+                      onGeneratePlan={
+                        proposal.status === "approved"
+                          ? () => void handleGeneratePlan(proposal.id)
+                          : undefined
+                      }
+                      planLoading={planLoadingId === proposal.id}
+                    />
+                  ))}
+                </div>
+              ) : null}
 
               <button
                 type="button"

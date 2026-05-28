@@ -2,6 +2,24 @@
 
 All notable changes to ProductAI are documented here.
 
+## 2026-05-28
+
+### Added (Phase 4-2 orchestration governance & approval flow)
+
+- Orchestration policy layer in `lib/orchestration/policy/` (approval, execution, lifecycle types).
+- Proposal lifecycle model and in-memory `proposalStore`.
+- Executive Sync structured proposals with human approval actions and advisory execution plans.
+- Judgment AI recommendation governance overlay (note, execution impact, policy boundary).
+- Runtime Observer recommendation-only governance messaging.
+- Organization Feed governance event generation.
+- Orchestration UI components: `ProposalCard`, `ApprovalBadge`, `RiskIndicator`, `GovernanceNote`.
+- Documentation: `docs/PHASE4_ORCHESTRATION_POLICY.md`.
+
+### Changed (Phase 4-2)
+
+- Orchestrator now supports `generateExecutiveProposals`, `generateExecutionPlan`, and `generateGovernanceFeedEvent`.
+- Operational tone remains calm and executive; no autonomous execution UI introduced.
+
 ## 2026-05-27
 
 ### Added (Phase 4-1 orchestration seed foundation)

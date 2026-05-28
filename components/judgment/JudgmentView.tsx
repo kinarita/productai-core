@@ -8,6 +8,8 @@ import { Badge } from "@/components/Badge";
 import { MissionLink } from "@/components/MissionLink";
 import { MissionFilterBanner } from "@/components/MissionFilterBanner";
 import { CreateTaskFromDecisionForm } from "@/components/judgment/CreateTaskFromDecisionForm";
+import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
+import type { JudgmentRecommendation } from "@/lib/orchestration/orchestrationTypes";
 import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
 import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
 import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
@@ -46,17 +48,7 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
 
   const [createFormFor, setCreateFormFor] = useState<string | null>(null);
   const [followUpFormFor, setFollowUpFormFor] = useState<string | null>(null);
-  const [recommendations, setRecommendations] = useState<
-    Record<
-      string,
-      {
-        recommendedOption: "optionA" | "optionB";
-        rationale: string;
-        executionRisk: string;
-        dependencyConcerns: string[];
-      }
-    >
-  >({});
+  const [recommendations, setRecommendations] = useState<Record<string, JudgmentRecommendation>>({});
 
   const filtered = missionFilter
     ? decisions.filter((d) => d.relatedMissionId === missionFilter)
@@ -222,6 +214,21 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
                           </li>
                         ))}
                       </ul>
+                      {aiRecommendation.governanceNote ? (
+                        <div className="mt-3 space-y-2">
+                          <GovernanceNote>{aiRecommendation.governanceNote}</GovernanceNote>
+                          {aiRecommendation.executionImpact ? (
+                            <p className="text-xs text-muted">
+                              Execution impact: {aiRecommendation.executionImpact}
+                            </p>
+                          ) : null}
+                          {aiRecommendation.approvalBoundary ? (
+                            <p className="text-xs text-muted">
+                              Policy boundary: {aiRecommendation.approvalBoundary}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   ) : (
                     <p className="mt-2 text-sm text-muted">

@@ -1,3 +1,5 @@
+import type { ExecutionPlan } from "@/lib/orchestration/policy/policyTypes";
+import type { AIProposal } from "@/lib/orchestration/policy/policyTypes";
 import type { Decision, Mission, OrganizationFeedItem, Task } from "@/types/productai";
 
 export type OrchestrationAgentRole =
@@ -31,6 +33,9 @@ export interface JudgmentRecommendation {
   rationale: string;
   executionRisk: string;
   dependencyConcerns: string[];
+  governanceNote?: string;
+  executionImpact?: string;
+  approvalBoundary?: string;
 }
 
 export interface ExecutiveDiscussion {
@@ -63,4 +68,17 @@ export interface ProductAIOrchestrator {
     type: OrganizationFeedItem["type"];
     message: string;
   }>;
+  generateExecutiveProposals(
+    missionId: string,
+    context: OrchestrationContext
+  ): Promise<Omit<AIProposal, "id" | "status" | "createdAt">[]>;
+  generateExecutionPlan(
+    missionId: string,
+    proposal: AIProposal,
+    context: OrchestrationContext
+  ): Promise<ExecutionPlan>;
+  generateGovernanceFeedEvent(
+    context: OrchestrationContext,
+    kind: "approval" | "architect_review" | "runtime_recommendation"
+  ): Promise<{ author: "COO" | "Architect" | "Runtime Observer"; type: OrganizationFeedItem["type"]; message: string; requiresCeoApproval: boolean }>;
 }

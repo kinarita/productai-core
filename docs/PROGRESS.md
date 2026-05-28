@@ -1,5 +1,35 @@
 # ProductAI Development Progress
 
+## 2026-05-28 — Phase 4-2 orchestration governance & approval flow
+
+### Objective
+
+Add orchestration policy, human approval boundaries, execution governance, and proposal lifecycle — without autonomous execution.
+
+### Implemented in Phase 4-2
+
+- Policy layer under `lib/orchestration/policy/`:
+  - `policyTypes`, `orchestrationPolicy`, `approvalPolicy`, `executionPolicy`
+- Proposal lifecycle: `proposal` → `approval_required` → `approved` → `execution_planned` (plus revision/rejected)
+- In-memory `proposalStore` for proposals and execution plans
+- Orchestrator extensions:
+  - `generateExecutiveProposals`
+  - `generateExecutionPlan`
+  - `generateGovernanceFeedEvent`
+  - Judgment recommendations enriched with governance metadata
+- Executive Sync structured proposals with Approve / Request Revision / Reject
+- Judgment governance notes on AI recommendations
+- Runtime Observer recommendation-only governance messaging
+- Organization Feed governance event generation
+- UI components: `ProposalCard`, `ApprovalBadge`, `RiskIndicator`, `GovernanceNote`
+- Documentation: `docs/PHASE4_ORCHESTRATION_POLICY.md`
+
+### Scope boundaries (kept)
+
+- No autonomous or automatic task execution
+- No background workers, MCP, GitHub automation, or deployment automation
+- No self-improving loops or realtime orchestration
+
 ## 2026-05-27 — Phase 4-1 orchestration seed foundation
 
 ### Objective
