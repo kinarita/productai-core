@@ -34,6 +34,9 @@ import { ReplayBookmarkPanel } from "@/components/orchestration/ReplayBookmarkPa
 import { ReplaySessionRecommendations } from "@/components/orchestration/ReplaySessionRecommendations";
 import { replayInterpretationPresets } from "@/lib/orchestration/governance-history/replayInterpretationPresets";
 import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
+import { GovernanceJournalPanel } from "@/components/orchestration/GovernanceJournalPanel";
+import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/ReplayInterpretationHistoryPanel";
+import { ExecutiveGovernanceDigestPanel } from "@/components/orchestration/ExecutiveGovernanceDigest";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -527,6 +530,51 @@ export function OrganizationFeedView({
         </div>
         <div className="mt-3">
           <ReplaySessionRecommendations baseReplayQuery={replayQuery} linkBasePath="/runtime-cost" />
+        </div>
+      </div>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-3">
+        <p className="text-xs font-medium uppercase text-muted">Governance reading continuity</p>
+        <p className="mt-1 text-xs text-muted">
+          Save human governance journals, record interpretations, and open replay comparison while
+          preserving attention query continuity.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link
+            href={buildReplayHref("/runtime-cost", {
+              ...replayQuery,
+              governanceAttention:
+                activeAttentionFilter !== "all" ? activeAttentionFilter : replayQuery.governanceAttention,
+            })}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Continue replay interpretation →
+          </Link>
+          <Link
+            href={buildReplayHref("/runtime-cost", replayQuery)}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Open replay comparison →
+          </Link>
+        </div>
+        <div className="mt-3">
+          <GovernanceJournalPanel
+            replayQuery={replayQuery}
+            missionId={missionFilter}
+            compact
+          />
+        </div>
+        <div className="mt-3">
+          <ReplayInterpretationHistoryPanel
+            replayQuery={replayQuery}
+            linkBasePath="/organization-feed"
+            compact
+          />
+        </div>
+        <div className="mt-3">
+          <ExecutiveGovernanceDigestPanel
+            compact
+            onExportDigest={(text) => void navigator.clipboard.writeText(text)}
+          />
         </div>
       </div>
       {process.env.NODE_ENV !== "production" ? (

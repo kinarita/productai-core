@@ -40,6 +40,8 @@ import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 import { ReplayBookmarkPanel } from "@/components/orchestration/ReplayBookmarkPanel";
+import { GovernanceJournalPanel } from "@/components/orchestration/GovernanceJournalPanel";
+import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/ReplayInterpretationHistoryPanel";
 
 const statusVariant = {
   pending: "warning" as const,
@@ -242,6 +244,17 @@ export function JudgmentView({ missionFilter, replayQuery: replayQueryProp }: Ju
             currentReplayQuery={replayQuery}
             linkBasePath="/judgment"
             focusCategory="attention_interpretation"
+            compact
+          />
+          <GovernanceJournalPanel
+            replayQuery={replayQuery}
+            missionId={missionFilter}
+            compact
+          />
+          <ReplayInterpretationHistoryPanel
+            replayQuery={replayQuery}
+            replayDiagnostics={replay.diagnostics}
+            linkBasePath="/judgment"
             compact
           />
           <ExecutiveWalkthroughPanel

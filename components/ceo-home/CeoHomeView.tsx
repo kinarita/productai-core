@@ -38,6 +38,8 @@ import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attent
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 import { ExecutiveReplayWorkspace } from "@/components/orchestration/ExecutiveReplayWorkspace";
+import { ExecutiveReviewSession } from "@/components/orchestration/ExecutiveReviewSession";
+import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
 
 const healthVariant = {
   stable: "success" as const,
@@ -58,6 +60,9 @@ interface CeoHomeViewProps {
 }
 
 export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
+  const preferredInterpretationPreset = useReplayPersonalizationStore(
+    (s) => s.preferredInterpretationPreset
+  );
   const missions = useMissionStore((s) => s.missions);
   const decisions = useOrganizationStore((s) => s.decisions);
   const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
@@ -429,6 +434,14 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           replayQuery={replayQuery}
           replayDiagnostics={diagnostics}
           linkBasePath="/ceo-home"
+        />
+
+        <ExecutiveReviewSession
+          replayQuery={replayQuery}
+          replayDiagnostics={diagnostics}
+          interpretationPreset={preferredInterpretationPreset}
+          linkBasePath="/ceo-home"
+          onExportDigest={(text) => void navigator.clipboard.writeText(text)}
         />
 
         <ExecutiveWalkthroughPanel

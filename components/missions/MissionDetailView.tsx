@@ -68,6 +68,8 @@ import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attent
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 import { ReplayBookmarkPanel } from "@/components/orchestration/ReplayBookmarkPanel";
+import { GovernanceJournalPanel } from "@/components/orchestration/GovernanceJournalPanel";
+import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/ReplayInterpretationHistoryPanel";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -906,6 +908,26 @@ export function MissionDetailView({
               focusCategory="governance_review"
               compact
             />
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Governance journaling"
+              description="Human interpretation continuity for this mission"
+            />
+            <GovernanceJournalPanel
+              replayQuery={{ ...replayQuery, mission: missionId }}
+              missionId={missionId}
+              compact
+            />
+            <div className="mt-3">
+              <ReplayInterpretationHistoryPanel
+                replayQuery={{ ...replayQuery, mission: missionId }}
+                replayDiagnostics={replayDiagnostics}
+                linkBasePath="/runtime-cost"
+                compact
+              />
+            </div>
           </Card>
 
           <ExecutiveWalkthroughPanel

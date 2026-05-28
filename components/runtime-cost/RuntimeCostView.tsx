@@ -67,6 +67,13 @@ import { fetchReplaySeedDiagnostics } from "@/lib/services/replaySeedRefresh";
 import type { ReplaySeedDiagnostics } from "@/lib/replay-query/replaySeedDiagnostics";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 import { ExecutiveReplayWorkspace } from "@/components/orchestration/ExecutiveReplayWorkspace";
+import { ExecutiveReviewSession } from "@/components/orchestration/ExecutiveReviewSession";
+import {
+  buildExecutiveGovernanceDigest,
+  formatExecutiveGovernanceDigest,
+} from "@/lib/orchestration/governance-history/governanceDigest";
+import { useReplayInterpretationStore } from "@/lib/store/replayInterpretationStore";
+import { useGovernanceJournalStore } from "@/lib/store/governanceJournalStore";
 import { getReplayInterpretationPreset } from "@/lib/orchestration/governance-history/replayInterpretationPresets";
 import {
   buildReplayInterpretationExportContext,
@@ -192,6 +199,8 @@ export function RuntimeCostView() {
     (s) => s.preferredInterpretationPreset
   );
   const readabilityMode = useReplayPersonalizationStore((s) => s.readabilityMode);
+  const interpretationRecords = useReplayInterpretationStore((s) => s.records);
+  const journalEntries = useGovernanceJournalStore((s) => s.entries);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -532,6 +541,35 @@ export function RuntimeCostView() {
         continuityCategory: "continuity_replay",
         advisoryLevel: "advisory_low",
         replayTags: ["replay", "export", "interpretation"],
+        replaySeverity: "low",
+        replaySource: "coo",
+      }),
+    });
+  };
+
+  const exportGovernanceDigest = () => {
+    const digest = buildExecutiveGovernanceDigest({
+      interpretations: interpretationRecords,
+      journals: journalEntries,
+    });
+    const text = formatExecutiveGovernanceDigest(digest);
+    void navigator.clipboard.writeText(text);
+    addFeedItem({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: "organization",
+      missionName: "Organization",
+      message:
+        "COO exported executive governance digest for reflective continuity reading (recommendation-only).",
+      status: "active",
+      requiresCeoApproval: false,
+      ...buildReplayMetadata({
+        governanceCategory: "governance_replay",
+        replayCategory: "replay_summary",
+        continuityCategory: "continuity_governance",
+        advisoryLevel: "advisory_low",
+        replayTags: ["replay", "digest", "export"],
         replaySeverity: "low",
         replaySource: "coo",
       }),
@@ -1280,6 +1318,7 @@ export function RuntimeCostView() {
               summary={replaySummary}
               onCopy={copyReplaySummary}
               onExportInterpretation={exportReplayInterpretation}
+              onExportGovernanceDigest={exportGovernanceDigest}
               readabilityMode={readabilityMode}
               interpretationPresetTitle={interpretationPresetTitle}
               bookmarkContinuityNote="Replay bookmarks help maintain continuity across governance interpretation sessions."
@@ -1290,6 +1329,7 @@ export function RuntimeCostView() {
               shareHref={`/runtime-cost${filterQuery}`}
               onShare={shareReplayView}
               onExportInterpretation={exportReplayInterpretation}
+              onExportGovernanceDigest={exportGovernanceDigest}
             />
           </div>
           <div className="mt-3">
@@ -1408,6 +1448,14 @@ export function RuntimeCostView() {
           replayDiagnostics={replayDiagnostics}
           replaySummary={replaySummary}
           linkBasePath="/runtime-cost"
+        />
+
+        <ExecutiveReviewSession
+          replayQuery={replayQuery}
+          replayDiagnostics={replayDiagnostics}
+          interpretationPreset={preferredInterpretationPreset}
+          linkBasePath="/runtime-cost"
+          onExportDigest={(text) => void navigator.clipboard.writeText(text)}
         />
 
         <ExecutiveWalkthroughPanel

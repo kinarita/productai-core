@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-8 replay interpretation history and governance journaling)
+
+- Replay interpretation history store and panel with explicit human-triggered recording.
+- Governance journal store, panel, and entry cards (human-authored interpretation only).
+- Executive governance digest, replay comparison, interpretation timeline, and executive review session.
+- Governance digest export on ReplayShareCard and ReplaySummaryPanel.
+- Cross-view integration on CEO Home, Runtime, Mission, Judgment, and Organization Feed.
+- Documentation: `docs/PHASE7_REPLAY_INTERPRETATION_HISTORY.md`.
+
 ### Added (Phase 7-7 executive replay personalization and governance bookmarking)
 
 - Replay bookmarks (`replayBookmarkStore`, `ReplayBookmarkPanel`) for view continuity across sessions.

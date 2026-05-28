@@ -6,6 +6,7 @@ export function ReplaySummaryPanel({
   summary,
   onCopy,
   onExportInterpretation,
+  onExportGovernanceDigest,
   readabilityMode = "compact",
   interpretationPresetTitle,
   bookmarkContinuityNote,
@@ -13,6 +14,7 @@ export function ReplaySummaryPanel({
   summary: ExecutiveReplaySummary;
   onCopy: () => void;
   onExportInterpretation?: () => void;
+  onExportGovernanceDigest?: () => void;
   readabilityMode?: "compact" | "expanded";
   interpretationPresetTitle?: string;
   bookmarkContinuityNote?: string;
@@ -93,6 +95,15 @@ export function ReplaySummaryPanel({
             className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-accent hover:bg-surface"
           >
             Export replay interpretation context
+          </button>
+        ) : null}
+        {onExportGovernanceDigest ? (
+          <button
+            type="button"
+            onClick={onExportGovernanceDigest}
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Export governance digest
           </button>
         ) : null}
       </div>
