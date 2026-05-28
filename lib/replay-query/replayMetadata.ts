@@ -1,4 +1,5 @@
 import type { OrganizationFeedItem } from "@/types/productai";
+import { replayTaxonomyFallbacks } from "@/lib/replay-query/replayTaxonomy";
 import { validateReplayMetadata } from "@/lib/replay-query/replayValidation";
 
 export interface ReplayMetadata {
@@ -12,13 +13,13 @@ export interface ReplayMetadata {
 }
 
 const defaults: Required<ReplayMetadata> = {
-  governanceCategory: "governance_summary",
-  replayCategory: "replay_governance",
-  continuityCategory: "continuity_governance",
-  advisoryLevel: "advisory",
+  governanceCategory: replayTaxonomyFallbacks.governanceCategory,
+  replayCategory: replayTaxonomyFallbacks.replayCategory,
+  continuityCategory: replayTaxonomyFallbacks.continuityCategory,
+  advisoryLevel: replayTaxonomyFallbacks.advisoryLevel,
   replayTags: [],
-  replaySeverity: "moderate",
-  replaySource: "governance",
+  replaySeverity: replayTaxonomyFallbacks.replaySeverity,
+  replaySource: replayTaxonomyFallbacks.replaySource,
 };
 
 export function resolveReplaySeverity(input: {

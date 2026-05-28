@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 6-3 replay taxonomy SSOT and query vocabulary consistency)
+
+- Central taxonomy source module for replay/governance metadata vocabulary.
+- Taxonomy-driven replay validation with shared fallback strategy.
+- Taxonomy-driven replay labels/tokens for UI chip and label consistency.
+- Canonical continuity output hardening in replay query builder with legacy alias parsing support.
+- Dev-only replay metadata normalization metrics and runtime observability block.
+- Documentation: `docs/PHASE6_METADATA_TAXONOMY.md`.
+
 ### Added (Phase 6-2 metadata API verification and safe fallback hardening)
 
 - Replay metadata validation helper for taxonomy normalization and compatibility fallback.

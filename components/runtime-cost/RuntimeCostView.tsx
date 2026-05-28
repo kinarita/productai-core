@@ -57,8 +57,11 @@ import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummar
 import { ReplayFilterChips } from "@/components/orchestration/ReplayFilterChips";
 import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
+import { replaySeverityOptions } from "@/lib/replay-query/replayTokens";
+import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 
 export function RuntimeCostView() {
+  const validationMetrics = getReplayValidationMetrics();
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
   const tokenUsage = useRuntimeStore((s) => s.tokenUsage);
@@ -1108,13 +1111,7 @@ export function RuntimeCostView() {
               <ReplayFilterChips
                 value={timelineSeverityFilter}
                 onChange={(v) => handleReplayFilterChange("severity", v)}
-                options={[
-                  { id: "all", label: "all" },
-                  { id: "low", label: "low" },
-                  { id: "moderate", label: "moderate" },
-                  { id: "elevated", label: "elevated" },
-                  { id: "critical_review", label: "critical review" },
-                ]}
+                options={replaySeverityOptions()}
               />
             </div>
             <div>
@@ -1210,6 +1207,18 @@ export function RuntimeCostView() {
             </p>
           )}
         </Card>
+        {process.env.NODE_ENV !== "production" ? (
+          <Card title="Replay Metadata Normalization">
+            <ul className="space-y-1 text-xs text-muted">
+              <li>Alias normalized: {validationMetrics.aliasNormalizationCount}</li>
+              <li>Invalid replay category fallback: {validationMetrics.invalidReplayCategoryCount}</li>
+              <li>Invalid continuity fallback: {validationMetrics.invalidContinuityCount}</li>
+              <li>Invalid severity fallback: {validationMetrics.invalidSeverityCount}</li>
+              <li>Invalid source fallback: {validationMetrics.invalidSourceCount}</li>
+              <li>Invalid advisory fallback: {validationMetrics.invalidAdvisoryCount}</li>
+            </ul>
+          </Card>
+        ) : null}
       </div>
     </AppShell>
   );

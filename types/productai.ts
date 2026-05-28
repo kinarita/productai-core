@@ -1,3 +1,12 @@
+import type {
+  AdvisoryLevel,
+  ContinuityCategory,
+  GovernanceCategory,
+  ReplayCategory,
+  ReplaySeverity,
+  ReplaySource,
+} from "@/lib/replay-query/replayTaxonomy";
+
 export type MissionLifecyclePhase =
   | "Idea"
   | "Requirements"
@@ -215,49 +224,13 @@ export interface OrganizationFeedItem {
   updatedAt?: string;
   syncedAt?: string;
   requiresCeoApproval?: boolean;
-  governanceCategory?:
-    | "governance_summary"
-    | "governance_review"
-    | "governance_continuity"
-    | "governance_runtime"
-    | "governance_processing"
-    | "governance_replay";
-  replayCategory?:
-    | "replay_summary"
-    | "replay_memory"
-    | "replay_review"
-    | "replay_runtime"
-    | "replay_governance"
-    | "replay_advisory"
-    | "replay_timeline";
-  continuityCategory?:
-    | "continuity_stable"
-    | "continuity_review"
-    | "continuity_advisory"
-    | "continuity_runtime"
-    | "continuity_governance"
-    | "continuity_replay";
-  advisoryLevel?:
-    | "informational"
-    | "advisory"
-    | "elevated"
-    | "advisory_low"
-    | "advisory_moderate"
-    | "advisory_elevated";
+  governanceCategory?: GovernanceCategory;
+  replayCategory?: ReplayCategory;
+  continuityCategory?: ContinuityCategory;
+  advisoryLevel?: AdvisoryLevel | "advisory_low" | "advisory_moderate" | "advisory_elevated";
   replayTags?: string[];
-  replaySeverity?: "low" | "moderate" | "elevated" | "critical_review";
-  replaySource?:
-    | "queue"
-    | "governance"
-    | "runtime"
-    | "replay"
-    | "memory"
-    | "orchestration"
-    | "advisory"
-    | "runtime_observer"
-    | "coo"
-    | "ceo"
-    | "system";
+  replaySeverity?: ReplaySeverity;
+  replaySource?: ReplaySource | "runtime_observer" | "coo" | "ceo" | "system";
 }
 
 export interface RuntimeCost {

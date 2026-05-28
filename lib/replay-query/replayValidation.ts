@@ -1,50 +1,26 @@
-import type { OrganizationFeedItem } from "@/types/productai";
-
-type AdvisoryLevel = NonNullable<OrganizationFeedItem["advisoryLevel"]>;
-type ReplaySource = NonNullable<OrganizationFeedItem["replaySource"]>;
-type ReplayCategory = NonNullable<OrganizationFeedItem["replayCategory"]>;
-type ContinuityCategory = NonNullable<OrganizationFeedItem["continuityCategory"]>;
-type ReplaySeverity = NonNullable<OrganizationFeedItem["replaySeverity"]>;
-type GovernanceCategory = NonNullable<OrganizationFeedItem["governanceCategory"]>;
-
-const replayCategorySet = new Set<ReplayCategory>([
-  "replay_summary",
-  "replay_memory",
-  "replay_review",
-  "replay_runtime",
-  "replay_governance",
-  "replay_advisory",
-  "replay_timeline",
-]);
-
-const continuityCategorySet = new Set<ContinuityCategory>([
-  "continuity_stable",
-  "continuity_review",
-  "continuity_advisory",
-  "continuity_runtime",
-  "continuity_governance",
-  "continuity_replay",
-]);
-
-const replaySeveritySet = new Set<ReplaySeverity>(["low", "moderate", "elevated", "critical_review"]);
-const replaySourceSet = new Set<ReplaySource>([
-  "queue",
-  "governance",
-  "runtime",
-  "replay",
-  "memory",
-  "orchestration",
-  "advisory",
-]);
-const advisoryLevelSet = new Set<AdvisoryLevel>(["informational", "advisory", "elevated"]);
-const governanceCategorySet = new Set<GovernanceCategory>([
-  "governance_summary",
-  "governance_review",
-  "governance_continuity",
-  "governance_runtime",
-  "governance_processing",
-  "governance_replay",
-]);
+import {
+  ADVISORY_LEVELS,
+  CONTINUITY_CATEGORIES,
+  GOVERNANCE_CATEGORIES,
+  REPLAY_CATEGORIES,
+  REPLAY_SEVERITIES,
+  REPLAY_SOURCES,
+  replayTaxonomyFallbacks,
+  type AdvisoryLevel,
+  type ContinuityCategory,
+  type GovernanceCategory,
+  type ReplayCategory,
+  type ReplaySeverity,
+  type ReplaySource,
+} from "@/lib/replay-query/replayTaxonomy";
+import {
+  recordAliasNormalization,
+  recordInvalidAdvisory,
+  recordInvalidContinuity,
+  recordInvalidReplayCategory,
+  recordInvalidSeverity,
+  recordInvalidSource,
+} from "@/lib/replay-query/replayValidationMetrics";
 
 function warnNormalization(field: string, value: unknown, fallback: string) {
   if (process.env.NODE_ENV === "production") return;
@@ -53,61 +29,72 @@ function warnNormalization(field: string, value: unknown, fallback: string) {
   );
 }
 
+function findTaxonomyValue<T extends string>(
+  entries: readonly { value: T; aliases?: readonly string[] }[],
+  value: unknown
+): { value: T; aliasMatched: boolean } | null {
+  if (typeof value !== "string") return null;
+  const canonical = entries.find((entry) => entry.value === value);
+  if (canonical) return { value: canonical.value, aliasMatched: false };
+  const alias = entries.find((entry) => entry.aliases?.includes(value));
+  if (!alias) return null;
+  return { value: alias.value, aliasMatched: true };
+}
+
 export function coerceReplayCategory(value: unknown): ReplayCategory {
-  if (typeof value === "string" && replayCategorySet.has(value as ReplayCategory)) {
-    return value as ReplayCategory;
-  }
+  const normalized = findTaxonomyValue(REPLAY_CATEGORIES, value);
+  if (normalized) return normalized.value;
+  recordInvalidReplayCategory();
   if (value != null) warnNormalization("replayCategory", value, "replay_governance");
-  return "replay_governance";
+  return replayTaxonomyFallbacks.replayCategory;
 }
 
 export function coerceContinuityCategory(value: unknown): ContinuityCategory {
-  if (value === "stable") return "continuity_stable";
-  if (value === "degraded") return "continuity_advisory";
-  if (typeof value === "string" && continuityCategorySet.has(value as ContinuityCategory)) {
-    return value as ContinuityCategory;
+  const normalized = findTaxonomyValue(CONTINUITY_CATEGORIES, value);
+  if (normalized) {
+    if (normalized.aliasMatched) recordAliasNormalization();
+    return normalized.value;
   }
+  recordInvalidContinuity();
   if (value != null) warnNormalization("continuityCategory", value, "continuity_governance");
-  return "continuity_governance";
+  return replayTaxonomyFallbacks.continuityCategory;
 }
 
 export function coerceReplaySeverity(value: unknown): ReplaySeverity {
-  if (typeof value === "string" && replaySeveritySet.has(value as ReplaySeverity)) {
-    return value as ReplaySeverity;
-  }
+  const normalized = findTaxonomyValue(REPLAY_SEVERITIES, value);
+  if (normalized) return normalized.value;
+  recordInvalidSeverity();
   if (value != null) warnNormalization("replaySeverity", value, "moderate");
-  return "moderate";
+  return replayTaxonomyFallbacks.replaySeverity;
 }
 
 export function coerceReplaySource(value: unknown): ReplaySource {
-  if (value === "runtime_observer") return "runtime";
-  if (value === "coo") return "orchestration";
-  if (value === "ceo") return "advisory";
-  if (value === "system") return "governance";
-  if (typeof value === "string" && replaySourceSet.has(value as ReplaySource)) {
-    return value as ReplaySource;
+  const normalized = findTaxonomyValue(REPLAY_SOURCES, value);
+  if (normalized) {
+    if (normalized.aliasMatched) recordAliasNormalization();
+    return normalized.value;
   }
+  recordInvalidSource();
   if (value != null) warnNormalization("replaySource", value, "governance");
-  return "governance";
+  return replayTaxonomyFallbacks.replaySource;
 }
 
 export function coerceAdvisoryLevel(value: unknown): AdvisoryLevel {
-  if (value === "advisory_low") return "informational";
-  if (value === "advisory_moderate") return "advisory";
-  if (value === "advisory_elevated") return "elevated";
-  if (typeof value === "string" && advisoryLevelSet.has(value as AdvisoryLevel)) {
-    return value as AdvisoryLevel;
+  const normalized = findTaxonomyValue(ADVISORY_LEVELS, value);
+  if (normalized) {
+    if (normalized.aliasMatched) recordAliasNormalization();
+    return normalized.value;
   }
+  recordInvalidAdvisory();
   if (value != null) warnNormalization("advisoryLevel", value, "advisory");
-  return "advisory";
+  return replayTaxonomyFallbacks.advisoryLevel;
 }
 
 export function coerceGovernanceCategory(value: unknown): GovernanceCategory {
-  if (typeof value === "string" && governanceCategorySet.has(value as GovernanceCategory)) {
-    return value as GovernanceCategory;
-  }
+  const normalized = findTaxonomyValue(GOVERNANCE_CATEGORIES, value);
+  if (normalized) return normalized.value;
   if (value != null) warnNormalization("governanceCategory", value, "governance_summary");
-  return "governance_summary";
+  return replayTaxonomyFallbacks.governanceCategory;
 }
 
 export function coerceReplayTags(value: unknown): string[] {

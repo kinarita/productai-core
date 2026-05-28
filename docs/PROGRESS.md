@@ -631,3 +631,12 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added metadata API verification scripts for POST/GET roundtrip and fallback coverage.
 - Documented verification flow, fallback philosophy, and compatibility mapping.
 
+## 2026-05-28 (Phase 6-3 replay taxonomy SSOT and query consistency)
+
+- Added centralized replay taxonomy module as SSOT for values, labels, descriptions, tone, and aliases.
+- Refactored replay validation to consume taxonomy definitions and unified fallback constants.
+- Unified replay labels/tokens with taxonomy-driven generation for severity/continuity/category/source vocabulary.
+- Hardened replay query builder to emit canonical continuity values only while parser keeps legacy alias compatibility.
+- Added dev-only replay validation observability metrics and runtime visibility section.
+- Added Phase 6 taxonomy architecture documentation for SSOT and compatibility flow.
+
