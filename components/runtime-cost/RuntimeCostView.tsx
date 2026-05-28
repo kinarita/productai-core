@@ -24,6 +24,9 @@ import { GovernanceAnalyticsCard } from "@/components/orchestration/GovernanceAn
 import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
 import { GovernanceFilterBar } from "@/components/orchestration/GovernanceFilterBar";
 import { OperationalReplayPanel } from "@/components/orchestration/OperationalReplayPanel";
+import { GovernanceTrendCard } from "@/components/orchestration/GovernanceTrendCard";
+import { ReplayShareCard } from "@/components/orchestration/ReplayShareCard";
+import { ReplaySummaryPanel } from "@/components/orchestration/ReplaySummaryPanel";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
@@ -42,6 +45,8 @@ import { runtimeCosts } from "@/data/mockData";
 import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel";
 import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
 import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
+import { buildExecutiveReplaySummary } from "@/lib/orchestration/governance-history/replaySummary";
+import { useReplaySnapshotStore } from "@/lib/store/replaySnapshotStore";
 
 export function RuntimeCostView() {
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
@@ -134,6 +139,8 @@ export function RuntimeCostView() {
   const [timelineSeverityFilter, setTimelineSeverityFilter] = useState<string>("all");
   const [timelineSourceFilter, setTimelineSourceFilter] = useState<string>("all");
   const [timelineReasonFilter, setTimelineReasonFilter] = useState<string>("all");
+  const savedSnapshots = useReplaySnapshotStore((s) => s.snapshots);
+  const recordSnapshot = useReplaySnapshotStore((s) => s.recordSnapshot);
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
@@ -147,12 +154,19 @@ export function RuntimeCostView() {
     const mission = params.get("mission");
     const review = params.get("review");
     const continuity = params.get("continuity");
+    const eventType = params.get("eventType");
+    const source = params.get("source");
+    const reasonCategory = params.get("reasonCategory");
     if (category) setFilterCategory(category);
     if (severity) setFilterSeverity(severity);
+    if (severity) setTimelineSeverityFilter(severity);
     if (advisory) setFilterAdvisory(advisory);
     if (mission) setFilterMission(mission);
     if (review) setFilterReviewState(review);
     if (continuity) setFilterContinuity(continuity);
+    if (eventType) setTimelineEventTypeFilter(eventType);
+    if (source) setTimelineSourceFilter(source);
+    if (reasonCategory) setTimelineReasonFilter(reasonCategory);
   }, []);
 
   const apiHealth = getOverallApiHealth(providerHealth);
@@ -230,16 +244,32 @@ export function RuntimeCostView() {
     if (filterMission !== "all") params.set("mission", filterMission);
     if (filterReviewState !== "all") params.set("review", filterReviewState);
     if (filterContinuity !== "all") params.set("continuity", filterContinuity);
+    if (timelineEventTypeFilter !== "all") params.set("eventType", timelineEventTypeFilter);
+    if (timelineSourceFilter !== "all") params.set("source", timelineSourceFilter);
+    if (timelineReasonFilter !== "all") params.set("reasonCategory", timelineReasonFilter);
     const text = params.toString();
     return text ? `?${text}` : "";
-  }, [filterAdvisory, filterCategory, filterContinuity, filterMission, filterReviewState, filterSeverity]);
+  }, [
+    filterAdvisory,
+    filterCategory,
+    filterContinuity,
+    filterMission,
+    filterReviewState,
+    filterSeverity,
+    timelineEventTypeFilter,
+    timelineReasonFilter,
+    timelineSourceFilter,
+  ]);
 
   const handleFilterChange = (
     key: "category" | "severity" | "advisory" | "mission" | "review" | "continuity",
     value: string
   ) => {
     if (key === "category") setFilterCategory(value);
-    if (key === "severity") setFilterSeverity(value);
+    if (key === "severity") {
+      setFilterSeverity(value);
+      setTimelineSeverityFilter(value);
+    }
     if (key === "advisory") setFilterAdvisory(value);
     if (key === "mission") setFilterMission(value);
     if (key === "review") setFilterReviewState(value);
@@ -249,6 +279,37 @@ export function RuntimeCostView() {
     else params.set(key, value);
     const query = params.toString();
     window.history.replaceState({}, "", query ? `/runtime-cost?${query}` : "/runtime-cost");
+  };
+  const handleReplayFilterChange = (
+    key: "eventType" | "severity" | "source" | "reasonCategory",
+    value: string
+  ) => {
+    if (key === "eventType") setTimelineEventTypeFilter(value);
+    if (key === "severity") {
+      setTimelineSeverityFilter(value);
+      setFilterSeverity(value);
+    }
+    if (key === "source") setTimelineSourceFilter(value);
+    if (key === "reasonCategory") setTimelineReasonFilter(value);
+    const params = new URLSearchParams(window.location.search);
+    if (value === "all") params.delete(key);
+    else params.set(key, value);
+    const query = params.toString();
+    window.history.replaceState({}, "", query ? `/runtime-cost?${query}` : "/runtime-cost");
+  };
+  const copyReplaySummary = () => {
+    const text = [
+      replaySummary.governanceHealthSummary,
+      replaySummary.reviewPressureSummary,
+      replaySummary.runtimeGovernanceSummary,
+      ...replaySummary.keyContinuityDrivers,
+      ...replaySummary.recommendedExecutiveFocus,
+    ].join("\n");
+    void navigator.clipboard.writeText(text);
+  };
+  const shareReplayView = () => {
+    const href = `${window.location.origin}/runtime-cost${filterQuery}`;
+    void navigator.clipboard.writeText(href);
   };
 
   const publishGovernanceSummary = () => {
@@ -275,8 +336,9 @@ export function RuntimeCostView() {
         feedItems,
         runtimeAlerts: alerts,
         syncWarnings,
+        persistedSnapshots: savedSnapshots,
       }),
-    [alerts, feedItems, filteredProcessingSessions, processingAuditTrail, syncWarnings]
+    [alerts, feedItems, filteredProcessingSessions, processingAuditTrail, savedSnapshots, syncWarnings]
   );
   const replayEvents = useMemo(
     () =>
@@ -298,6 +360,55 @@ export function RuntimeCostView() {
     }
     return `Governance score shifted because review density (${reviewDensity}) and runtime advisories (${runtimeDensity}) increased across the latest ${recent.length} events.`;
   }, [replayEvents]);
+  const replayExplanation = useMemo(
+    () =>
+      `Governance replay indicates sustained review concentration around runtime-sensitive operational continuity within ${replayEvents.length} filtered event(s).`,
+    [replayEvents.length]
+  );
+  const continuityShiftExplanation = useMemo(() => {
+    const snapshots = replay.snapshots.slice(0, 2);
+    if (snapshots.length < 2) {
+      return "Continuity shift baseline is forming from newly persisted replay snapshots.";
+    }
+    const delta = snapshots[0].governanceHealthScore - snapshots[1].governanceHealthScore;
+    if (delta === 0) return "Continuity shift is neutral compared with the prior replay snapshot.";
+    return delta > 0
+      ? `Continuity shift improved by ${delta} points versus the prior replay snapshot.`
+      : `Continuity shift decreased by ${Math.abs(delta)} points versus the prior replay snapshot.`;
+  }, [replay.snapshots]);
+  const trendPoints = useMemo(
+    () =>
+      replay.snapshots.slice(0, 5).map((snapshot) => ({
+        label: snapshot.createdAt,
+        governanceHealthScore: snapshot.governanceHealthScore,
+        reviewDensity: snapshot.reviewRequiredCount,
+        runtimeInstability: snapshot.runtimeInstabilityCount,
+        advisoryDensity: snapshot.elevatedRiskCount,
+      })),
+    [replay.snapshots]
+  );
+  const replaySummary = useMemo(
+    () =>
+      buildExecutiveReplaySummary({
+        events: replayEvents,
+        snapshots: replay.snapshots,
+        processingSessions: filteredProcessingSessions,
+        memoryItems: replay.memoryItems,
+        continuityExplanation: filteredAnalytics.continuityExplanation,
+      }),
+    [
+      filteredAnalytics.continuityExplanation,
+      filteredProcessingSessions,
+      replay.memoryItems,
+      replay.snapshots,
+      replayEvents,
+    ]
+  );
+
+  useEffect(() => {
+    if (!replay.latestSnapshot.id) return;
+    recordSnapshot(replay.latestSnapshot);
+  }, [recordSnapshot, replay.latestSnapshot]);
 
   return (
     <AppShell
@@ -889,6 +1000,8 @@ export function RuntimeCostView() {
             explanation={filteredAnalytics.continuityExplanation}
             breakdown={filteredAnalytics.scoreBreakdown}
             historicalExplanation={historicalContinuityExplanation}
+            replayExplanation={replayExplanation}
+            continuityShiftExplanation={continuityShiftExplanation}
           />
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <Link href={`/organization-feed?gov=continuity_events`} className="font-medium text-accent hover:underline">
@@ -906,7 +1019,7 @@ export function RuntimeCostView() {
               Event type
               <select
                 value={timelineEventTypeFilter}
-                onChange={(e) => setTimelineEventTypeFilter(e.target.value)}
+                onChange={(e) => handleReplayFilterChange("eventType", e.target.value)}
                 className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
               >
                 <option value="all">all</option>
@@ -921,7 +1034,7 @@ export function RuntimeCostView() {
               Severity
               <select
                 value={timelineSeverityFilter}
-                onChange={(e) => setTimelineSeverityFilter(e.target.value)}
+                onChange={(e) => handleReplayFilterChange("severity", e.target.value)}
                 className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
               >
                 <option value="all">all</option>
@@ -935,7 +1048,7 @@ export function RuntimeCostView() {
               Source
               <select
                 value={timelineSourceFilter}
-                onChange={(e) => setTimelineSourceFilter(e.target.value)}
+                onChange={(e) => handleReplayFilterChange("source", e.target.value)}
                 className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
               >
                 <option value="all">all</option>
@@ -949,7 +1062,7 @@ export function RuntimeCostView() {
               Reason category
               <select
                 value={timelineReasonFilter}
-                onChange={(e) => setTimelineReasonFilter(e.target.value)}
+                onChange={(e) => handleReplayFilterChange("reasonCategory", e.target.value)}
                 className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
               >
                 <option value="all">all</option>
@@ -965,6 +1078,13 @@ export function RuntimeCostView() {
               replay={{ ...replay, events: replayEvents }}
               missionNameMap={missionNameMap}
             />
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <GovernanceTrendCard points={trendPoints} />
+            <ReplaySummaryPanel summary={replaySummary} onCopy={copyReplaySummary} />
+          </div>
+          <div className="mt-3">
+            <ReplayShareCard shareHref={`/runtime-cost${filterQuery}`} onShare={shareReplayView} />
           </div>
         </Card>
 

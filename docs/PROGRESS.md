@@ -570,3 +570,17 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
   - AI summarizes and recommends.
   - Human operators decide priorities and approvals.
 
+## 2026-05-28 (Phase 5-7 shareable executive governance replay)
+
+- Added full replay URL synchronization in Runtime & Cost for executive shareability.
+- Added Organization Feed governance chip/query bidirectional sync (`gov`).
+- Added portable executive query schema coverage in CEO Home and Mission Detail.
+- Added replay snapshot persistence (`replaySnapshotStore`) with local-first continuity history.
+- Added Historical Governance Trend visibility in Runtime replay.
+- Added executive replay summary model and summary generation.
+- Added replay summary/export panel actions:
+  - Copy Replay Summary
+  - Share Replay View
+- Added continuity-enhanced governance memory phrasing based on recent replay events.
+- Extended explainability continuity with replay and continuity-shift narratives.
+

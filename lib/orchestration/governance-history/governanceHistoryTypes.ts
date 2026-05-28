@@ -69,3 +69,21 @@ export interface GovernanceReplayBundle {
   continuityExplanation: GovernanceContinuityExplanation;
   memoryItems: GovernanceMemoryItem[];
 }
+
+export interface GovernanceTrendPoint {
+  label: string;
+  governanceHealthScore: number;
+  reviewDensity: number;
+  runtimeInstability: number;
+  advisoryDensity: number;
+}
+
+export interface ExecutiveReplaySummary {
+  generatedAt: string;
+  replayWindow: string;
+  governanceHealthSummary: string;
+  keyContinuityDrivers: string[];
+  reviewPressureSummary: string;
+  runtimeGovernanceSummary: string;
+  recommendedExecutiveFocus: string[];
+}

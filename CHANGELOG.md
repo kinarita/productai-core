@@ -4,6 +4,17 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-7 shareable executive governance replay views)
+
+- Full Runtime replay query sync for mission/eventType/severity/source/reasonCategory/continuity/advisory/review.
+- Organization Feed `gov` chip ↔ URL bidirectional sync for portable governance filtering.
+- Portable executive query schema application in CEO Home and Mission Detail views.
+- Replay snapshot persistence store with local-first continuity history.
+- Historical governance trend card (health, review, runtime, advisory density).
+- Executive replay summary model + generation and replay summary panel.
+- Replay share/export actions (copy summary, share replay view URL).
+- Documentation: `docs/PHASE5_EXECUTIVE_REPLAY.md`.
+
 ### Added (Phase 5-6 governance memory and operational replay)
 
 - Governance history architecture and timeline event model (`governance-history` modules).

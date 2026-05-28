@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
@@ -19,6 +20,7 @@ import type { OrganizationFeedItem } from "@/types/productai";
 import { ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel";
+import { ReplayFilterChips } from "@/components/orchestration/ReplayFilterChips";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -127,8 +129,13 @@ export function OrganizationFeedView({
   const setFeedFilter = useUiStore((s) => s.setFeedFilter);
   const missions = useMissionStore((s) => s.missions);
   const missionNameMap = Object.fromEntries(missions.map((m) => [m.id, m.name]));
+  const [activeGovernanceFilter, setActiveGovernanceFilter] = useState<string>(governanceFilter ?? "all");
   const filterChipClass =
     "rounded-md border border-border bg-surface px-2 py-1 text-muted";
+
+  useEffect(() => {
+    setActiveGovernanceFilter(governanceFilter ?? "all");
+  }, [governanceFilter]);
 
   let filtered = feedItems;
 
@@ -141,33 +148,55 @@ export function OrganizationFeedView({
   if (typeFilter) {
     filtered = filtered.filter((f) => f.type === typeFilter);
   }
-  if (governanceFilter) {
+  if (activeGovernanceFilter && activeGovernanceFilter !== "all") {
     filtered = filtered.filter((item) => {
       const message = item.message.toLowerCase();
-      if (governanceFilter === "governance_summary") {
+      if (activeGovernanceFilter === "governance_summary") {
         return message.includes("governance summary") || message.includes("governance visibility");
       }
-      if (governanceFilter === "review_lifecycle") {
+      if (activeGovernanceFilter === "review_lifecycle") {
         return message.includes("review");
       }
-      if (governanceFilter === "continuity_events") {
+      if (activeGovernanceFilter === "continuity_events" || activeGovernanceFilter === "continuity") {
         return message.includes("continuity");
       }
-      if (governanceFilter === "advisory_events") {
+      if (activeGovernanceFilter === "advisory_events") {
         return message.includes("advisory");
       }
-      if (governanceFilter === "runtime_governance") {
+      if (activeGovernanceFilter === "runtime_governance") {
         return item.type === "runtime" || message.includes("runtime observer");
       }
-      if (governanceFilter === "processing_governance") {
+      if (activeGovernanceFilter === "processing_governance") {
         return message.includes("processing governance") || message.includes("processing review");
       }
-      if (governanceFilter === "timeline_memory") {
+      if (activeGovernanceFilter === "timeline_memory") {
         return message.includes("snapshot") || message.includes("timeline") || message.includes("governance memory");
       }
       return true;
     });
   }
+  const govOptions = useMemo(
+    () => [
+      { id: "all", label: "all" },
+      { id: "governance_summary", label: "summary" },
+      { id: "review_lifecycle", label: "review lifecycle" },
+      { id: "continuity", label: "continuity" },
+      { id: "advisory_events", label: "advisory" },
+      { id: "runtime_governance", label: "runtime governance" },
+      { id: "processing_governance", label: "processing governance" },
+      { id: "timeline_memory", label: "timeline & memory" },
+    ],
+    []
+  );
+  const onGovernanceFilterChange = (value: string) => {
+    setActiveGovernanceFilter(value);
+    const params = new URLSearchParams(window.location.search);
+    if (value === "all") params.delete("gov");
+    else params.set("gov", value);
+    const query = params.toString();
+    window.history.replaceState({}, "", query ? `/organization-feed?${query}` : "/organization-feed");
+  };
+
 
   filtered = filtered.filter((f) => matchesFeedFilter(f, activeFeedFilter));
   filtered = filtered.filter((f) => matchesStatus(f, statusFilter));
@@ -251,7 +280,7 @@ export function OrganizationFeedView({
       {missionFilter && (
         <MissionFilterBanner missionId={missionFilter} basePath="/organization-feed" />
       )}
-      {(missionFilter || taskFilter || typeFilter || statusFilter || governanceFilter) && (
+      {(missionFilter || taskFilter || typeFilter || statusFilter || activeGovernanceFilter !== "all") && (
         <div className="mb-3 flex flex-wrap gap-2 text-xs">
           {missionFilter ? (
             <span className={filterChipClass}>
@@ -261,7 +290,9 @@ export function OrganizationFeedView({
           {taskFilter ? <span className={filterChipClass}>task: {taskFilter}</span> : null}
           {typeFilter ? <span className={filterChipClass}>type: {typeFilter}</span> : null}
           {statusFilter ? <span className={filterChipClass}>status: {statusFilter}</span> : null}
-          {governanceFilter ? <span className={filterChipClass}>governance: {governanceFilter}</span> : null}
+          {activeGovernanceFilter !== "all" ? (
+            <span className={filterChipClass}>governance: {activeGovernanceFilter}</span>
+          ) : null}
           <span className={filterChipClass}>view: {activeFeedFilter}</span>
           <Link href="/organization-feed" className="rounded-md border border-border bg-background px-2 py-1 text-accent hover:bg-surface">
             Clear filters
@@ -270,27 +301,7 @@ export function OrganizationFeedView({
       )}
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
         <span className="text-muted">Governance:</span>
-        <Link href="/organization-feed?gov=governance_summary" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
-          summary
-        </Link>
-        <Link href="/organization-feed?gov=review_lifecycle" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
-          review lifecycle
-        </Link>
-        <Link href="/organization-feed?gov=continuity_events" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
-          continuity
-        </Link>
-        <Link href="/organization-feed?gov=advisory_events" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
-          advisory
-        </Link>
-        <Link href="/organization-feed?gov=runtime_governance" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
-          runtime governance
-        </Link>
-        <Link href="/organization-feed?gov=processing_governance" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
-          processing governance
-        </Link>
-        <Link href="/organization-feed?gov=timeline_memory" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
-          timeline & memory
-        </Link>
+        <ReplayFilterChips value={activeGovernanceFilter} options={govOptions} onChange={onGovernanceFilterChange} />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">

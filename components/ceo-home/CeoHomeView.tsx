@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card, StatCard } from "@/components/Card";
 import { Badge } from "@/components/Badge";
@@ -38,7 +39,21 @@ const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "suc
   completed: "success",
 };
 
-export function CeoHomeView() {
+interface CeoHomeViewProps {
+  severityFilter?: string;
+  missionFilter?: string;
+  governanceFilter?: string;
+  continuityFilter?: string;
+  advisoryFilter?: string;
+}
+
+export function CeoHomeView({
+  severityFilter,
+  missionFilter,
+  governanceFilter,
+  continuityFilter,
+  advisoryFilter,
+}: CeoHomeViewProps) {
   const missions = useMissionStore((s) => s.missions);
   const decisions = useOrganizationStore((s) => s.decisions);
   const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
@@ -46,6 +61,20 @@ export function CeoHomeView() {
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
   const tasks = useTaskStore((s) => s.tasks);
   const processingSessions = useProcessingStore((s) => s.getSessions());
+  const filteredProcessingSessions = processingSessions.filter((session) => {
+    if (missionFilter && missionFilter !== "all" && session.missionId !== missionFilter) return false;
+    if (severityFilter && severityFilter !== "all") {
+      if (!session.activeReasons.some((reason) => reason.severity === severityFilter)) return false;
+    }
+    if (continuityFilter === "degraded" && !session.reviewRequired) return false;
+    if (continuityFilter === "stable" && session.reviewRequired) return false;
+    if (advisoryFilter === "advisory" && !session.activeReasons.some((reason) => reason.advisoryOnly)) return false;
+    if (advisoryFilter === "decision" && !session.activeReasons.some((reason) => !reason.advisoryOnly)) return false;
+    if (governanceFilter === "runtime" && !session.activeReasons.some((r) => r.category === "runtime_stability")) {
+      return false;
+    }
+    return true;
+  });
   const importantTasks = getImportantTasks(tasks, 6);
   const recentlyCreated = getRecentlyCreatedTasks(tasks, 5);
   const dependencyWarnings = getDependencyWarnings(tasks).slice(0, 5);
@@ -58,9 +87,9 @@ export function CeoHomeView() {
   const orgHealth = computeOrganizationHealth(missions, runtimeAlerts);
   const activeMissions = missions.filter((m) => m.status === "active" || m.status === "planning");
   const pendingDecisions = decisions.filter((d) => d.status === "pending");
-  const processingAnalytics = buildProcessingAnalytics(processingSessions);
+  const processingAnalytics = buildProcessingAnalytics(filteredProcessingSessions);
   const executiveSnapshot = buildExecutiveGovernanceSnapshot({
-    processingSessions,
+    processingSessions: filteredProcessingSessions,
     runtimeAlerts,
     syncWarnings,
     feedItems,
@@ -68,6 +97,16 @@ export function CeoHomeView() {
   const missionRiskRows = Object.entries(processingAnalytics.missionRisk)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
+  const replayQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    if (severityFilter && severityFilter !== "all") params.set("severity", severityFilter);
+    if (missionFilter && missionFilter !== "all") params.set("mission", missionFilter);
+    if (governanceFilter && governanceFilter !== "all") params.set("governance", governanceFilter);
+    if (continuityFilter && continuityFilter !== "all") params.set("continuity", continuityFilter);
+    if (advisoryFilter && advisoryFilter !== "all") params.set("advisory", advisoryFilter);
+    const text = params.toString();
+    return text ? `?${text}` : "";
+  }, [advisoryFilter, continuityFilter, governanceFilter, missionFilter, severityFilter]);
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -258,29 +297,29 @@ export function CeoHomeView() {
             <GovernanceHealthBadge score={processingAnalytics.summary.governanceHealthScore} />
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+            <Link href={`/runtime-cost${replayQuery}`} className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">High severity items</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {processingAnalytics.summary.elevatedRiskCount}
               </p>
             </Link>
-            <Link href="/runtime-cost?review=processing_review_required" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+            <Link href={`/runtime-cost?review=processing_review_required${replayQuery ? `&${replayQuery.slice(1)}` : ""}`} className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Review-required sessions</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {processingAnalytics.summary.reviewRequiredCount}
               </p>
             </Link>
-            <Link href="/runtime-cost?category=runtime_stability" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+            <Link href={`/runtime-cost?category=runtime_stability${replayQuery ? `&${replayQuery.slice(1)}` : ""}`} className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Runtime continuity concerns</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {processingAnalytics.summary.runtimeInstabilityCount}
               </p>
             </Link>
-            <Link href="/runtime-cost?review=processing_paused" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+            <Link href={`/runtime-cost?review=processing_paused${replayQuery ? `&${replayQuery.slice(1)}` : ""}`} className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Processing pauses/revokes</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {
-                  processingSessions.filter(
+                  filteredProcessingSessions.filter(
                     (session) =>
                       session.processingStatus === "processing_paused" ||
                       session.processingStatus === "processing_revoked"

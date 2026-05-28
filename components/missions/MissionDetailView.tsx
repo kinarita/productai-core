@@ -85,9 +85,19 @@ const signalVariant = {
 
 interface MissionDetailViewProps {
   missionId: string;
+  severityFilter?: string;
+  governanceFilter?: string;
+  continuityFilter?: string;
+  advisoryFilter?: string;
 }
 
-export function MissionDetailView({ missionId }: MissionDetailViewProps) {
+export function MissionDetailView({
+  missionId,
+  severityFilter,
+  governanceFilter,
+  continuityFilter,
+  advisoryFilter,
+}: MissionDetailViewProps) {
   const hydrated = useStoreHydration();
   const setActiveMission = useUiStore((s) => s.setActiveMission);
   const setSelectedMission = useMissionStore((s) => s.setSelectedMission);
@@ -130,9 +140,32 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
     () => processingSessions.filter((session) => session.missionId === missionId),
     [missionId, processingSessions]
   );
+  const filteredMissionProcessingSessions = useMemo(
+    () =>
+      missionProcessingSessions.filter((session) => {
+        if (severityFilter && severityFilter !== "all") {
+          if (!session.activeReasons.some((reason) => reason.severity === severityFilter)) return false;
+        }
+        if (continuityFilter === "degraded" && !session.reviewRequired) return false;
+        if (continuityFilter === "stable" && session.reviewRequired) return false;
+        if (advisoryFilter === "advisory" && !session.activeReasons.some((reason) => reason.advisoryOnly)) {
+          return false;
+        }
+        if (advisoryFilter === "decision" && !session.activeReasons.some((reason) => !reason.advisoryOnly)) {
+          return false;
+        }
+        if (governanceFilter === "runtime") {
+          return session.activeReasons.some(
+            (reason) => reason.category === "runtime_stability" || reason.category === "provider_instability"
+          );
+        }
+        return true;
+      }),
+    [advisoryFilter, continuityFilter, governanceFilter, missionProcessingSessions, severityFilter]
+  );
   const missionProcessingAnalytics = useMemo(
-    () => buildProcessingAnalytics(missionProcessingSessions),
-    [missionProcessingSessions]
+    () => buildProcessingAnalytics(filteredMissionProcessingSessions),
+    [filteredMissionProcessingSessions]
   );
   const missionNameMap = useMemo(
     () => Object.fromEntries((allMissions.length > 0 ? allMissions : seedMissions).map((m) => [m.id, m.name])),
@@ -733,7 +766,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
             </p>
             <div className="mt-2 flex flex-wrap gap-3 text-xs">
               <Link
-                href={`/runtime-cost?mission=${missionId}&review=processing_review_required`}
+                href={`/runtime-cost?mission=${missionId}&review=processing_review_required${severityFilter ? `&severity=${severityFilter}` : ""}${advisoryFilter ? `&advisory=${advisoryFilter}` : ""}${continuityFilter ? `&continuity=${continuityFilter}` : ""}`}
                 className="font-medium text-accent hover:underline"
               >
                 Open related processing review →

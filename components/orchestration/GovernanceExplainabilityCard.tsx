@@ -5,6 +5,8 @@ export function GovernanceExplainabilityCard({
   explanation,
   breakdown,
   historicalExplanation,
+  replayExplanation,
+  continuityShiftExplanation,
 }: {
   explanation: GovernanceContinuityExplanation;
   breakdown: {
@@ -15,6 +17,8 @@ export function GovernanceExplainabilityCard({
     governanceContinuity: number;
   };
   historicalExplanation?: string;
+  replayExplanation?: string;
+  continuityShiftExplanation?: string;
 }) {
   return (
     <div className="space-y-3 rounded-lg border border-border bg-surface p-3">
@@ -25,6 +29,16 @@ export function GovernanceExplainabilityCard({
       {historicalExplanation ? (
         <p className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
           {historicalExplanation}
+        </p>
+      ) : null}
+      {replayExplanation ? (
+        <p className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
+          {replayExplanation}
+        </p>
+      ) : null}
+      {continuityShiftExplanation ? (
+        <p className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
+          {continuityShiftExplanation}
         </p>
       ) : null}
       <ContinuityScoreBreakdown breakdown={breakdown} />

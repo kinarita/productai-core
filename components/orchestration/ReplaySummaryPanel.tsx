@@ -1,0 +1,38 @@
+import type { ExecutiveReplaySummary } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
+
+export function ReplaySummaryPanel({
+  summary,
+  onCopy,
+}: {
+  summary: ExecutiveReplaySummary;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-surface p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">Executive replay summary</p>
+      <p className="text-sm text-foreground">{summary.governanceHealthSummary}</p>
+      <p className="text-xs text-muted">
+        {summary.generatedAt} · {summary.replayWindow}
+      </p>
+      <ul className="space-y-1 text-xs text-muted">
+        {summary.keyContinuityDrivers.map((driver) => (
+          <li key={driver}>- {driver}</li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted">{summary.reviewPressureSummary}</p>
+      <p className="text-xs text-muted">{summary.runtimeGovernanceSummary}</p>
+      <ul className="space-y-1 text-xs text-muted">
+        {summary.recommendedExecutiveFocus.slice(0, 3).map((item) => (
+          <li key={item}>- {item}</li>
+        ))}
+      </ul>
+      <button
+        type="button"
+        onClick={onCopy}
+        className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-surface"
+      >
+        Copy Replay Summary
+      </button>
+    </div>
+  );
+}

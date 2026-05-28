@@ -14,11 +14,14 @@ export function buildGovernanceReplay(input: {
   feedItems: OrganizationFeedItem[];
   runtimeAlerts: RuntimeAlert[];
   syncWarnings: SyncWarning[];
+  persistedSnapshots?: GovernanceReplayBundle["snapshots"];
 }): GovernanceReplayBundle {
   const timeline = buildGovernanceTimeline(input);
   const latestSnapshot = buildExecutiveGovernanceSnapshot(input);
   const analytics = buildProcessingAnalytics(input.processingSessions);
-  const snapshots = [latestSnapshot];
+  const snapshots = [latestSnapshot, ...(input.persistedSnapshots ?? [])]
+    .filter((snapshot, index, arr) => arr.findIndex((entry) => entry.id === snapshot.id) === index)
+    .slice(0, 10);
   const memoryItems = buildGovernanceMemory(timeline);
   return {
     events: timeline,

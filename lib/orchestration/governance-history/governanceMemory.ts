@@ -4,6 +4,7 @@ import type {
 } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
 
 export function buildGovernanceMemory(events: GovernanceTimelineEvent[]): GovernanceMemoryItem[] {
+  const recentEvents = events.slice(0, 5);
   const reviewEvents = events.filter((event) => event.eventType === "review_requested");
   const runtimeEvents = events.filter((event) => event.eventType === "runtime_advisory");
   const criticalEvents = events.filter((event) => event.severity === "critical_review");
@@ -15,7 +16,7 @@ export function buildGovernanceMemory(events: GovernanceTimelineEvent[]): Govern
       createdAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       memoryType: "repeated_review_pattern",
       title: "Repeated governance review pattern",
-      summary: "Recurring governance review patterns were observed across runtime-sensitive missions.",
+      summary: `Recurring governance review patterns were observed across runtime-sensitive missions. Review concentration increased across the last ${recentEvents.length} replay events.`,
       evidenceEventIds: reviewEvents.slice(0, 4).map((event) => event.id),
       relatedMissionIds: Array.from(new Set(reviewEvents.map((event) => event.missionId))).slice(0, 4),
       recommendation: "Prioritize mission owners with repeated review_requested transitions.",
@@ -27,7 +28,7 @@ export function buildGovernanceMemory(events: GovernanceTimelineEvent[]): Govern
       createdAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       memoryType: "runtime_instability_pattern",
       title: "Runtime instability advisory pattern",
-      summary: "Runtime-related advisories repeatedly influenced governance continuity.",
+      summary: `Runtime-related advisories repeatedly influenced governance continuity across the latest ${recentEvents.length} replay events.`,
       evidenceEventIds: runtimeEvents.slice(0, 4).map((event) => event.id),
       relatedMissionIds: Array.from(new Set(runtimeEvents.map((event) => event.missionId))).slice(0, 4),
       recommendation: "Track runtime advisory density before prioritizing governance resume decisions.",
