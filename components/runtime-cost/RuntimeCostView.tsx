@@ -10,7 +10,11 @@ import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
 import { getExecutionPolicy } from "@/lib/orchestration/policy/executionPolicy";
 import { getHandoffBoundaryMessage } from "@/lib/orchestration/execution/executionPolicy";
+import { ExecutionReadinessCard } from "@/components/orchestration/ExecutionReadinessCard";
+import { buildExecutionQueue } from "@/lib/orchestration/materialization/executionQueue";
 import { useExecutionStore } from "@/lib/store/executionStore";
+import { useMaterializationStore } from "@/lib/store/materializationStore";
+import { useTaskStore } from "@/lib/store/taskStore";
 import { describeAllExecutionBoundaries } from "@/lib/orchestration/execution/executionAdapters";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
@@ -39,6 +43,26 @@ export function RuntimeCostView() {
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
   const governanceStats = useExecutionStore((s) => s.getGovernanceStats());
   const missionTickets = useExecutionStore((s) => s.tickets);
+  const materializationRecords = useMaterializationStore((s) => s.records);
+  const allTasks = useTaskStore((s) => s.tasks);
+
+  const orgReadinessSummary = {
+    missionId: "organization",
+    governanceReviewed: allTasks.filter(
+      (t) => t.provenance?.executionReadiness === "governance_reviewed"
+    ).length,
+    executionReady: allTasks.filter(
+      (t) => t.provenance?.executionReadiness === "execution_ready"
+    ).length,
+    blocked: allTasks.filter((t) => t.provenance?.executionReadiness === "blocked").length,
+    pendingReview: governanceStats.pendingHandoffs,
+    runtimeAdvisory:
+      syncWarnings.length > 0 || alerts.length > 0
+        ? "Runtime Observer advisory: review execution readiness before authorizing additional handoffs."
+        : undefined,
+  };
+
+  const executionQueue = buildExecutionQueue(missionTickets, materializationRecords);
 
   const apiHealth = getOverallApiHealth(providerHealth);
   const budgetUsed = Math.round((totalCostUsd / budgetUsd) * 100);
@@ -262,7 +286,14 @@ export function RuntimeCostView() {
         </Card>
 
         <Card title="Execution Governance">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wide text-muted">
+            Execution readiness (organization)
+          </p>
+          <ExecutionReadinessCard
+            summary={orgReadinessSummary}
+            queueSize={executionQueue.length}
+          />
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="rounded-lg border border-border bg-surface px-3 py-3">
               <p className="text-xs font-medium uppercase text-muted">Pending handoffs</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">

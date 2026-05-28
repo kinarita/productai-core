@@ -9,6 +9,9 @@ import { ProposalCard } from "@/components/orchestration/ProposalCard";
 import { ExecutionTicketCard } from "@/components/orchestration/ExecutionTicketCard";
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { getHandoffBoundaryMessage } from "@/lib/orchestration/execution/executionPolicy";
+import { materializationFeedMessage } from "@/lib/orchestration/materialization/materializationFeed";
+import { validateMaterializationBoundary } from "@/lib/orchestration/materialization/materializationPolicy";
+import { getTasksByTicketId } from "@/lib/orchestration/materialization/provenanceTracker";
 import { useLiveExecutiveSync } from "@/lib/hooks/useLiveExecutiveSync";
 import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
 import { governanceFeedMessage, feedTypeForProposalStatus } from "@/lib/orchestration/governanceFeed";
@@ -18,6 +21,10 @@ import type { AIProposal } from "@/lib/orchestration/policy/policyTypes";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useProposalStore } from "@/lib/store/proposalStore";
 import { useExecutionStore } from "@/lib/store/executionStore";
+import { useMaterializationStore } from "@/lib/store/materializationStore";
+import { useSyncStore } from "@/lib/store/syncStore";
+import { useRuntimeStore } from "@/lib/store/runtimeStore";
+import { useTaskStore } from "@/lib/store/taskStore";
 import { Gavel } from "lucide-react";
 
 export function ExecutiveSyncView() {
@@ -38,11 +45,32 @@ export function ExecutiveSyncView() {
   const approveTicketHandoff = useExecutionStore((s) => s.approveTicketHandoff);
   const rejectTicketHandoff = useExecutionStore((s) => s.rejectTicketHandoff);
   const getAuditForTicket = useExecutionStore((s) => s.getAuditForTicket);
+  const requestMaterializationReview = useMaterializationStore((s) => s.requestMaterializationReview);
+  const materializeTicket = useMaterializationStore((s) => s.materializeTicket);
+  const allTasks = useTaskStore((s) => s.tasks);
+  const syncWarnings = useSyncStore((s) => s.syncWarnings);
+  const runtimeAlerts = useRuntimeStore((s) => s.alerts);
 
   const [operationalSummary, setOperationalSummary] = useState<string | null>(null);
   const [planLoadingId, setPlanLoadingId] = useState<string | null>(null);
 
   const executionPolicy = getExecutionPolicy();
+
+  const pushMaterializationFeed = (
+    action: Parameters<typeof materializationFeedMessage>[0],
+    detail?: string
+  ) => {
+    addFeedItemWithSync({
+      type: "coordination",
+      author: action === "runtime_readiness_advisory" ? "Runtime Observer" : "COO",
+      authorName: action === "runtime_readiness_advisory" ? "Pulse" : "Nova",
+      missionId: ctx.missionId,
+      missionName: ctx.mission,
+      message: materializationFeedMessage(action, detail),
+      status: "active",
+      requiresCeoApproval: false,
+    });
+  };
 
   const pushGovernanceFeed = (
     action: Parameters<typeof governanceFeedMessage>[0],
@@ -206,6 +234,35 @@ export function ExecutiveSyncView() {
     }
   };
 
+  const handleRequestMaterializationReview = (ticketId: string) => {
+    const ticket = useExecutionStore.getState().getTicket(ticketId);
+    if (!ticket) return;
+    if (requestMaterializationReview(ticketId)) {
+      pushMaterializationFeed("materialization_requested", ticket.executionIntent);
+      pushMaterializationFeed("governance_review_completed", ticket.executionIntent);
+    }
+  };
+
+  const handleMaterializeTasks = (ticketId: string) => {
+    const ticket = useExecutionStore.getState().getTicket(ticketId);
+    if (!ticket) return;
+    const record = materializeTicket({
+      ticketId,
+      missionName: ctx.mission,
+      syncWarningCount: syncWarnings.length,
+      runtimeAlertCount: runtimeAlerts.length,
+    });
+    if (record) {
+      pushMaterializationFeed(
+        "tasks_materialized",
+        `${record.taskIds.length} operational tasks prepared`
+      );
+      if (syncWarnings.length > 0 || runtimeAlerts.length > 0) {
+        pushMaterializationFeed("runtime_readiness_advisory", ticket.executionIntent);
+      }
+    }
+  };
+
   const handleRejectHandoff = (ticketId: string) => {
     const ticket = useExecutionStore.getState().getTicket(ticketId);
     rejectTicketHandoff(ticketId);
@@ -323,6 +380,7 @@ export function ExecutiveSyncView() {
 
               <GovernanceNote>{executionPolicy.boundaryMessage}</GovernanceNote>
               <GovernanceNote>{getHandoffBoundaryMessage()}</GovernanceNote>
+              <GovernanceNote>{validateMaterializationBoundary()}</GovernanceNote>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -388,8 +446,18 @@ export function ExecutiveSyncView() {
                       key={ticket.id}
                       ticket={ticket}
                       auditEntries={getAuditForTicket(ticket.id)}
+                      materializedTaskCount={getTasksByTicketId(allTasks, ticket.id).length}
                       onApproveHandoff={() => handleApproveHandoff(ticket.id)}
                       onRejectHandoff={() => handleRejectHandoff(ticket.id)}
+                      onRequestMaterializationReview={() =>
+                        handleRequestMaterializationReview(ticket.id)
+                      }
+                      onMaterializeTasks={() => handleMaterializeTasks(ticket.id)}
+                      materializeDisabledReason={
+                        syncWarnings.length >= 3
+                          ? "Materialization blocked by runtime policy advisory."
+                          : undefined
+                      }
                     />
                   ))}
                 </div>

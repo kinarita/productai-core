@@ -26,6 +26,12 @@ export interface ApprovalSignature {
   governanceNote: string;
 }
 
+export type MaterializationLifecycleStatus =
+  | "execution_planned"
+  | "materialization_requested"
+  | "materialized"
+  | "execution_ready";
+
 export interface ExecutionTicket {
   id: string;
   proposalId: string;
@@ -40,6 +46,8 @@ export interface ExecutionTicket {
   createdAt: string;
   executionPlan?: ExecutionPlan;
   approvalSignature?: ApprovalSignature;
+  materializationStatus?: MaterializationLifecycleStatus;
+  materializedTaskIds?: string[];
 }
 
 export type ExecutionAuditAction =

@@ -117,8 +117,18 @@ export function TasksView({ missionFilter, statusFilter }: TasksViewProps) {
                         Open Detail →
                       </Link>
                     </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <Badge variant="accent">{task.assignedTo}</Badge>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="accent">{task.assignedTo}</Badge>
+                        {task.createdFrom === "materialization" &&
+                        task.provenance?.executionReadiness === "execution_ready" ? (
+                          <Badge variant="success">execution ready</Badge>
+                        ) : null}
+                        {task.createdFrom === "materialization" &&
+                        task.provenance?.executionReadiness === "governance_reviewed" ? (
+                          <Badge variant="warning">governance reviewed</Badge>
+                        ) : null}
+                      </div>
                       <span className="text-xs text-muted">
                         {task.updatedAt ? `Updated ${task.updatedAt}` : `ETA ${task.eta}`}
                       </span>

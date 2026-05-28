@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 4-4 controlled task materialization)
+
+- Task materialization layer in `lib/orchestration/materialization/`.
+- Task provenance and execution readiness fields on operational tasks.
+- Materialize Tasks flow from approved execution tickets in Executive Sync.
+- Governance provenance on Task Detail; execution readiness on Mission Detail and Runtime.
+- Materialization UI components and execution queue visualization.
+- Documentation: `docs/PHASE4_TASK_MATERIALIZATION.md`.
+
 ### Added (Phase 4-3 controlled execution handoff foundation)
 
 - Controlled execution handoff layer in `lib/orchestration/execution/`.

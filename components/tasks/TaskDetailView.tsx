@@ -18,6 +18,9 @@ import {
 import { isWaitingOnDependency } from "@/lib/task/taskDependencies";
 import { agentName, sourceBadgeClass } from "@/lib/task/taskUi";
 import { TaskDependenciesPanel } from "@/components/tasks/TaskDependenciesPanel";
+import { ProvenanceCard } from "@/components/orchestration/ProvenanceCard";
+import { useProposalStore } from "@/lib/store/proposalStore";
+import { useExecutionStore } from "@/lib/store/executionStore";
 import { TaskWorkflowSteps } from "@/components/tasks/TaskWorkflowSteps";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
@@ -57,8 +60,22 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
   const alerts = useRuntimeStore((s) => s.alerts);
   const storeMission = useMissionStore((s) => s.missions);
+  const proposals = useProposalStore((s) => s.proposals);
+  const executionTickets = useExecutionStore((s) => s.tickets);
 
   const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
+
+  const provenanceProposal = useMemo(() => {
+    if (!task?.provenance?.createdFromProposalId) return undefined;
+    return proposals.find((p) => p.id === task.provenance?.createdFromProposalId);
+  }, [proposals, task]);
+
+  const provenanceTicket = useMemo(() => {
+    if (!task?.provenance?.createdFromExecutionTicketId) return undefined;
+    return executionTickets.find(
+      (t) => t.id === task.provenance?.createdFromExecutionTicketId
+    );
+  }, [executionTickets, task]);
 
   const mission = useMemo(() => {
     if (!task) return undefined;
@@ -267,6 +284,20 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
               <p className="text-sm text-muted">Mission not available in local state.</p>
             )}
           </Card>
+
+          {task.provenance ? (
+            <Card>
+              <SectionHeader
+                title="Governance Provenance"
+                description="Why this operational task exists"
+              />
+              <ProvenanceCard
+                provenance={task.provenance}
+                proposal={provenanceProposal}
+                ticket={provenanceTicket}
+              />
+            </Card>
+          ) : null}
 
           <Card>
             <SectionHeader

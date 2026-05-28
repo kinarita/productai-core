@@ -26,7 +26,24 @@ export type TaskStatus = "active" | "in_review" | "blocked" | "completed";
 
 export type TaskPriority = "high" | "medium" | "low";
 
-export type TaskCreatedFrom = "judgment" | "manual" | "mission";
+export type TaskCreatedFrom = "judgment" | "manual" | "mission" | "materialization";
+
+export type ExecutionReadiness =
+  | "planning"
+  | "governance_reviewed"
+  | "execution_ready"
+  | "blocked";
+
+export interface TaskProvenance {
+  createdFromProposalId?: string;
+  createdFromExecutionTicketId?: string;
+  createdFromExecutionPlanId?: string;
+  governanceApprovedBy?: string;
+  materializedAt?: string;
+  executionReadiness?: ExecutionReadiness;
+  governanceNotes?: string[];
+  executionBoundaryNote?: string;
+}
 
 export type DecisionStatus = "pending" | "approved" | "rejected";
 
@@ -90,6 +107,7 @@ export interface Task {
   priority?: TaskPriority;
   relatedDecisionId?: string;
   createdFrom?: TaskCreatedFrom;
+  provenance?: TaskProvenance;
   /** Structured event trail (local-only) */
   events?: TaskEvent[];
   updatedAt?: string;

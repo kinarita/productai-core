@@ -7,13 +7,19 @@ import { RiskIndicator } from "@/components/orchestration/RiskIndicator";
 import { EXECUTION_TARGET_LABELS } from "@/lib/orchestration/execution/executionPolicy";
 import type { ExecutionAuditEntry, ExecutionTicket } from "@/lib/orchestration/execution/executionTypes";
 import { getHandoffBoundaryMessage } from "@/lib/orchestration/execution/executionPolicy";
-import { Check, X } from "lucide-react";
+import { MaterializationStatusBadge } from "@/components/orchestration/MaterializationStatusBadge";
+import { canMaterializeExecutionPlan, requiresMaterializationReview } from "@/lib/orchestration/materialization/materializationPolicy";
+import { Check, Layers, ClipboardCheck, X } from "lucide-react";
 
 interface ExecutionTicketCardProps {
   ticket: ExecutionTicket;
   auditEntries?: ExecutionAuditEntry[];
+  materializedTaskCount?: number;
   onApproveHandoff: () => void;
   onRejectHandoff: () => void;
+  onRequestMaterializationReview?: () => void;
+  onMaterializeTasks?: () => void;
+  materializeDisabledReason?: string;
 }
 
 export function ExecutionTicketCard({
@@ -21,9 +27,20 @@ export function ExecutionTicketCard({
   auditEntries = [],
   onApproveHandoff,
   onRejectHandoff,
+  onRequestMaterializationReview,
+  onMaterializeTasks,
+  materializeDisabledReason,
+  materializedTaskCount = 0,
 }: ExecutionTicketCardProps) {
   const canAct = ticket.status === "awaiting_handoff" || ticket.status === "draft";
+  const handoffApproved = ticket.status === "handoff_approved";
   const plan = ticket.executionPlan;
+  const materializeCheck = canMaterializeExecutionPlan({
+    ticket,
+    plan,
+    alreadyMaterialized: Boolean(ticket.materializedTaskIds?.length),
+  });
+  const needsReview = requiresMaterializationReview(ticket);
 
   return (
     <article className="rounded-lg border border-border bg-surface p-4">
@@ -37,7 +54,10 @@ export function ExecutionTicketCard({
             {EXECUTION_TARGET_LABELS[ticket.executionTarget]}
           </p>
         </div>
-        <HandoffStatusBadge status={ticket.status} />
+        <div className="flex flex-col items-end gap-2">
+          <HandoffStatusBadge status={ticket.status} />
+          <MaterializationStatusBadge status={ticket.materializationStatus} />
+        </div>
       </div>
 
       <div className="mt-3">
@@ -85,6 +105,45 @@ export function ExecutionTicketCard({
       {ticket.approvalSignature ? (
         <div className="mt-3">
           <ApprovalSignatureView signature={ticket.approvalSignature} />
+        </div>
+      ) : null}
+
+      {handoffApproved && ticket.materializationStatus === "execution_ready" ? (
+        <p className="mt-3 text-xs text-muted">
+          {materializedTaskCount} execution-ready operational task
+          {materializedTaskCount === 1 ? "" : "s"} prepared under governance review.
+        </p>
+      ) : null}
+
+      {handoffApproved && onMaterializeTasks ? (
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+          {needsReview && ticket.materializationStatus !== "materialization_requested" && onRequestMaterializationReview ? (
+            <button
+              type="button"
+              onClick={onRequestMaterializationReview}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface"
+            >
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              Request Materialization Review
+            </button>
+          ) : null}
+          <button
+            type="button"
+            disabled={
+              Boolean(materializeDisabledReason) ||
+              (!materializeCheck.allowed && ticket.materializationStatus !== "materialization_requested")
+            }
+            onClick={onMaterializeTasks}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-indigo-50/50 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Layers className="h-3.5 w-3.5" />
+            Materialize Tasks
+          </button>
+          {materializeDisabledReason || !materializeCheck.allowed ? (
+            <p className="w-full text-xs text-muted">
+              {materializeDisabledReason ?? materializeCheck.reason}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

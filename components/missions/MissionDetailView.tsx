@@ -45,6 +45,9 @@ import {
   getDependsOnTasks,
 } from "@/lib/task/taskDependencies";
 import { useUiStore } from "@/lib/store/uiStore";
+import { ExecutionReadinessCard } from "@/components/orchestration/ExecutionReadinessCard";
+import { useMaterializationStore } from "@/lib/store/materializationStore";
+import { useSyncStore } from "@/lib/store/syncStore";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -95,6 +98,18 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   const allFeed = useOrganizationStore((s) => s.organizationFeedItems);
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
   const alerts = useRuntimeStore((s) => s.alerts);
+  const syncWarnings = useSyncStore((s) => s.syncWarnings);
+  const getReadinessSummary = useMaterializationStore((s) => s.getReadinessSummary);
+  const getQueueForMission = useMaterializationStore((s) => s.getQueueForMission);
+
+  const readinessSummary = useMemo(
+    () => getReadinessSummary(missionId, syncWarnings.length),
+    [getReadinessSummary, missionId, syncWarnings.length]
+  );
+  const executionQueue = useMemo(
+    () => getQueueForMission(missionId),
+    [getQueueForMission, missionId]
+  );
 
   const missionDecisions = useMemo(
     () => allDecisions.filter((d) => d.relatedMissionId === missionId),
@@ -620,6 +635,17 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <SectionHeader
+              title="Execution Readiness"
+              description="Governance-reviewed operational task preparation"
+            />
+            <ExecutionReadinessCard
+              summary={readinessSummary}
+              queueSize={executionQueue.length}
+            />
+          </Card>
+
           <Card>
             <SectionHeader title="Release Readiness" />
             <div className="space-y-3">
