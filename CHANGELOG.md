@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-4 decision attention hydration and replay continuity)
+
+- Feed merge hardening via `mergeOrganizationFeedItem` to preserve decision attention metadata during hydration.
+- Mock/seed decision attention feed events (generated, reviewed, resolved, deferred) with taxonomy-aligned metadata.
+- Bootstrap seed alignment for decision attention columns.
+- Hydration dev observability and Organization Feed attention count display.
+- Verification script: `scripts/verifyDecisionAttentionHydration.mjs`.
+- Documentation: `docs/PHASE7_DECISION_ATTENTION_HYDRATION.md`.
+
 ### Added (Phase 7-3 decision attention persistence and query continuity)
 
 - Decision attention metadata columns on feed_items with safe idempotent migration.

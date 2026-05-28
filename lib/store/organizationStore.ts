@@ -5,6 +5,7 @@ import {
   executiveSyncInitial,
   organizationStoreInitial,
 } from "@/lib/store/initialState";
+import { mergeOrganizationFeedItem } from "@/lib/services/feedMerge";
 import { mapFeedItemToCreatePayload } from "@/lib/services/mappers";
 import { createFeedItem } from "@/lib/services/feedService";
 import { getPersistenceMode } from "@/lib/config/persistenceMode";
@@ -66,21 +67,6 @@ interface OrganizationState {
   resetToInitial: () => void;
 }
 
-function parseUpdatedAt(value?: string): number | null {
-  if (!value) return null;
-  const n = Date.parse(value);
-  return Number.isNaN(n) ? null : n;
-}
-
-function shouldPreferRemote(localUpdatedAt?: string, remoteUpdatedAt?: string): boolean {
-  if (!remoteUpdatedAt) return false;
-  const localTs = parseUpdatedAt(localUpdatedAt);
-  const remoteTs = parseUpdatedAt(remoteUpdatedAt);
-  if (remoteTs === null) return false;
-  if (localTs === null) return true;
-  return remoteTs >= localTs;
-}
-
 export const useOrganizationStore = create<OrganizationState>()(
   persist(
     (set) => ({
@@ -94,10 +80,7 @@ export const useOrganizationStore = create<OrganizationState>()(
           const mergedRemote = feedItems.map((remote) => {
             const local = localById.get(remote.id);
             if (!local) return remote;
-            if (shouldPreferRemote(local.timestamp, remote.timestamp)) {
-              return { ...local, ...remote };
-            }
-            return local;
+            return mergeOrganizationFeedItem(local, remote);
           });
           const remoteIds = new Set(mergedRemote.map((f) => f.id));
           const localOnly = state.organizationFeedItems.filter((f) => !remoteIds.has(f.id));

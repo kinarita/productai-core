@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-4 decision attention hydration and replay continuity)
+
+- Hardened organization feed remote merge to preserve decision attention and replay metadata across hydration.
+- Aligned mock/seed feed with taxonomy-normalized decision attention lifecycle samples.
+- Extended bootstrap feed seeding for decision attention columns.
+- Added hydration dev observability and Organization Feed attention initialization support.
+- Added decision attention hydration verification script and documentation.
+
 ## 2026-05-28 (Phase 7-3 decision attention persistence and query continuity)
 
 - Extended feed_items schema, repository, domain mapper, API, and service layers for decision attention metadata persistence.

@@ -1,5 +1,6 @@
 import { agents } from "@/data/mockData";
 import { markSyncedAt, withSyncedAt } from "@/lib/services/syncMetadata";
+import { validateDecisionAttentionMetadata } from "@/lib/replay-query/decisionAttentionValidation";
 import { normalizeReplayMetadata } from "@/lib/replay-query/replayMetadata";
 import type { FeedItemRecord } from "@/lib/domain/feed";
 import type { JudgmentRecord } from "@/lib/domain/judgment";
@@ -165,6 +166,18 @@ export function mapFeedRecordToFeedItem(
   record: FeedItemRecord,
   base?: OrganizationFeedItem
 ): OrganizationFeedItem {
+  const attention = validateDecisionAttentionMetadata({
+    decisionAttentionId: record.decisionAttentionId ?? base?.decisionAttentionId,
+    decisionAttentionSeverity: record.decisionAttentionSeverity ?? base?.decisionAttentionSeverity,
+    decisionAttentionCategory: record.decisionAttentionCategory ?? base?.decisionAttentionCategory,
+    decisionAttentionReason: record.decisionAttentionReason ?? base?.decisionAttentionReason,
+    decisionAttentionSource: record.decisionAttentionSource ?? base?.decisionAttentionSource,
+    decisionAttentionReplayConfidence:
+      record.decisionAttentionReplayConfidence ?? base?.decisionAttentionReplayConfidence,
+    decisionAttentionContinuityCategory:
+      record.decisionAttentionContinuityCategory ?? base?.decisionAttentionContinuityCategory,
+    decisionAttentionLifecycle: record.decisionAttentionLifecycle ?? base?.decisionAttentionLifecycle,
+  });
   return {
     ...(base ?? {
       id: record.id,
@@ -202,22 +215,14 @@ export function mapFeedRecordToFeedItem(
       replaySeverity: (record.replaySeverity as OrganizationFeedItem["replaySeverity"]) ?? base?.replaySeverity,
       replaySource: (record.replaySource as OrganizationFeedItem["replaySource"]) ?? base?.replaySource,
     }),
-    decisionAttentionId: record.decisionAttentionId ?? base?.decisionAttentionId,
-    decisionAttentionSeverity:
-      (record.decisionAttentionSeverity as OrganizationFeedItem["decisionAttentionSeverity"]) ??
-      base?.decisionAttentionSeverity,
-    decisionAttentionCategory: record.decisionAttentionCategory ?? base?.decisionAttentionCategory,
-    decisionAttentionReason: record.decisionAttentionReason ?? base?.decisionAttentionReason,
-    decisionAttentionSource: record.decisionAttentionSource ?? base?.decisionAttentionSource,
-    decisionAttentionReplayConfidence:
-      (record.decisionAttentionReplayConfidence as OrganizationFeedItem["decisionAttentionReplayConfidence"]) ??
-      base?.decisionAttentionReplayConfidence,
-    decisionAttentionContinuityCategory:
-      (record.decisionAttentionContinuityCategory as OrganizationFeedItem["decisionAttentionContinuityCategory"]) ??
-      base?.decisionAttentionContinuityCategory,
-    decisionAttentionLifecycle:
-      (record.decisionAttentionLifecycle as OrganizationFeedItem["decisionAttentionLifecycle"]) ??
-      base?.decisionAttentionLifecycle,
+    decisionAttentionId: attention.decisionAttentionId,
+    decisionAttentionSeverity: attention.decisionAttentionSeverity,
+    decisionAttentionCategory: attention.decisionAttentionCategory,
+    decisionAttentionReason: attention.decisionAttentionReason,
+    decisionAttentionSource: attention.decisionAttentionSource,
+    decisionAttentionReplayConfidence: attention.decisionAttentionReplayConfidence,
+    decisionAttentionContinuityCategory: attention.decisionAttentionContinuityCategory,
+    decisionAttentionLifecycle: attention.decisionAttentionLifecycle,
   };
 }
 

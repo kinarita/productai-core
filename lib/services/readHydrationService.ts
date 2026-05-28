@@ -4,6 +4,7 @@ import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { refreshBackendHealth } from "@/lib/services/backendHealth";
 import { fetchFeed } from "@/lib/services/feedService";
 import { fetchJudgments } from "@/lib/services/judgmentService";
+import { countDecisionAttentionFeedItems } from "@/lib/services/feedMerge";
 import { mapFeedRecordToFeedItem, mapJudgmentRecordToDecision, mapMissionRecordToMission, mapTaskRecordToTask } from "@/lib/services/mappers";
 import { fetchMissionsFromApi } from "@/lib/services/missionService";
 import { fetchTasksFromApi } from "@/lib/services/taskService";
@@ -58,6 +59,14 @@ export async function hydrateFeed() {
       mapFeedRecordToFeedItem(record, current.find((f) => f.id === record.id))
     );
     useOrganizationStore.getState().mergeFeedFromRemote(mapped);
+    if (process.env.NODE_ENV !== "production") {
+      const attentionCount = countDecisionAttentionFeedItems(
+        useOrganizationStore.getState().organizationFeedItems
+      );
+      console.info(
+        `[ProductAI hydrate] Decision attention continuity preserved during replay hydration (${attentionCount} items).`
+      );
+    }
   } catch (error) {
     useSyncStore.getState().recordReadFailure("feed-hydration", error);
     useSyncStore.getState().addWarning({

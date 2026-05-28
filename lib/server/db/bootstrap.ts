@@ -156,11 +156,19 @@ function seedFeed() {
     INSERT OR IGNORE INTO feed_items (
       id, mission_id, mission_name, task_id, decision_id, type, status, author, author_name, message,
       governance_category, replay_category, continuity_category, advisory_level, replay_severity, replay_source,
-      replay_tags_json, metadata_json, created_at
+      replay_tags_json, metadata_json,
+      decision_attention_id, decision_attention_severity, decision_attention_category, decision_attention_reason,
+      decision_attention_source, decision_attention_replay_confidence, decision_attention_continuity_category,
+      decision_attention_lifecycle,
+      created_at
     ) VALUES (
       @id, @missionId, @missionName, @taskId, @decisionId, @type, @status, @author, @authorName, @message,
       @governanceCategory, @replayCategory, @continuityCategory, @advisoryLevel, @replaySeverity, @replaySource,
-      @replayTagsJson, @metadataJson, @createdAt
+      @replayTagsJson, @metadataJson,
+      @decisionAttentionId, @decisionAttentionSeverity, @decisionAttentionCategory, @decisionAttentionReason,
+      @decisionAttentionSource, @decisionAttentionReplayConfidence, @decisionAttentionContinuityCategory,
+      @decisionAttentionLifecycle,
+      @createdAt
     )
   `);
 
@@ -185,6 +193,14 @@ function seedFeed() {
         replaySource: item.replaySource ?? null,
         replayTagsJson: JSON.stringify(item.replayTags ?? []),
         metadataJson: null,
+        decisionAttentionId: item.decisionAttentionId ?? null,
+        decisionAttentionSeverity: item.decisionAttentionSeverity ?? null,
+        decisionAttentionCategory: item.decisionAttentionCategory ?? null,
+        decisionAttentionReason: item.decisionAttentionReason ?? null,
+        decisionAttentionSource: item.decisionAttentionSource ?? null,
+        decisionAttentionReplayConfidence: item.decisionAttentionReplayConfidence ?? null,
+        decisionAttentionContinuityCategory: item.decisionAttentionContinuityCategory ?? null,
+        decisionAttentionLifecycle: item.decisionAttentionLifecycle ?? null,
         createdAt: item.timestamp,
       });
     }

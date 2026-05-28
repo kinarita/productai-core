@@ -28,6 +28,7 @@ import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
 import { matchesGovernanceAttentionFilter } from "@/lib/orchestration/decision-attention/decisionAttention";
+import { countDecisionAttentionFeedItems } from "@/lib/services/feedMerge";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -158,6 +159,10 @@ export function OrganizationFeedView({
   );
   const [activeGovernanceFilter, setActiveGovernanceFilter] = useState<string>(replayQuery.governance);
   const [activeAttentionFilter, setActiveAttentionFilter] = useState<string>(replayQuery.governanceAttention);
+  const hydratedAttentionCount = useMemo(
+    () => countDecisionAttentionFeedItems(feedItems),
+    [feedItems]
+  );
   const filterChipClass =
     "rounded-md border border-border bg-surface px-2 py-1 text-muted";
 
@@ -447,6 +452,12 @@ export function OrganizationFeedView({
         />
       </div>
       <ReplayQuerySummary query={replayQuery} />
+      {process.env.NODE_ENV !== "production" ? (
+        <p className="mb-2 text-[11px] text-muted">
+          Hydrated decision attention events: {hydratedAttentionCount} · Decision attention continuity was
+          preserved during replay hydration.
+        </p>
+      ) : null}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted">Filter:</span>
