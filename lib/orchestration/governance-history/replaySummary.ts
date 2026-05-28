@@ -11,6 +11,7 @@ import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 import { buildReplayDiagnosticsSummary } from "@/lib/replay-query/replayDiagnosticsHelpers";
+import { buildDecisionAttentionSummary, type DecisionAttentionItem } from "@/lib/orchestration/decision-attention/decisionAttention";
 
 export function buildExecutiveReplaySummary(input: {
   events: GovernanceTimelineEvent[];
@@ -20,6 +21,7 @@ export function buildExecutiveReplaySummary(input: {
   continuityExplanation: GovernanceContinuityExplanation;
   query: ReplayQueryState;
   diagnostics: ReplayDiagnostics;
+  decisionAttentionItems?: DecisionAttentionItem[];
 }): ExecutiveReplaySummary {
   const analytics = buildProcessingAnalytics(input.processingSessions);
   const replayWindow = `${Math.min(input.events.length, 20)} recent governance events`;
@@ -53,6 +55,7 @@ export function buildExecutiveReplaySummary(input: {
     diagnosticsSummary: `${buildReplayDiagnosticsSummary(input.diagnostics, input.query)} · Metadata completeness ${Math.round(
       input.diagnostics.metadataCompletenessRatio * 100
     )}%`,
+    decisionAttentionSummary: buildDecisionAttentionSummary(input.decisionAttentionItems ?? []),
     recommendedExecutiveFocus: [
       "Keep human review decisions prioritized before expanding governance scope.",
       "Use replay links to confirm mission-level continuity drivers.",

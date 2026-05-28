@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-1 executive decision attention workflow)
+
+- Decision attention derivation module with replay-informed executive review routing.
+- Decision Attention Queue and Decision Workflow Summary components for CEO and mission-level visibility.
+- Judgment decision context summary integrating replay diagnostics and governance explainability.
+- Replay summary extension with decision attention summary semantics.
+- Documentation: `docs/PHASE7_EXECUTIVE_DECISION_WORKFLOW.md`.
+
 ### Added (Phase 6-6 replay diagnostics explainability completion and governance polish)
 
 - Shared replay diagnostics terminology labels and definitions for consistent cross-view wording.

@@ -63,6 +63,8 @@ import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai
 import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
+import { DecisionAttentionQueue } from "@/components/orchestration/DecisionAttentionQueue";
+import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -210,6 +212,24 @@ export function MissionDetailView({
   );
   const replayDiagnostics = replay.diagnostics;
   const validationMetrics = getReplayValidationMetrics();
+  const decisionAttentionItems = useMemo(
+    () =>
+      buildDecisionAttentionQueue({
+        replayDiagnostics,
+        memoryItems: replay.memoryItems,
+        processingSessions: filteredMissionProcessingSessions,
+        runtimeAlerts: alerts,
+        replayQuery: { ...replayQuery, mission: missionId },
+      }),
+    [
+      alerts,
+      filteredMissionProcessingSessions,
+      missionId,
+      replay.memoryItems,
+      replayDiagnostics,
+      replayQuery,
+    ]
+  );
 
   useEffect(() => {
     setActiveMission(missionId);
@@ -864,6 +884,8 @@ export function MissionDetailView({
               </p>
             ) : null}
           </Card>
+
+          <DecisionAttentionQueue items={decisionAttentionItems} />
 
           <Card>
             <SectionHeader

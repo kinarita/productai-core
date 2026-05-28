@@ -61,6 +61,8 @@ import { replaySeverityOptions } from "@/lib/replay-query/replayTokens";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 import { buildReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 import { ReplayDiagnosticsDefinition } from "@/components/orchestration/ReplayDiagnosticsDefinition";
+import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
+import { DecisionWorkflowSummary } from "@/components/orchestration/DecisionWorkflowSummary";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -414,6 +416,17 @@ export function RuntimeCostView() {
       }),
     [feedItems, replay.memoryItems, replayEvents.length, replayQuery, visibleReplayEvents]
   );
+  const decisionAttentionItems = useMemo(
+    () =>
+      buildDecisionAttentionQueue({
+        replayDiagnostics,
+        memoryItems: replay.memoryItems,
+        processingSessions: filteredProcessingSessions,
+        runtimeAlerts: alerts,
+        replayQuery,
+      }),
+    [alerts, filteredProcessingSessions, replay.memoryItems, replayDiagnostics, replayQuery]
+  );
   const historicalContinuityExplanation = useMemo(() => {
     const recent = replayEvents.slice(0, 3);
     const reviewDensity = recent.filter((event) => event.eventType === "review_requested").length;
@@ -460,6 +473,7 @@ export function RuntimeCostView() {
         continuityExplanation: filteredAnalytics.continuityExplanation,
         query: replayQuery,
         diagnostics: replayDiagnostics,
+        decisionAttentionItems,
       }),
     [
       filteredAnalytics.continuityExplanation,
@@ -467,6 +481,7 @@ export function RuntimeCostView() {
       replay.memoryItems,
       replay.snapshots,
       replayDiagnostics,
+      decisionAttentionItems,
       visibleReplayEvents,
       replayQuery,
     ]
@@ -1175,6 +1190,9 @@ export function RuntimeCostView() {
           </div>
           <div className="mt-3">
             <ReplayShareCard shareHref={`/runtime-cost${filterQuery}`} onShare={shareReplayView} />
+          </div>
+          <div className="mt-3">
+            <DecisionWorkflowSummary items={decisionAttentionItems} />
           </div>
         </Card>
 

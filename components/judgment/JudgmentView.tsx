@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
@@ -23,6 +23,15 @@ import { useTaskStore } from "@/lib/store/taskStore";
 import { getLinkedTasksForDecision } from "@/lib/task/taskSelectors";
 import type { DecisionStatus } from "@/types/productai";
 import { Check, Plus, RotateCcw, X } from "lucide-react";
+import { useRuntimeStore } from "@/lib/store/runtimeStore";
+import { useSyncStore } from "@/lib/store/syncStore";
+import { useProcessingStore } from "@/lib/store/processingStore";
+import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
+import { parseReplayQuery } from "@/lib/replay-query/replayQueryParser";
+import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
+import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
+import { DecisionWorkflowSummary } from "@/components/orchestration/DecisionWorkflowSummary";
+import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
 
 const statusVariant = {
   pending: "warning" as const,
@@ -49,6 +58,65 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
   const [createFormFor, setCreateFormFor] = useState<string | null>(null);
   const [followUpFormFor, setFollowUpFormFor] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<Record<string, JudgmentRecommendation>>({});
+  const runtimeAlerts = useRuntimeStore((s) => s.alerts);
+  const syncWarnings = useSyncStore((s) => s.syncWarnings);
+  const processingSessions = useProcessingStore((s) => s.getSessions());
+  const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
+  const replayQuery = useMemo(
+    () =>
+      parseReplayQuery(
+        typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search)
+      ),
+    []
+  );
+  const filteredProcessingSessions = useMemo(
+    () =>
+      processingSessions.filter((session) =>
+        missionFilter ? session.missionId === missionFilter : true
+      ),
+    [missionFilter, processingSessions]
+  );
+  const replay = useMemo(
+    () =>
+      buildGovernanceReplay({
+        processingSessions: filteredProcessingSessions,
+        processingAuditTrail,
+        feedItems: useOrganizationStore.getState().organizationFeedItems,
+        runtimeAlerts,
+        syncWarnings,
+        replayQuery: missionFilter ? { ...replayQuery, mission: missionFilter } : replayQuery,
+      }),
+    [
+      filteredProcessingSessions,
+      missionFilter,
+      processingAuditTrail,
+      replayQuery,
+      runtimeAlerts,
+      syncWarnings,
+    ]
+  );
+  const processingAnalytics = useMemo(
+    () => buildProcessingAnalytics(filteredProcessingSessions),
+    [filteredProcessingSessions]
+  );
+  const decisionAttentionItems = useMemo(
+    () =>
+      buildDecisionAttentionQueue({
+        replayDiagnostics: replay.diagnostics,
+        memoryItems: replay.memoryItems,
+        processingSessions: filteredProcessingSessions,
+        runtimeAlerts,
+        replayQuery: missionFilter ? { ...replayQuery, mission: missionFilter } : replayQuery,
+      }),
+    [
+      filteredProcessingSessions,
+      missionFilter,
+      replay.diagnostics,
+      replay.memoryItems,
+      replayQuery,
+      runtimeAlerts,
+    ]
+  );
 
   const filtered = missionFilter
     ? decisions.filter((d) => d.relatedMissionId === missionFilter)
@@ -140,6 +208,22 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
         </Card>
       ) : (
         <div className="space-y-6">
+          <Card>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Decision Context Summary</p>
+            <p className="mt-2 text-xs text-muted">{replay.diagnostics.visibilityExplanation}</p>
+            <p className="mt-1 text-xs text-muted">{replay.diagnostics.confidenceExplanation}</p>
+            <GovernanceExplainabilityCard
+              explanation={processingAnalytics.continuityExplanation}
+              breakdown={processingAnalytics.scoreBreakdown}
+              replayDiagnostics={replay.diagnostics}
+              scope={replayQuery.scope}
+              replayWindow={replayQuery.replayWindow}
+              compact
+            />
+            <div className="mt-3">
+              <DecisionWorkflowSummary items={decisionAttentionItems} />
+            </div>
+          </Card>
           {filtered.map((decision) => {
             const isResolved = decision.status !== "pending";
             const aiRecommendation = recommendations[decision.id];

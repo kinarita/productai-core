@@ -24,6 +24,7 @@ import { ReplayNavigationContext } from "@/components/orchestration/ReplayNaviga
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
+import { DecisionAttentionQueue } from "@/components/orchestration/DecisionAttentionQueue";
 import { getDependencyWarnings } from "@/lib/task/taskDependencies";
 import { getImportantTasks, getRecentlyCreatedTasks } from "@/lib/task/taskSelectors";
 import { getBlockerAge } from "@/lib/task/missionExecutionInsights";
@@ -33,6 +34,7 @@ import { agents } from "@/data/mockData";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
+import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
 
 const healthVariant = {
   stable: "success" as const,
@@ -127,6 +129,17 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
   );
   const diagnostics = replay.diagnostics;
   const validationMetrics = getReplayValidationMetrics();
+  const decisionAttentionItems = useMemo(
+    () =>
+      buildDecisionAttentionQueue({
+        replayDiagnostics: diagnostics,
+        memoryItems: replay.memoryItems,
+        processingSessions: filteredProcessingSessions,
+        runtimeAlerts,
+        replayQuery,
+      }),
+    [diagnostics, filteredProcessingSessions, replay.memoryItems, replayQuery, runtimeAlerts]
+  );
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -401,6 +414,8 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
             </p>
           ) : null}
         </Card>
+
+        <DecisionAttentionQueue items={decisionAttentionItems} />
 
         <Card title="Governance Explainability" description="Cross-view explainability semantics aligned with runtime diagnostics">
           <GovernanceExplainabilityCard

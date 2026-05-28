@@ -666,3 +666,11 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added replay diagnostics configuration-driven and helper-driven wording consistency polish across views.
 - Added Phase 6 completion documentation covering backend integrity, taxonomy, diagnostics, explainability, and advisory boundaries.
 
+## 2026-05-28 (Phase 7-1 executive decision workflow connection)
+
+- Added executive decision attention derivation from replay diagnostics, governance memory, processing review state, and runtime advisories.
+- Added Decision Attention Queue and Decision Workflow Summary UI for recommendation-first CEO visibility.
+- Extended replay summary with decision attention context for executive focus readability.
+- Added Judgment decision context summary with replay-informed governance explainability.
+- Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
+
