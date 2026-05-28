@@ -29,7 +29,7 @@ import { useTaskStore } from "@/lib/store/taskStore";
 import { useSyncStore } from "@/lib/store/syncStore";
 import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
 import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCard";
-import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
+import { queueFeedMessage, queueFeedMetadata } from "@/lib/orchestration/queue/queueFeed";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
@@ -185,6 +185,7 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   }
 
   const pushQueueFeed = (action: Parameters<typeof queueFeedMessage>[0]) => {
+    const metadata = queueFeedMetadata(action);
     addFeedItem({
       type: "coordination",
       author: action === "runtime_lock" ? "Runtime Observer" : "COO",
@@ -195,6 +196,7 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
       message: queueFeedMessage(action, task.title),
       status: "active",
       requiresCeoApproval: false,
+      ...metadata,
     });
   };
 

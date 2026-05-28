@@ -18,6 +18,10 @@ export function ReplaySummaryPanel({
         Scope: {summary.activeScope.replaceAll("_", " ")} · Continuity focus: {summary.continuityFocus} · Severity:{" "}
         {summary.filteredSeverity.replaceAll("_", " ")}
       </p>
+      <p className="text-xs text-muted">
+        Viewing {summary.activeReplayWindow} operational replay window · {summary.visibleEventCount} visible events ·{" "}
+        {summary.timelineDensity} timeline density
+      </p>
       <ul className="space-y-1 text-xs text-muted">
         {summary.keyContinuityDrivers.map((driver) => (
           <li key={driver}>- {driver}</li>

@@ -594,3 +594,13 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Expanded feed query handling to align with replay schema and `gov` continuity.
 - Updated replay summary model with scope/window/continuity context fields.
 
+## 2026-05-28 (Phase 5-9 governance replay polish)
+
+- Added metadata-driven feed filtering for governance/replay precision.
+- Added queue feed metadata normalization helper for replay categories and severity.
+- Migrated Runtime replay filters to chip-based interaction for UX consistency.
+- Applied replayWindow semantics to visible timeline counts (latest/short/medium/extended).
+- Extended replay summary with visible event count and timeline density context.
+- Improved timeline readability with compact/expanded behavior by replay window.
+- Refined explainability wording to reflect replay scope and replay window context.
+

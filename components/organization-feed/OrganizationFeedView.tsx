@@ -178,42 +178,41 @@ export function OrganizationFeedView({
   }
   if (activeGovernanceFilter && activeGovernanceFilter !== "all") {
     filtered = filtered.filter((item) => {
-      const message = item.message.toLowerCase();
       if (activeGovernanceFilter === "governance_summary") {
-        return message.includes("governance summary") || message.includes("governance visibility");
+        return item.governanceCategory === "summary" || item.replayCategory === "summary";
       }
       if (activeGovernanceFilter === "review_lifecycle") {
-        return message.includes("review");
+        return item.governanceCategory === "review" || item.replayCategory === "review";
       }
       if (activeGovernanceFilter === "continuity_events" || activeGovernanceFilter === "continuity") {
-        return message.includes("continuity");
+        return item.governanceCategory === "continuity" || item.continuityCategory !== undefined;
       }
       if (activeGovernanceFilter === "advisory_events") {
-        return message.includes("advisory");
+        return item.replayCategory === "advisory" || item.advisoryLevel !== undefined;
       }
       if (activeGovernanceFilter === "runtime_governance") {
-        return item.type === "runtime" || message.includes("runtime observer");
+        return item.governanceCategory === "runtime" || item.replaySource === "runtime_observer";
       }
       if (activeGovernanceFilter === "processing_governance") {
-        return message.includes("processing governance") || message.includes("processing review");
+        return item.governanceCategory === "processing" || item.replayTags?.includes("processing");
       }
       if (activeGovernanceFilter === "timeline_memory") {
-        return message.includes("snapshot") || message.includes("timeline") || message.includes("governance memory");
+        return item.replayCategory === "timeline" || item.replayCategory === "memory";
       }
       return true;
     });
   }
   if (replayQuery.severity !== "all") {
-    filtered = filtered.filter((item) => item.message.toLowerCase().includes(replayQuery.severity));
+    filtered = filtered.filter((item) => item.replaySeverity === replayQuery.severity);
   }
   if (replayQuery.continuity !== "all") {
-    filtered = filtered.filter((item) => item.message.toLowerCase().includes("continuity"));
+    filtered = filtered.filter((item) => item.continuityCategory === replayQuery.continuity);
   }
   if (replayQuery.advisory !== "all") {
-    filtered = filtered.filter((item) => item.message.toLowerCase().includes("advisory"));
+    filtered = filtered.filter((item) => item.advisoryLevel !== undefined);
   }
   if (replayQuery.review !== "all") {
-    filtered = filtered.filter((item) => item.message.toLowerCase().includes("review"));
+    filtered = filtered.filter((item) => item.governanceCategory === "review");
   }
   const govOptions = useMemo(
     () => [
@@ -260,6 +259,12 @@ export function OrganizationFeedView({
       message: event.message,
       status: "active",
       requiresCeoApproval: false,
+      governanceCategory: "summary",
+      replayCategory: "timeline",
+      continuityCategory: "stable",
+      advisoryLevel: "low",
+      replaySeverity: "low",
+      replaySource: "system",
     });
   };
 
@@ -283,6 +288,12 @@ export function OrganizationFeedView({
       message: event.message,
       status: "active",
       requiresCeoApproval: event.requiresCeoApproval,
+      governanceCategory: "summary",
+      replayCategory: "summary",
+      continuityCategory: "stable",
+      advisoryLevel: "low",
+      replaySeverity: "moderate",
+      replaySource: event.author === "Architect" ? "system" : "coo",
     });
   };
   const generateTimelineEvent = () => {
@@ -295,6 +306,13 @@ export function OrganizationFeedView({
       message: "COO generated executive governance snapshot for operational replay.",
       status: "active",
       requiresCeoApproval: false,
+      governanceCategory: "replay",
+      replayCategory: "timeline",
+      continuityCategory: "stable",
+      advisoryLevel: "low",
+      replaySeverity: "low",
+      replaySource: "coo",
+      replayTags: ["replay", "snapshot"],
     });
   };
   const generateMemoryEvent = () => {
@@ -307,6 +325,13 @@ export function OrganizationFeedView({
       message: "Runtime Observer identified recurring advisory pattern and recorded governance memory.",
       status: "active",
       requiresCeoApproval: false,
+      governanceCategory: "continuity",
+      replayCategory: "memory",
+      continuityCategory: "degraded",
+      advisoryLevel: "moderate",
+      replaySeverity: "moderate",
+      replaySource: "runtime_observer",
+      replayTags: ["memory", "advisory", "runtime"],
     });
   };
 
@@ -430,6 +455,21 @@ export function OrganizationFeedView({
                       CEO approval required
                     </span>
                   )}
+                  {item.governanceCategory ? (
+                    <span className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted">
+                      {item.governanceCategory}
+                    </span>
+                  ) : null}
+                  {item.replayCategory ? (
+                    <span className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted">
+                      {item.replayCategory}
+                    </span>
+                  ) : null}
+                  {item.continuityCategory ? (
+                    <span className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted">
+                      {item.continuityCategory}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-foreground">{item.message}</p>
                 {(item.taskId || item.decisionId) && (

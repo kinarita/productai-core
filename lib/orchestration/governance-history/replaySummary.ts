@@ -29,6 +29,9 @@ export function buildExecutiveReplaySummary(input: {
     activeScope: input.query.scope,
     continuityFocus: input.query.continuity,
     filteredSeverity: input.query.severity,
+    visibleEventCount: input.events.length,
+    timelineDensity: input.events.length > 24 ? "expanded" : "compact",
+    activeReplayWindow: input.query.replayWindow,
     governanceHealthSummary:
       analytics.summary.governanceHealthScore >= 70
         ? "Governance replay indicates stable continuity with manageable review pressure."

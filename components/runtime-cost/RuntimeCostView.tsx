@@ -29,7 +29,7 @@ import { ReplayShareCard } from "@/components/orchestration/ReplayShareCard";
 import { ReplaySummaryPanel } from "@/components/orchestration/ReplaySummaryPanel";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
-import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
+import { queueFeedMessage, queueFeedMetadata } from "@/lib/orchestration/queue/queueFeed";
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
 import { useExecuteStore } from "@/lib/store/executeStore";
 import { useExecutionSessionStore } from "@/lib/store/executionSessionStore";
@@ -54,6 +54,7 @@ import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { ReplayScopeSwitcher } from "@/components/orchestration/ReplayScopeSwitcher";
 import { ReplayWindowSelector } from "@/components/orchestration/ReplayWindowSelector";
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
+import { ReplayFilterChips } from "@/components/orchestration/ReplayFilterChips";
 
 export function RuntimeCostView() {
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
@@ -298,6 +299,7 @@ export function RuntimeCostView() {
   };
 
   const publishGovernanceSummary = () => {
+    const metadata = queueFeedMetadata("processing_governance_summary");
     addFeedItem({
       type: "coordination",
       author: "COO",
@@ -307,6 +309,7 @@ export function RuntimeCostView() {
       message: queueFeedMessage("processing_governance_summary"),
       status: "active",
       requiresCeoApproval: false,
+      ...metadata,
     });
   };
   const filteredAnalytics = useMemo(
@@ -336,6 +339,16 @@ export function RuntimeCostView() {
       }),
     [replay.events, timelineEventTypeFilter, timelineReasonFilter, timelineSeverityFilter, timelineSourceFilter]
   );
+  const replayWindowEventLimit = useMemo(() => {
+    if (replayQuery.replayWindow === "latest") return 8;
+    if (replayQuery.replayWindow === "short") return 16;
+    if (replayQuery.replayWindow === "medium") return 32;
+    return 64;
+  }, [replayQuery.replayWindow]);
+  const visibleReplayEvents = useMemo(
+    () => replayEvents.slice(0, replayWindowEventLimit),
+    [replayEvents, replayWindowEventLimit]
+  );
   const historicalContinuityExplanation = useMemo(() => {
     const recent = replayEvents.slice(0, 3);
     const reviewDensity = recent.filter((event) => event.eventType === "review_requested").length;
@@ -347,8 +360,8 @@ export function RuntimeCostView() {
   }, [replayEvents]);
   const replayExplanation = useMemo(
     () =>
-      `Current continuity explanation reflects ${replayQuery.scope.replaceAll("_", " ")} replay scope with ${replayEvents.length} filtered event(s).`,
-    [replayEvents.length, replayQuery.scope]
+      `Replay visibility currently emphasizes ${replayQuery.scope.replaceAll("_", " ")} context across a ${replayQuery.replayWindow} window.`,
+    [replayQuery.replayWindow, replayQuery.scope]
   );
   const continuityShiftExplanation = useMemo(() => {
     const snapshots = replay.snapshots.slice(0, 2);
@@ -375,7 +388,7 @@ export function RuntimeCostView() {
   const replaySummary = useMemo(
     () =>
       buildExecutiveReplaySummary({
-        events: replayEvents,
+        events: visibleReplayEvents,
         snapshots: replay.snapshots,
         processingSessions: filteredProcessingSessions,
         memoryItems: replay.memoryItems,
@@ -387,7 +400,7 @@ export function RuntimeCostView() {
       filteredProcessingSessions,
       replay.memoryItems,
       replay.snapshots,
-      replayEvents,
+      visibleReplayEvents,
       replayQuery,
     ]
   );
@@ -1026,69 +1039,70 @@ export function RuntimeCostView() {
             </div>
           </div>
           <ReplayQuerySummary query={replayQuery} />
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            <label className="text-xs text-muted">
-              Event type
-              <select
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div>
+              <p className="mb-1 text-xs text-muted">Event type</p>
+              <ReplayFilterChips
                 value={timelineEventTypeFilter}
-                onChange={(e) => handleReplayFilterChange("eventType", e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">all</option>
-                <option value="review_requested">review requested</option>
-                <option value="review_resolved">review resolved</option>
-                <option value="processing_paused">processing paused</option>
-                <option value="runtime_advisory">runtime advisory</option>
-                <option value="governance_summary">governance summary</option>
-              </select>
-            </label>
-            <label className="text-xs text-muted">
-              Severity
-              <select
+                onChange={(v) => handleReplayFilterChange("eventType", v)}
+                options={[
+                  { id: "all", label: "all" },
+                  { id: "review_requested", label: "review requested" },
+                  { id: "review_resolved", label: "review resolved" },
+                  { id: "processing_paused", label: "processing paused" },
+                  { id: "runtime_advisory", label: "runtime advisory" },
+                  { id: "governance_summary", label: "governance summary" },
+                ]}
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-muted">Severity</p>
+              <ReplayFilterChips
                 value={timelineSeverityFilter}
-                onChange={(e) => handleReplayFilterChange("severity", e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">all</option>
-                <option value="low">low</option>
-                <option value="moderate">moderate</option>
-                <option value="elevated">elevated</option>
-                <option value="critical_review">critical review</option>
-              </select>
-            </label>
-            <label className="text-xs text-muted">
-              Source
-              <select
+                onChange={(v) => handleReplayFilterChange("severity", v)}
+                options={[
+                  { id: "all", label: "all" },
+                  { id: "low", label: "low" },
+                  { id: "moderate", label: "moderate" },
+                  { id: "elevated", label: "elevated" },
+                  { id: "critical_review", label: "critical review" },
+                ]}
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-muted">Source</p>
+              <ReplayFilterChips
                 value={timelineSourceFilter}
-                onChange={(e) => handleReplayFilterChange("source", e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">all</option>
-                <option value="Runtime Observer">Runtime Observer</option>
-                <option value="COO">COO</option>
-                <option value="Nova">Nova</option>
-                <option value="CEO">CEO</option>
-              </select>
-            </label>
-            <label className="text-xs text-muted">
-              Reason category
-              <select
+                onChange={(v) => handleReplayFilterChange("source", v)}
+                options={[
+                  { id: "all", label: "all" },
+                  { id: "Runtime Observer", label: "Runtime Observer" },
+                  { id: "COO", label: "COO" },
+                  { id: "Nova", label: "Nova" },
+                  { id: "CEO", label: "CEO" },
+                ]}
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-muted">Reason category</p>
+              <ReplayFilterChips
                 value={timelineReasonFilter}
-                onChange={(e) => handleReplayFilterChange("reasonCategory", e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">all</option>
-                <option value="runtime_stability">runtime stability</option>
-                <option value="provider_instability">provider instability</option>
-                <option value="dependency_blocker">dependency blocker</option>
-                <option value="advisory_review">advisory review</option>
-              </select>
-            </label>
+                onChange={(v) => handleReplayFilterChange("reasonCategory", v)}
+                options={[
+                  { id: "all", label: "all" },
+                  { id: "runtime_stability", label: "runtime stability" },
+                  { id: "provider_instability", label: "provider instability" },
+                  { id: "dependency_blocker", label: "dependency blocker" },
+                  { id: "advisory_review", label: "advisory review" },
+                ]}
+              />
+            </div>
           </div>
           <div className="mt-4">
             <OperationalReplayPanel
-              replay={{ ...replay, events: replayEvents }}
+              replay={{ ...replay, events: visibleReplayEvents }}
               missionNameMap={missionNameMap}
+              maxEvents={replayWindowEventLimit}
             />
           </div>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">

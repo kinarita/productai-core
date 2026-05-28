@@ -1,5 +1,4 @@
-export function queueFeedMessage(
-  action:
+export type QueueFeedAction =
     | "slot_reserved"
     | "reservation_released"
     | "queued"
@@ -30,9 +29,9 @@ export function queueFeedMessage(
     | "processing_governance_reason_added"
     | "processing_governance_summary"
     | "continuity_advisory"
-    | "runtime_governance_summary",
-  detail?: string
-): string {
+    | "runtime_governance_summary";
+
+export function queueFeedMessage(action: QueueFeedAction, detail?: string): string {
   switch (action) {
     case "slot_reserved":
       return `COO reserved execution preparation slot${detail ? ` for ${detail}` : ""}.`;
@@ -99,4 +98,61 @@ export function queueFeedMessage(
     default:
       return "Queue governance event recorded.";
   }
+}
+
+export function queueFeedMetadata(action: QueueFeedAction): {
+  governanceCategory: "summary" | "review" | "continuity" | "runtime" | "processing" | "replay";
+  replayCategory: "timeline" | "memory" | "summary" | "review" | "advisory";
+  continuityCategory: "stable" | "degraded" | "review_required";
+  advisoryLevel: "low" | "moderate" | "elevated";
+  replayTags: string[];
+  replaySeverity: "low" | "moderate" | "elevated" | "critical_review";
+  replaySource: "runtime_observer" | "coo" | "ceo" | "system";
+} {
+  if (action === "runtime_governance_summary" || action === "runtime_lock") {
+    return {
+      governanceCategory: "runtime",
+      replayCategory: "advisory",
+      continuityCategory: "degraded",
+      advisoryLevel: "elevated",
+      replayTags: ["runtime", "advisory", "continuity"],
+      replaySeverity: "elevated",
+      replaySource: "runtime_observer",
+    };
+  }
+  if (action.includes("review")) {
+    return {
+      governanceCategory: "review",
+      replayCategory: "review",
+      continuityCategory:
+        action === "processing_review_required" ? "review_required" : "degraded",
+      advisoryLevel: "moderate",
+      replayTags: ["review", "governance"],
+      replaySeverity:
+        action === "processing_review_denied" || action === "processing_review_revoked"
+          ? "critical_review"
+          : "moderate",
+      replaySource: action.includes("denied") || action.includes("revoked") ? "ceo" : "coo",
+    };
+  }
+  if (action.includes("summary") || action.includes("continuity")) {
+    return {
+      governanceCategory: "summary",
+      replayCategory: "summary",
+      continuityCategory: "stable",
+      advisoryLevel: "low",
+      replayTags: ["summary", "replay"],
+      replaySeverity: "low",
+      replaySource: "coo",
+    };
+  }
+  return {
+    governanceCategory: "processing",
+    replayCategory: "timeline",
+    continuityCategory: "stable",
+    advisoryLevel: "low",
+    replayTags: ["processing", "timeline"],
+    replaySeverity: "low",
+    replaySource: "coo",
+  };
 }

@@ -215,6 +215,13 @@ export interface OrganizationFeedItem {
   updatedAt?: string;
   syncedAt?: string;
   requiresCeoApproval?: boolean;
+  governanceCategory?: "summary" | "review" | "continuity" | "runtime" | "processing" | "replay";
+  replayCategory?: "timeline" | "memory" | "summary" | "review" | "advisory";
+  continuityCategory?: "stable" | "degraded" | "review_required";
+  advisoryLevel?: "low" | "moderate" | "elevated";
+  replayTags?: string[];
+  replaySeverity?: "low" | "moderate" | "elevated" | "critical_review";
+  replaySource?: "runtime_observer" | "coo" | "ceo" | "system";
 }
 
 export interface RuntimeCost {

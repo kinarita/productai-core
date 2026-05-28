@@ -84,6 +84,9 @@ export interface ExecutiveReplaySummary {
   activeScope: string;
   continuityFocus: string;
   filteredSeverity: string;
+  visibleEventCount: number;
+  timelineDensity: string;
+  activeReplayWindow: string;
   governanceHealthSummary: string;
   keyContinuityDrivers: string[];
   reviewPressureSummary: string;

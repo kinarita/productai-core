@@ -5,19 +5,22 @@ import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel
 export function GovernanceTimeline({
   events,
   missionNameMap,
+  maxEvents = 12,
 }: {
   events: GovernanceTimelineEvent[];
   missionNameMap?: Record<string, string>;
+  maxEvents?: number;
 }) {
+  const compact = maxEvents <= 16;
   if (!events.length) {
     return <p className="text-xs text-muted">No governance timeline events available.</p>;
   }
   return (
     <ul className="space-y-2">
-      {events.slice(0, 12).map((event) => (
+      {events.slice(0, maxEvents).map((event) => (
         <li key={event.id} className="rounded-lg border border-border bg-surface p-3 text-xs">
           <p className="font-medium text-foreground">{event.title}</p>
-          <p className="mt-1 text-muted">{event.summary}</p>
+          <p className="mt-1 text-muted">{compact ? event.summary : `${event.summary} (${event.id})`}</p>
           <p className="mt-1 text-muted">
             {event.timestamp} · {event.source} · {event.severity.replaceAll("_", " ")} ·{" "}
             {event.eventType.replaceAll("_", " ")}

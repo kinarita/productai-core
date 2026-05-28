@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-9 governance replay filtering and readability polish)
+
+- Metadata-driven governance feed filtering model and feed metadata fields.
+- Queue feed metadata normalization via `queueFeedMetadata()`.
+- Runtime replay chip-based filter consolidation and reduced select usage.
+- Replay window semantics mapped to timeline visibility ranges.
+- Replay summary extensions for visible events and timeline density context.
+- Documentation: `docs/PHASE5_REPLAY_POLISH.md`.
+
 ### Added (Phase 5-8 unified governance replay query architecture)
 
 - Shared replay query layer (`lib/replay-query`) with unified state and helpers.

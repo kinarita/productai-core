@@ -1,12 +1,6 @@
 import { ReplayFilterChips } from "@/components/orchestration/ReplayFilterChips";
 import type { ReplayWindow } from "@/lib/replay-query/replayQueryTypes";
-
-const windowOptions: { id: ReplayWindow; label: string }[] = [
-  { id: "latest", label: "Latest" },
-  { id: "short", label: "Short" },
-  { id: "medium", label: "Medium" },
-  { id: "extended", label: "Extended" },
-];
+import { replayWindowOptions } from "@/lib/replay-query/replayTokens";
 
 export function ReplayWindowSelector({
   value,
@@ -15,5 +9,11 @@ export function ReplayWindowSelector({
   value: ReplayWindow;
   onChange: (value: ReplayWindow) => void;
 }) {
-  return <ReplayFilterChips value={value} options={windowOptions} onChange={(v) => onChange(v as ReplayWindow)} />;
+  return (
+    <ReplayFilterChips
+      value={value}
+      options={replayWindowOptions()}
+      onChange={(v) => onChange(v as ReplayWindow)}
+    />
+  );
 }
