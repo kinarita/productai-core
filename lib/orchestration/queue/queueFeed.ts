@@ -18,7 +18,12 @@ export function queueFeedMessage(
     | "execution_boundary_confirmed"
     | "execution_session_started"
     | "execution_start_denied"
-    | "execution_session_revoked",
+    | "execution_session_revoked"
+    | "processing_prepared"
+    | "processing_governance_activated"
+    | "processing_paused"
+    | "processing_revoked"
+    | "processing_review_required",
   detail?: string
 ): string {
   switch (action) {
@@ -60,6 +65,16 @@ export function queueFeedMessage(
       return `Execution session start was denied under governance review${detail ? ` for ${detail}` : ""}.`;
     case "execution_session_revoked":
       return `Execution session activation was revoked pending stabilization${detail ? ` for ${detail}` : ""}.`;
+    case "processing_prepared":
+      return `COO prepared processing governance continuity${detail ? ` for ${detail}` : ""}.`;
+    case "processing_governance_activated":
+      return "Processing governance entered active continuity state. No operational execution has been initiated.";
+    case "processing_paused":
+      return `Runtime Observer recommended processing pause${detail ? ` for ${detail}` : ""}.`;
+    case "processing_revoked":
+      return `Processing governance was revoked under review${detail ? ` for ${detail}` : ""}.`;
+    case "processing_review_required":
+      return "Processing review was requested pending runtime stabilization.";
     default:
       return "Queue governance event recorded.";
   }

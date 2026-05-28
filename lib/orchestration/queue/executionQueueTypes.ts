@@ -20,6 +20,12 @@ export type QueueLifecycleStatus =
   | "execution_session_active"
   | "execution_start_denied"
   | "execution_start_revoked"
+  | "processing_prepared"
+  | "processing_active"
+  | "processing_paused"
+  | "processing_revoked"
+  | "processing_denied"
+  | "processing_review_required"
   | "executing"
   | "completed";
 

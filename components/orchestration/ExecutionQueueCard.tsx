@@ -8,6 +8,9 @@ import { ExecutionIntentConfirmation } from "@/components/orchestration/Executio
 import { ExecutionBoundaryReview } from "@/components/orchestration/ExecutionBoundaryReview";
 import { ExecutionSessionCard } from "@/components/orchestration/ExecutionSessionCard";
 import { ExecutionSessionTimeline } from "@/components/orchestration/ExecutionSessionTimeline";
+import { ProcessingAuditTimeline } from "@/components/orchestration/ProcessingAuditTimeline";
+import { ProcessingBoundaryReview } from "@/components/orchestration/ProcessingBoundaryReview";
+import { ProcessingGovernanceCard } from "@/components/orchestration/ProcessingGovernanceCard";
 import { QueueLifecycleView } from "@/components/orchestration/QueueLifecycleView";
 import { ReadinessScoreBadge } from "@/components/orchestration/ReadinessScoreBadge";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
@@ -20,6 +23,7 @@ import type { ExecutionQueueItem } from "@/lib/orchestration/queue/executionQueu
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import type { ExecuteAuditEntry, ExecuteStub } from "@/lib/orchestration/execute/executeTypes";
 import type { ExecutionSession, ExecutionStartAuditEntry } from "@/lib/orchestration/execution-start/executionStartTypes";
+import type { ProcessingAuditEntry, ProcessingSession } from "@/lib/orchestration/processing/processingTypes";
 import { Bookmark, BookmarkX, Layers, ShieldCheck, UserCheck, UserX, Undo2, ClipboardCheck, Ban, PlayCircle } from "lucide-react";
 
 interface ExecutionQueueCardProps {
@@ -52,6 +56,12 @@ interface ExecutionQueueCardProps {
   onStartExecutionSession?: () => void;
   onDenyExecutionStart?: () => void;
   onRevokeExecutionSession?: () => void;
+  processingSession?: ProcessingSession;
+  processingAudit?: ProcessingAuditEntry[];
+  onPrepareProcessing?: () => void;
+  onActivateProcessing?: () => void;
+  onPauseProcessing?: () => void;
+  onRevokeProcessing?: () => void;
 }
 
 export function ExecutionQueueCard({
@@ -84,6 +94,12 @@ export function ExecutionQueueCard({
   onStartExecutionSession,
   onDenyExecutionStart,
   onRevokeExecutionSession,
+  processingSession,
+  processingAudit = [],
+  onPrepareProcessing,
+  onActivateProcessing,
+  onPauseProcessing,
+  onRevokeProcessing,
 }: ExecutionQueueCardProps) {
   return (
     <article className="rounded-lg border border-border bg-surface p-4">
@@ -151,6 +167,16 @@ export function ExecutionQueueCard({
         item.queueStatus === "execution_session_active") ? (
         <div className="mt-3">
           <ExecutionBoundaryReview
+            item={item}
+            runtimeAdvisory={runtimeLockActive ? "Runtime advisory lock is active." : undefined}
+          />
+        </div>
+      ) : null}
+      {(item.queueStatus === "execution_session_active" ||
+        item.queueStatus === "processing_prepared" ||
+        item.queueStatus === "processing_active") ? (
+        <div className="mt-3">
+          <ProcessingBoundaryReview
             item={item}
             runtimeAdvisory={runtimeLockActive ? "Runtime advisory lock is active." : undefined}
           />
@@ -359,6 +385,49 @@ export function ExecutionQueueCard({
             Revoke Execution Session
           </button>
         ) : null}
+        {item.queueStatus === "execution_session_active" && onPrepareProcessing ? (
+          <button
+            type="button"
+            onClick={onPrepareProcessing}
+            disabled={runtimeLockActive}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface disabled:opacity-60"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" />
+            Prepare Processing
+          </button>
+        ) : null}
+        {item.queueStatus === "processing_prepared" && onActivateProcessing ? (
+          <button
+            type="button"
+            onClick={onActivateProcessing}
+            disabled={runtimeLockActive}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+          >
+            <PlayCircle className="h-3.5 w-3.5" />
+            Activate Processing Governance
+          </button>
+        ) : null}
+        {item.queueStatus === "processing_active" && onPauseProcessing ? (
+          <button
+            type="button"
+            onClick={onPauseProcessing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Pause Processing
+          </button>
+        ) : null}
+        {(item.queueStatus === "processing_active" || item.queueStatus === "processing_prepared") &&
+        onRevokeProcessing ? (
+          <button
+            type="button"
+            onClick={onRevokeProcessing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+          >
+            <Ban className="h-3.5 w-3.5" />
+            Revoke Processing
+          </button>
+        ) : null}
       </div>
       <AuthorizationRequestCard
         item={item}
@@ -377,6 +446,12 @@ export function ExecutionQueueCard({
       </div>
       <div className="mt-3">
         <ExecutionSessionTimeline entries={executionSessionAudit} />
+      </div>
+      <div className="mt-3">
+        <ProcessingGovernanceCard session={processingSession} />
+      </div>
+      <div className="mt-3">
+        <ProcessingAuditTimeline entries={processingAudit} />
       </div>
     </article>
   );

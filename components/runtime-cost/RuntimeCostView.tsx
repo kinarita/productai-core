@@ -22,6 +22,7 @@ import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGa
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
 import { useExecuteStore } from "@/lib/store/executeStore";
 import { useExecutionSessionStore } from "@/lib/store/executionSessionStore";
+import { useProcessingStore } from "@/lib/store/processingStore";
 import { describeAllExecutionBoundaries } from "@/lib/orchestration/execution/executionAdapters";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
@@ -97,6 +98,13 @@ export function RuntimeCostView() {
   const revokeExecutionSession = useExecutionSessionStore((s) => s.revokeExecutionSession);
   const getExecutionSession = useExecutionSessionStore((s) => s.getSessionForQueueItem);
   const getExecutionSessionAudit = useExecutionSessionStore((s) => s.getAuditForQueueItem);
+  const processingSummary = useProcessingStore((s) => s.getSummary());
+  const prepareProcessing = useProcessingStore((s) => s.prepareProcessing);
+  const activateProcessing = useProcessingStore((s) => s.activateProcessing);
+  const pauseProcessing = useProcessingStore((s) => s.pauseProcessing);
+  const revokeProcessing = useProcessingStore((s) => s.revokeProcessing);
+  const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
+  const getProcessingAudit = useProcessingStore((s) => s.getAuditForQueueItem);
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
@@ -387,6 +395,8 @@ export function RuntimeCostView() {
                       executeAudit={getExecuteAudit(item.id)}
                       executionSession={getExecutionSession(item.id)}
                       executionSessionAudit={getExecutionSessionAudit(item.id)}
+                      processingSession={getProcessingSession(item.id)}
+                      processingAudit={getProcessingAudit(item.id)}
                       onReserve={() => {
                         useExecutionQueueStore.getState().reserveSlot(item.id, "COO");
                       }}
@@ -442,6 +452,23 @@ export function RuntimeCostView() {
                       }}
                       onRevokeExecutionSession={() => {
                         revokeExecutionSession(item.id);
+                      }}
+                      onPrepareProcessing={() => {
+                        prepareProcessing(
+                          item.id,
+                          runtimeLock.active
+                            ? "Runtime Observer recommended review before activation."
+                            : "Runtime continuity stable for governance processing."
+                        );
+                      }}
+                      onActivateProcessing={() => {
+                        activateProcessing(item.id);
+                      }}
+                      onPauseProcessing={() => {
+                        pauseProcessing(item.id, "Runtime Observer recommended temporary pause.");
+                      }}
+                      onRevokeProcessing={() => {
+                        revokeProcessing(item.id, "Governance continuity revoked by human operator.");
                       }}
                     />
                   </li>
@@ -593,6 +620,34 @@ export function RuntimeCostView() {
           </div>
           <p className="mt-3 text-xs text-muted">
             execution_session_active is governance state only. No execution processing is running.
+          </p>
+        </Card>
+
+        <Card title="Processing Governance State">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Prepared</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.prepared}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Active continuity</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.active}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Paused</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.paused}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Revoked</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.revoked}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Review required</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.reviewRequired}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            processing_active is governance continuity only. No operational execution has been initiated.
           </p>
         </Card>
 

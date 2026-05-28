@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-2 controlled processing governance stub)
+
+- Controlled processing governance layer in `lib/orchestration/processing/`.
+- Processing session model, policy gates, boundary semantics, and audit continuity.
+- `processingStore` with prepare/activate/pause/revoke governance actions.
+- Queue UI controls for processing governance lifecycle.
+- Runtime & Cost processing governance state summary.
+- Documentation: `docs/PHASE5_PROCESSING_GOVERNANCE.md`.
+
 ### Added (Phase 5-1 controlled execution session governance layer)
 
 - Controlled execution start layer in `lib/orchestration/execution-start/`.

@@ -1,5 +1,27 @@
 # ProductAI Development Progress
 
+## 2026-05-28 — Phase 5-2 controlled processing governance stub
+
+### Objective
+
+Connect `execution_session_active` to `processing_active` semantics with governance continuity only, while keeping operational execution disabled.
+
+### Implemented in Phase 5-2
+
+- Processing layer under `lib/orchestration/processing/`
+- `processingStore` with prepare/activate/pause/revoke flow
+- Queue lifecycle extension for `processing_prepared` and `processing_active` (+ paused/revoked/review states)
+- Processing boundary semantics and governance-only language
+- Processing audit continuity and timeline components
+- Task Detail processing controls and governance timeline visibility
+- Runtime & Cost processing governance summary section
+- Feed events for processing governance transitions
+- Documentation: `docs/PHASE5_PROCESSING_GOVERNANCE.md`
+
+### Scope boundaries (kept)
+
+- No actual code execution, MCP/GitHub/Claude Code execution, deploy automation, or autonomous worker processing
+
 ## 2026-05-28 — Phase 5-1 controlled execution session governance layer
 
 ### Objective

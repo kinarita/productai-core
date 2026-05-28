@@ -36,6 +36,7 @@ import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizati
 import { ExecutionIntentReview } from "@/components/orchestration/ExecutionIntentReview";
 import { useExecuteStore } from "@/lib/store/executeStore";
 import { useExecutionSessionStore } from "@/lib/store/executionSessionStore";
+import { useProcessingStore } from "@/lib/store/processingStore";
 import type { TaskEvent, TaskStatus } from "@/types/productai";
 
 const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
@@ -102,6 +103,12 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const revokeExecutionSession = useExecutionSessionStore((s) => s.revokeExecutionSession);
   const getExecutionSession = useExecutionSessionStore((s) => s.getSessionForQueueItem);
   const getExecutionSessionAudit = useExecutionSessionStore((s) => s.getAuditForQueueItem);
+  const prepareProcessing = useProcessingStore((s) => s.prepareProcessing);
+  const activateProcessing = useProcessingStore((s) => s.activateProcessing);
+  const pauseProcessing = useProcessingStore((s) => s.pauseProcessing);
+  const revokeProcessing = useProcessingStore((s) => s.revokeProcessing);
+  const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
+  const getProcessingAudit = useProcessingStore((s) => s.getAuditForQueueItem);
 
   const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
 
@@ -388,6 +395,8 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     executeAudit={getExecuteAudit(queueItem.id)}
                     executionSession={getExecutionSession(queueItem.id)}
                     executionSessionAudit={getExecutionSessionAudit(queueItem.id)}
+                    processingSession={getProcessingSession(queueItem.id)}
+                    processingAudit={getProcessingAudit(queueItem.id)}
                     onReserve={() => {
                       refreshRuntimeLock(syncWarnings.length, alerts.length);
                       if (reserveSlot(queueItem.id, "COO")) pushQueueFeed("slot_reserved");
@@ -474,6 +483,33 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     onRevokeExecutionSession={() => {
                       if (revokeExecutionSession(queueItem.id)) {
                         pushQueueFeed("execution_session_revoked");
+                      }
+                    }}
+                    onPrepareProcessing={() => {
+                      if (
+                        prepareProcessing(
+                          queueItem.id,
+                          runtimeLock.active
+                            ? "Runtime Observer detected degraded continuity."
+                            : "Runtime continuity stable for governance processing."
+                        )
+                      ) {
+                        pushQueueFeed("processing_prepared");
+                      }
+                    }}
+                    onActivateProcessing={() => {
+                      if (activateProcessing(queueItem.id)) {
+                        pushQueueFeed("processing_governance_activated");
+                      }
+                    }}
+                    onPauseProcessing={() => {
+                      if (pauseProcessing(queueItem.id, "Governance review recommended due to runtime conditions.")) {
+                        pushQueueFeed("processing_paused");
+                      }
+                    }}
+                    onRevokeProcessing={() => {
+                      if (revokeProcessing(queueItem.id)) {
+                        pushQueueFeed("processing_revoked");
                       }
                     }}
                   />
