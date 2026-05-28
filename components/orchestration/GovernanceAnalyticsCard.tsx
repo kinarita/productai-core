@@ -1,11 +1,22 @@
+import Link from "next/link";
+import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
 import { GovernanceContinuityScore } from "@/components/orchestration/GovernanceContinuityScore";
 import { GovernanceHealthBadge } from "@/components/orchestration/GovernanceHealthBadge";
 import { SeverityDistributionBar } from "@/components/orchestration/SeverityDistributionBar";
 import { ProcessingReviewQueue } from "@/components/orchestration/ProcessingReviewQueue";
+import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel";
 import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
 import type { ProcessingSession } from "@/lib/orchestration/processing/processingTypes";
 
-export function GovernanceAnalyticsCard({ sessions }: { sessions: ProcessingSession[] }) {
+export function GovernanceAnalyticsCard({
+  sessions,
+  missionNameMap,
+  filterQuery = "",
+}: {
+  sessions: ProcessingSession[];
+  missionNameMap?: Record<string, string>;
+  filterQuery?: string;
+}) {
   const analytics = buildProcessingAnalytics(sessions);
   const topCategories = Object.entries(analytics.categoryDistribution)
     .sort((a, b) => b[1] - a[1])
@@ -45,7 +56,30 @@ export function GovernanceAnalyticsCard({ sessions }: { sessions: ProcessingSess
           ))}
         </ul>
       </div>
-      <GovernanceContinuityScore score={analytics.summary.governanceHealthScore} />
+      <GovernanceContinuityScore
+        score={analytics.summary.governanceHealthScore}
+        contributionLabel="Score contribution combines runtime stability, advisory density, review load, blocker density, and governance continuity."
+      />
+      <GovernanceExplainabilityCard
+        explanation={analytics.continuityExplanation}
+        breakdown={analytics.scoreBreakdown}
+      />
+      <div className="rounded-lg border border-border bg-surface p-3">
+        <p className="mb-2 text-xs font-medium uppercase text-muted">Mission governance risk density</p>
+        <ul className="space-y-1 text-xs text-muted">
+          {Object.entries(analytics.missionRisk)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 4)
+            .map(([missionId, risk]) => (
+              <li key={missionId}>
+                <Link href={`/missions/${missionId}`} className="font-medium text-accent hover:underline">
+                  {resolveMissionLabel({ missionId, missionNameMap })}
+                </Link>{" "}
+                · risk {risk}
+              </li>
+            ))}
+        </ul>
+      </div>
       <div className="rounded-lg border border-border bg-surface p-3">
         <p className="mb-2 text-xs font-medium uppercase text-muted">Processing governance review queue</p>
         <ProcessingReviewQueue
@@ -55,7 +89,16 @@ export function GovernanceAnalyticsCard({ sessions }: { sessions: ProcessingSess
               session.processingStatus === "processing_denied" ||
               session.processingStatus === "processing_revoked"
           )}
+          missionNameMap={missionNameMap}
         />
+        <div className="mt-2 flex flex-wrap gap-3 text-xs">
+          <Link href={`/runtime-cost${filterQuery}`} className="font-medium text-accent hover:underline">
+            View details →
+          </Link>
+          <Link href={`/organization-feed?gov=processing_governance`} className="font-medium text-accent hover:underline">
+            Open related processing review →
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -253,19 +253,19 @@ export function CeoHomeView() {
                 {processingAnalytics.summary.elevatedRiskCount}
               </p>
             </Link>
-            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+            <Link href="/runtime-cost?review=processing_review_required" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Review-required sessions</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {processingAnalytics.summary.reviewRequiredCount}
               </p>
             </Link>
-            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+            <Link href="/runtime-cost?category=runtime_stability" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Runtime continuity concerns</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {processingAnalytics.summary.runtimeInstabilityCount}
               </p>
             </Link>
-            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+            <Link href="/runtime-cost?review=processing_paused" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
               <p className="text-xs font-medium uppercase text-muted">Processing pauses/revokes</p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
                 {

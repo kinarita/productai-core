@@ -716,6 +716,17 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     No governance reasons match the selected filter for this task.
                   </p>
                 )}
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <Link
+                    href={`/runtime-cost?mission=${task.missionId}&category=${reasonCategoryFilter}&severity=${reasonSeverityFilter}`}
+                    className="font-medium text-accent hover:underline"
+                  >
+                    View details →
+                  </Link>
+                  <Link href={`/organization-feed?task=${task.id}&gov=processing_governance`} className="font-medium text-accent hover:underline">
+                    Open related processing review →
+                  </Link>
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted">

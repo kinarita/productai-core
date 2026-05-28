@@ -12,11 +12,13 @@ import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
 import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
 import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
+import { useMissionStore } from "@/lib/store/missionStore";
 import { useUiStore } from "@/lib/store/uiStore";
 import type { FeedFilter } from "@/lib/store/uiStore";
 import type { OrganizationFeedItem } from "@/types/productai";
 import { ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -87,6 +89,7 @@ interface OrganizationFeedViewProps {
   taskFilter?: string;
   typeFilter?: string;
   statusFilter?: string;
+  governanceFilter?: string;
 }
 
 function matchesStatus(item: OrganizationFeedItem, status?: string) {
@@ -113,6 +116,7 @@ export function OrganizationFeedView({
   taskFilter,
   typeFilter,
   statusFilter,
+  governanceFilter,
 }: OrganizationFeedViewProps) {
   useMissionFilterFromUrl(missionFilter);
   useLiveOrganizationFeed(true);
@@ -121,6 +125,8 @@ export function OrganizationFeedView({
   const addFeedItemWithSync = useOrganizationStore((s) => s.addFeedItemWithSync);
   const activeFeedFilter = useUiStore((s) => s.activeFeedFilter);
   const setFeedFilter = useUiStore((s) => s.setFeedFilter);
+  const missions = useMissionStore((s) => s.missions);
+  const missionNameMap = Object.fromEntries(missions.map((m) => [m.id, m.name]));
   const filterChipClass =
     "rounded-md border border-border bg-surface px-2 py-1 text-muted";
 
@@ -134,6 +140,30 @@ export function OrganizationFeedView({
   }
   if (typeFilter) {
     filtered = filtered.filter((f) => f.type === typeFilter);
+  }
+  if (governanceFilter) {
+    filtered = filtered.filter((item) => {
+      const message = item.message.toLowerCase();
+      if (governanceFilter === "governance_summary") {
+        return message.includes("governance summary") || message.includes("governance visibility");
+      }
+      if (governanceFilter === "review_lifecycle") {
+        return message.includes("review");
+      }
+      if (governanceFilter === "continuity_events") {
+        return message.includes("continuity");
+      }
+      if (governanceFilter === "advisory_events") {
+        return message.includes("advisory");
+      }
+      if (governanceFilter === "runtime_governance") {
+        return item.type === "runtime" || message.includes("runtime observer");
+      }
+      if (governanceFilter === "processing_governance") {
+        return message.includes("processing governance") || message.includes("processing review");
+      }
+      return true;
+    });
   }
 
   filtered = filtered.filter((f) => matchesFeedFilter(f, activeFeedFilter));
@@ -194,18 +224,44 @@ export function OrganizationFeedView({
       {missionFilter && (
         <MissionFilterBanner missionId={missionFilter} basePath="/organization-feed" />
       )}
-      {(missionFilter || taskFilter || typeFilter || statusFilter) && (
+      {(missionFilter || taskFilter || typeFilter || statusFilter || governanceFilter) && (
         <div className="mb-3 flex flex-wrap gap-2 text-xs">
-          {missionFilter ? <span className={filterChipClass}>mission: {missionFilter}</span> : null}
+          {missionFilter ? (
+            <span className={filterChipClass}>
+              mission: {resolveMissionLabel({ missionId: missionFilter, missionNameMap })}
+            </span>
+          ) : null}
           {taskFilter ? <span className={filterChipClass}>task: {taskFilter}</span> : null}
           {typeFilter ? <span className={filterChipClass}>type: {typeFilter}</span> : null}
           {statusFilter ? <span className={filterChipClass}>status: {statusFilter}</span> : null}
+          {governanceFilter ? <span className={filterChipClass}>governance: {governanceFilter}</span> : null}
           <span className={filterChipClass}>view: {activeFeedFilter}</span>
           <Link href="/organization-feed" className="rounded-md border border-border bg-background px-2 py-1 text-accent hover:bg-surface">
             Clear filters
           </Link>
         </div>
       )}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted">Governance:</span>
+        <Link href="/organization-feed?gov=governance_summary" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
+          summary
+        </Link>
+        <Link href="/organization-feed?gov=review_lifecycle" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
+          review lifecycle
+        </Link>
+        <Link href="/organization-feed?gov=continuity_events" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
+          continuity
+        </Link>
+        <Link href="/organization-feed?gov=advisory_events" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
+          advisory
+        </Link>
+        <Link href="/organization-feed?gov=runtime_governance" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
+          runtime governance
+        </Link>
+        <Link href="/organization-feed?gov=processing_governance" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
+          processing governance
+        </Link>
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted">Filter:</span>

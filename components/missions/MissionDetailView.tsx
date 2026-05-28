@@ -712,6 +712,17 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
             <p className="mt-3 text-xs text-muted">
               Governance continuity remains human-prioritized. Analytics are review guidance only.
             </p>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs">
+              <Link
+                href={`/runtime-cost?mission=${missionId}&review=processing_review_required`}
+                className="font-medium text-accent hover:underline"
+              >
+                Open related processing review →
+              </Link>
+              <Link href={`/tasks?mission=${missionId}`} className="font-medium text-accent hover:underline">
+                View mission tasks →
+              </Link>
+            </div>
           </Card>
 
           <Card>

@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-5 governance analytics explainability and navigation)
+
+- URL-synced processing governance analytics filters and shareable runtime views.
+- Explainable governance continuity scoring model and contribution breakdown.
+- Executive drilldown navigation from analytics cards to mission/task/review contexts.
+- Mission label normalization helper across governance visibility surfaces.
+- Organization Feed governance analytics filter chips for continuity and review events.
+- Documentation: `docs/PHASE5_GOVERNANCE_EXPLAINABILITY.md`.
+
 ### Added (Phase 5-4 processing governance visibility analytics)
 
 - Processing governance analytics module with severity/category/risk distributions.

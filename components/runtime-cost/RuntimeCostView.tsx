@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Card, StatCard } from "@/components/Card";
 import { Badge } from "@/components/Badge";
@@ -15,10 +16,13 @@ import { buildExecutionQueue } from "@/lib/orchestration/materialization/executi
 import { useExecutionStore } from "@/lib/store/executionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useMaterializationStore } from "@/lib/store/materializationStore";
+import { useMissionStore } from "@/lib/store/missionStore";
 import { useTaskStore } from "@/lib/store/taskStore";
 import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
 import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCard";
 import { GovernanceAnalyticsCard } from "@/components/orchestration/GovernanceAnalyticsCard";
+import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
+import { GovernanceFilterBar } from "@/components/orchestration/GovernanceFilterBar";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
@@ -34,6 +38,8 @@ import {
   getSuggestedRetryLabel,
 } from "@/lib/services/syncPolicyUi";
 import { runtimeCosts } from "@/data/mockData";
+import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel";
+import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
 
 export function RuntimeCostView() {
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
@@ -57,6 +63,7 @@ export function RuntimeCostView() {
   const materializationRecords = useMaterializationStore((s) => s.records);
   const allTasks = useTaskStore((s) => s.tasks);
   const addFeedItem = useOrganizationStore((s) => s.addFeedItemWithSync);
+  const missions = useMissionStore((s) => s.missions);
 
   const orgReadinessSummary = {
     missionId: "organization",
@@ -118,10 +125,27 @@ export function RuntimeCostView() {
   const [filterAdvisory, setFilterAdvisory] = useState<string>("all");
   const [filterMission, setFilterMission] = useState<string>("all");
   const [filterReviewState, setFilterReviewState] = useState<string>("all");
+  const [filterContinuity, setFilterContinuity] = useState<string>("all");
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
   }, [syncWarnings.length, alerts.length, refreshRuntimeLock]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const category = params.get("category");
+    const severity = params.get("severity");
+    const advisory = params.get("advisory");
+    const mission = params.get("mission");
+    const review = params.get("review");
+    const continuity = params.get("continuity");
+    if (category) setFilterCategory(category);
+    if (severity) setFilterSeverity(severity);
+    if (advisory) setFilterAdvisory(advisory);
+    if (mission) setFilterMission(mission);
+    if (review) setFilterReviewState(review);
+    if (continuity) setFilterContinuity(continuity);
+  }, []);
 
   const apiHealth = getOverallApiHealth(providerHealth);
   const providerDegraded = providerHealth.some(
@@ -161,14 +185,63 @@ export function RuntimeCostView() {
       }
       if (filterMission !== "all" && session.missionId !== filterMission) return false;
       if (filterReviewState !== "all" && session.processingStatus !== filterReviewState) return false;
+      if (filterContinuity !== "all") {
+        if (filterContinuity === "stable" && session.reviewRequired) return false;
+        if (filterContinuity === "degraded" && !session.reviewRequired) return false;
+      }
       return true;
     });
-  }, [filterAdvisory, filterCategory, filterMission, filterReviewState, filterSeverity, processingSessions]);
+  }, [
+    filterAdvisory,
+    filterCategory,
+    filterContinuity,
+    filterMission,
+    filterReviewState,
+    filterSeverity,
+    processingSessions,
+  ]);
 
-  const missionIds = useMemo(
-    () => Array.from(new Set(processingSessions.map((session) => session.missionId))),
-    [processingSessions]
+  const missionNameMap = useMemo(
+    () => Object.fromEntries(missions.map((mission) => [mission.id, mission.name])),
+    [missions]
   );
+  const missionOptions = useMemo(
+    () =>
+      Array.from(new Set(processingSessions.map((session) => session.missionId))).map((missionId) => ({
+        id: missionId,
+        label: resolveMissionLabel({ missionId, missionNameMap }),
+      })),
+    [missionNameMap, processingSessions]
+  );
+
+  const filterQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filterCategory !== "all") params.set("category", filterCategory);
+    if (filterSeverity !== "all") params.set("severity", filterSeverity);
+    if (filterAdvisory !== "all") params.set("advisory", filterAdvisory);
+    if (filterMission !== "all") params.set("mission", filterMission);
+    if (filterReviewState !== "all") params.set("review", filterReviewState);
+    if (filterContinuity !== "all") params.set("continuity", filterContinuity);
+    const text = params.toString();
+    return text ? `?${text}` : "";
+  }, [filterAdvisory, filterCategory, filterContinuity, filterMission, filterReviewState, filterSeverity]);
+
+  const handleFilterChange = (
+    key: "category" | "severity" | "advisory" | "mission" | "review" | "continuity",
+    value: string
+  ) => {
+    if (key === "category") setFilterCategory(value);
+    if (key === "severity") setFilterSeverity(value);
+    if (key === "advisory") setFilterAdvisory(value);
+    if (key === "mission") setFilterMission(value);
+    if (key === "review") setFilterReviewState(value);
+    if (key === "continuity") setFilterContinuity(value);
+    const params = new URLSearchParams(window.location.search);
+    if (value === "all") params.delete(key);
+    else params.set(key, value);
+    const query = params.toString();
+    window.history.replaceState({}, "", query ? `/runtime-cost?${query}` : "/runtime-cost");
+  };
 
   const publishGovernanceSummary = () => {
     addFeedItem({
@@ -182,6 +255,10 @@ export function RuntimeCostView() {
       requiresCeoApproval: false,
     });
   };
+  const filteredAnalytics = useMemo(
+    () => buildProcessingAnalytics(filteredProcessingSessions),
+    [filteredProcessingSessions]
+  );
 
   return (
     <AppShell
@@ -710,82 +787,30 @@ export function RuntimeCostView() {
         </Card>
 
         <Card title="Processing Governance Analytics">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            <label className="text-xs text-muted">
-              Category
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">All categories</option>
-                <option value="runtime_stability">runtime stability</option>
-                <option value="provider_instability">provider instability</option>
-                <option value="sync_instability">sync instability</option>
-                <option value="dependency_blocker">dependency blocker</option>
-                <option value="governance_review">governance review</option>
-                <option value="elevated_risk">elevated risk</option>
-              </select>
-            </label>
-            <label className="text-xs text-muted">
-              Severity
-              <select
-                value={filterSeverity}
-                onChange={(e) => setFilterSeverity(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">All severities</option>
-                <option value="low">low</option>
-                <option value="moderate">moderate</option>
-                <option value="elevated">elevated</option>
-                <option value="critical_review">critical review</option>
-              </select>
-            </label>
-            <label className="text-xs text-muted">
-              Advisory
-              <select
-                value={filterAdvisory}
-                onChange={(e) => setFilterAdvisory(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">All</option>
-                <option value="advisory">Advisory only</option>
-                <option value="decision">Governance decision</option>
-              </select>
-            </label>
-            <label className="text-xs text-muted">
-              Mission
-              <select
-                value={filterMission}
-                onChange={(e) => setFilterMission(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">All missions</option>
-                {missionIds.map((missionId) => (
-                  <option key={missionId} value={missionId}>
-                    {missionId}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs text-muted">
-              Review state
-              <select
-                value={filterReviewState}
-                onChange={(e) => setFilterReviewState(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-              >
-                <option value="all">All states</option>
-                <option value="processing_review_required">review required</option>
-                <option value="processing_active">active</option>
-                <option value="processing_paused">paused</option>
-                <option value="processing_denied">denied</option>
-                <option value="processing_revoked">revoked</option>
-              </select>
-            </label>
-          </div>
+          <GovernanceFilterBar
+            category={filterCategory}
+            severity={filterSeverity}
+            advisory={filterAdvisory}
+            mission={filterMission}
+            review={filterReviewState}
+            continuity={filterContinuity}
+            missionOptions={missionOptions}
+            onChange={handleFilterChange}
+          />
           <div className="mt-4">
-            <GovernanceAnalyticsCard sessions={filteredProcessingSessions} />
+            <GovernanceAnalyticsCard
+              sessions={filteredProcessingSessions}
+              missionNameMap={missionNameMap}
+              filterQuery={filterQuery}
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs">
+            <Link href={`/runtime-cost${filterQuery}`} className="font-medium text-accent hover:underline">
+              Share this executive view →
+            </Link>
+            <Link href={`/organization-feed?gov=processing_governance`} className="font-medium text-accent hover:underline">
+              Open governance feed visibility →
+            </Link>
           </div>
           <button
             type="button"
@@ -818,6 +843,21 @@ export function RuntimeCostView() {
           <p className="mt-3 text-xs text-muted">
             Processing governance review is recommendation-first and human resolved. No autonomous revocation is executed.
           </p>
+        </Card>
+
+        <Card title="Analytics Explainability">
+          <GovernanceExplainabilityCard
+            explanation={filteredAnalytics.continuityExplanation}
+            breakdown={filteredAnalytics.scoreBreakdown}
+          />
+          <div className="mt-3 flex flex-wrap gap-3 text-xs">
+            <Link href={`/organization-feed?gov=continuity_events`} className="font-medium text-accent hover:underline">
+              Continuity events →
+            </Link>
+            <Link href={`/organization-feed?gov=runtime_governance`} className="font-medium text-accent hover:underline">
+              Runtime governance →
+            </Link>
+          </div>
         </Card>
 
         <Card title="Runtime Observer Insight">

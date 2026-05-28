@@ -28,7 +28,9 @@ export function queueFeedMessage(
     | "processing_review_denied"
     | "processing_review_revoked"
     | "processing_governance_reason_added"
-    | "processing_governance_summary",
+    | "processing_governance_summary"
+    | "continuity_advisory"
+    | "runtime_governance_summary",
   detail?: string
 ): string {
   switch (action) {
@@ -90,6 +92,10 @@ export function queueFeedMessage(
       return `Runtime Observer requested processing governance review${detail ? ` — ${detail}` : ""}.`;
     case "processing_governance_summary":
       return `COO escalated governance review visibility for operational continuity${detail ? ` — ${detail}` : ""}.`;
+    case "continuity_advisory":
+      return "Governance continuity remains stable under elevated advisory review density.";
+    case "runtime_governance_summary":
+      return "Runtime Observer reported increased provider instability review load.";
     default:
       return "Queue governance event recorded.";
   }

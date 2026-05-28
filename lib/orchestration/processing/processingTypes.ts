@@ -33,6 +33,14 @@ export interface ProcessingGovernanceSummary {
   continuityStable: boolean;
 }
 
+export interface GovernanceContinuityExplanation {
+  score: number;
+  stabilityFactors: string[];
+  degradationFactors: string[];
+  recommendations: string[];
+  generatedAt: string;
+}
+
 export interface ProcessingGovernanceReason {
   id: string;
   category: ProcessingReasonCategory;

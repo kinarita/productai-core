@@ -1,4 +1,10 @@
-export function GovernanceContinuityScore({ score }: { score: number }) {
+export function GovernanceContinuityScore({
+  score,
+  contributionLabel,
+}: {
+  score: number;
+  contributionLabel?: string;
+}) {
   return (
     <div className="rounded-lg border border-border bg-surface p-3">
       <p className="text-xs font-medium uppercase text-muted">Governance continuity score</p>
@@ -9,7 +15,10 @@ export function GovernanceContinuityScore({ score }: { score: number }) {
           style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
         />
       </div>
-      <p className="mt-2 text-xs text-muted">Reference metric only. No autonomous control is applied.</p>
+      <p className="mt-2 text-xs text-muted">
+        {contributionLabel ??
+          "Reference metric only. No autonomous control is applied."}
+      </p>
     </div>
   );
 }
