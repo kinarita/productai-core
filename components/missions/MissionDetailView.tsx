@@ -52,6 +52,8 @@ import { useSyncStore } from "@/lib/store/syncStore";
 import { useProcessingStore } from "@/lib/store/processingStore";
 import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
 import { GovernanceHealthBadge } from "@/components/orchestration/GovernanceHealthBadge";
+import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
+import { GovernanceHistoryPanel } from "@/components/orchestration/GovernanceHistoryPanel";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -89,6 +91,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   const hydrated = useStoreHydration();
   const setActiveMission = useUiStore((s) => s.setActiveMission);
   const setSelectedMission = useMissionStore((s) => s.setSelectedMission);
+  const allMissions = useMissionStore((s) => s.missions);
 
   const storeMission = useMissionStore((s) =>
     s.missions.find((m) => m.id === missionId)
@@ -117,6 +120,7 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   const missionQueueItems = useExecutionQueueStore((s) => s.getItemsForMission(missionId));
   const queueGovernance = useExecutionQueueStore((s) => s.getGovernanceSummary());
   const processingSessions = useProcessingStore((s) => s.getSessions());
+  const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
 
   const missionDecisions = useMemo(
     () => allDecisions.filter((d) => d.relatedMissionId === missionId),
@@ -130,10 +134,25 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
     () => buildProcessingAnalytics(missionProcessingSessions),
     [missionProcessingSessions]
   );
+  const missionNameMap = useMemo(
+    () => Object.fromEntries((allMissions.length > 0 ? allMissions : seedMissions).map((m) => [m.id, m.name])),
+    [allMissions]
+  );
 
   const missionFeed = useMemo(
     () => allFeed.filter((f) => f.missionId === missionId),
     [allFeed, missionId]
+  );
+  const replay = useMemo(
+    () =>
+      buildGovernanceReplay({
+        processingSessions,
+        processingAuditTrail,
+        feedItems: allFeed,
+        runtimeAlerts: alerts,
+        syncWarnings,
+      }),
+    [alerts, allFeed, processingAuditTrail, processingSessions, syncWarnings]
   );
 
   useEffect(() => {
@@ -723,6 +742,14 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                 View mission tasks →
               </Link>
             </div>
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Governance History"
+              description="Mission-specific timeline and continuity context"
+            />
+            <GovernanceHistoryPanel replay={replay} missionId={missionId} missionNameMap={missionNameMap} />
           </Card>
 
           <Card>

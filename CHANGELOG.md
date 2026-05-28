@@ -4,6 +4,17 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-6 governance memory and operational replay)
+
+- Governance history architecture and timeline event model (`governance-history` modules).
+- Executive governance snapshot generator for point-in-time operational context.
+- Runtime & Cost operational replay panel with calm timeline and event filters.
+- Mission governance history panel with timeline and readiness-change context.
+- Memory Vault governance memory section for recurring governance patterns.
+- Historical continuity explanation in explainability card.
+- Organization Feed timeline/memory event integration and filter support.
+- Documentation: `docs/PHASE5_GOVERNANCE_MEMORY.md`.
+
 ### Added (Phase 5-5 governance analytics explainability and navigation)
 
 - URL-synced processing governance analytics filters and shareable runtime views.

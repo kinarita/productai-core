@@ -556,3 +556,17 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Execution state is operationally visible and traceable.
 - UI tone remains calm, structured, and operational (non-chatbot, non-cyberpunk).
 
+## 2026-05-28 (Phase 5-6 governance memory and replay)
+
+- Added governance history architecture under `lib/orchestration/governance-history/`.
+- Added derived governance timeline event model across processing/review/runtime/feed continuity.
+- Added executive governance snapshot builder for point-in-time executive context.
+- Added operational replay bundle (timeline + snapshot + continuity explanation + memory items).
+- Added mission governance history panel and runtime replay timeline filters.
+- Added governance memory section in Memory Vault with recurring risk patterns.
+- Added historical continuity explanation narrative in analytics explainability UI.
+- Added organization feed support for timeline and governance memory related events.
+- Maintained human-in-the-loop boundary:
+  - AI summarizes and recommends.
+  - Human operators decide priorities and approvals.
+

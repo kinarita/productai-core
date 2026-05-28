@@ -1,8 +1,19 @@
+"use client";
+
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { MissionLink } from "@/components/MissionLink";
+import Link from "next/link";
+import { GovernanceMemoryCard } from "@/components/orchestration/GovernanceMemoryCard";
 import { memories } from "@/data/mockData";
+import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
+import { useMissionStore } from "@/lib/store/missionStore";
+import { useOrganizationStore } from "@/lib/store/organizationStore";
+import { useProcessingStore } from "@/lib/store/processingStore";
+import { useRuntimeStore } from "@/lib/store/runtimeStore";
+import { useSyncStore } from "@/lib/store/syncStore";
+import { useMemo } from "react";
 import { BookMarked } from "lucide-react";
 
 const categoryLabels = {
@@ -20,6 +31,28 @@ const categoryVariant = {
 };
 
 export default function MemoryPage() {
+  const processingSessions = useProcessingStore((s) => s.getSessions());
+  const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
+  const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
+  const runtimeAlerts = useRuntimeStore((s) => s.alerts);
+  const syncWarnings = useSyncStore((s) => s.syncWarnings);
+  const missions = useMissionStore((s) => s.missions);
+  const missionNameMap = useMemo(
+    () => Object.fromEntries(missions.map((mission) => [mission.id, mission.name])),
+    [missions]
+  );
+  const replay = useMemo(
+    () =>
+      buildGovernanceReplay({
+        processingSessions,
+        processingAuditTrail,
+        feedItems,
+        runtimeAlerts,
+        syncWarnings,
+      }),
+    [feedItems, processingAuditTrail, processingSessions, runtimeAlerts, syncWarnings]
+  );
+
   return (
     <AppShell
       title="Memory Vault"
@@ -67,6 +100,26 @@ export default function MemoryPage() {
             </div>
           </Card>
         ))}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold text-foreground">Governance Memory</h2>
+        <p className="mt-1 text-xs text-muted">
+          Derived governance learnings captured as recurring risks and review patterns.
+        </p>
+        <div className="mt-3 grid gap-3">
+          {replay.memoryItems.map((item) => (
+            <GovernanceMemoryCard key={item.id} item={item} missionNameMap={missionNameMap} />
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3 text-xs">
+          <Link href="/runtime-cost" className="font-medium text-accent hover:underline">
+            Open Operational Replay →
+          </Link>
+          <Link href="/organization-feed?gov=processing_governance" className="font-medium text-accent hover:underline">
+            Open Governance Feed →
+          </Link>
+        </div>
       </div>
     </AppShell>
   );

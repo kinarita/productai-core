@@ -162,6 +162,9 @@ export function OrganizationFeedView({
       if (governanceFilter === "processing_governance") {
         return message.includes("processing governance") || message.includes("processing review");
       }
+      if (governanceFilter === "timeline_memory") {
+        return message.includes("snapshot") || message.includes("timeline") || message.includes("governance memory");
+      }
       return true;
     });
   }
@@ -215,6 +218,30 @@ export function OrganizationFeedView({
       requiresCeoApproval: event.requiresCeoApproval,
     });
   };
+  const generateTimelineEvent = () => {
+    addFeedItemWithSync({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: missionFilter ?? "organization",
+      missionName: missionFilter ? resolveMissionLabel({ missionId: missionFilter, missionNameMap }) : "Organization",
+      message: "COO generated executive governance snapshot for operational replay.",
+      status: "active",
+      requiresCeoApproval: false,
+    });
+  };
+  const generateMemoryEvent = () => {
+    addFeedItemWithSync({
+      type: "memory",
+      author: "Runtime Observer",
+      authorName: "Pulse",
+      missionId: missionFilter ?? "organization",
+      missionName: missionFilter ? resolveMissionLabel({ missionId: missionFilter, missionNameMap }) : "Organization",
+      message: "Runtime Observer identified recurring advisory pattern and recorded governance memory.",
+      status: "active",
+      requiresCeoApproval: false,
+    });
+  };
 
   return (
     <AppShell
@@ -261,6 +288,9 @@ export function OrganizationFeedView({
         <Link href="/organization-feed?gov=processing_governance" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
           processing governance
         </Link>
+        <Link href="/organization-feed?gov=timeline_memory" className="rounded-md border border-border bg-background px-2 py-1 text-muted hover:bg-surface">
+          timeline & memory
+        </Link>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -300,6 +330,20 @@ export function OrganizationFeedView({
           className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface"
         >
           Generate Governance Event
+        </button>
+        <button
+          type="button"
+          onClick={generateTimelineEvent}
+          className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface"
+        >
+          Generate Timeline Event
+        </button>
+        <button
+          type="button"
+          onClick={generateMemoryEvent}
+          className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface"
+        >
+          Generate Memory Event
         </button>
       </div>
 

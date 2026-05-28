@@ -44,6 +44,7 @@ interface ProcessingState {
   pauseProcessing: (queueItemId: string, note?: string) => boolean;
   revokeProcessing: (queueItemId: string, note?: string) => boolean;
   getSessions: () => ProcessingSession[];
+  getAuditTrail: () => ProcessingAuditEntry[];
   getSessionForQueueItem: (queueItemId: string) => ProcessingSession | undefined;
   getAuditForQueueItem: (queueItemId: string) => ProcessingAuditEntry[];
   getSummary: () => {
@@ -352,6 +353,7 @@ export const useProcessingStore = create<ProcessingState>((set, get) => ({
   },
 
   getSessions: () => get().sessions,
+  getAuditTrail: () => get().auditTrail,
   getSessionForQueueItem: (queueItemId) => get().sessions.find((s) => s.queueItemId === queueItemId),
   getAuditForQueueItem: (queueItemId) => get().auditTrail.filter((a) => a.queueItemId === queueItemId),
   getSummary: () => {

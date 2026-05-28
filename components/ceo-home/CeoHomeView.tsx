@@ -9,10 +9,13 @@ import { computeOrganizationHealth } from "@/lib/store/computeOrganizationHealth
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
+import { useSyncStore } from "@/lib/store/syncStore";
 import { useTaskStore } from "@/lib/store/taskStore";
 import { useProcessingStore } from "@/lib/store/processingStore";
 import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
 import { GovernanceHealthBadge } from "@/components/orchestration/GovernanceHealthBadge";
+import { ExecutiveSnapshotCard } from "@/components/orchestration/ExecutiveSnapshotCard";
+import { buildExecutiveGovernanceSnapshot } from "@/lib/orchestration/governance-history/governanceSnapshot";
 import { getDependencyWarnings } from "@/lib/task/taskDependencies";
 import { getImportantTasks, getRecentlyCreatedTasks } from "@/lib/task/taskSelectors";
 import { getBlockerAge } from "@/lib/task/missionExecutionInsights";
@@ -38,7 +41,9 @@ const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "suc
 export function CeoHomeView() {
   const missions = useMissionStore((s) => s.missions);
   const decisions = useOrganizationStore((s) => s.decisions);
+  const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
   const runtimeAlerts = useRuntimeStore((s) => s.alerts);
+  const syncWarnings = useSyncStore((s) => s.syncWarnings);
   const tasks = useTaskStore((s) => s.tasks);
   const processingSessions = useProcessingStore((s) => s.getSessions());
   const importantTasks = getImportantTasks(tasks, 6);
@@ -54,6 +59,12 @@ export function CeoHomeView() {
   const activeMissions = missions.filter((m) => m.status === "active" || m.status === "planning");
   const pendingDecisions = decisions.filter((d) => d.status === "pending");
   const processingAnalytics = buildProcessingAnalytics(processingSessions);
+  const executiveSnapshot = buildExecutiveGovernanceSnapshot({
+    processingSessions,
+    runtimeAlerts,
+    syncWarnings,
+    feedItems,
+  });
   const missionRiskRows = Object.entries(processingAnalytics.missionRisk)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
@@ -292,6 +303,10 @@ export function CeoHomeView() {
           ) : (
             <p className="mt-3 text-sm text-muted">No mission-level governance review load at this time.</p>
           )}
+        </Card>
+
+        <Card title="Executive Governance Snapshot" description="Current governance context and focus">
+          <ExecutiveSnapshotCard snapshot={executiveSnapshot} />
         </Card>
 
         <Card title="Cross-mission Blocker List" description="Organization-wide execution bottlenecks">

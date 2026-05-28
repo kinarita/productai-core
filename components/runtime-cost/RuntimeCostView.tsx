@@ -23,6 +23,7 @@ import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCar
 import { GovernanceAnalyticsCard } from "@/components/orchestration/GovernanceAnalyticsCard";
 import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
 import { GovernanceFilterBar } from "@/components/orchestration/GovernanceFilterBar";
+import { OperationalReplayPanel } from "@/components/orchestration/OperationalReplayPanel";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
@@ -40,6 +41,7 @@ import {
 import { runtimeCosts } from "@/data/mockData";
 import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel";
 import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
+import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
 
 export function RuntimeCostView() {
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
@@ -63,6 +65,7 @@ export function RuntimeCostView() {
   const materializationRecords = useMaterializationStore((s) => s.records);
   const allTasks = useTaskStore((s) => s.tasks);
   const addFeedItem = useOrganizationStore((s) => s.addFeedItemWithSync);
+  const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
   const missions = useMissionStore((s) => s.missions);
 
   const orgReadinessSummary = {
@@ -120,12 +123,17 @@ export function RuntimeCostView() {
   const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
   const getProcessingAudit = useProcessingStore((s) => s.getAuditForQueueItem);
   const processingSessions = useProcessingStore((s) => s.getSessions());
+  const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [filterAdvisory, setFilterAdvisory] = useState<string>("all");
   const [filterMission, setFilterMission] = useState<string>("all");
   const [filterReviewState, setFilterReviewState] = useState<string>("all");
   const [filterContinuity, setFilterContinuity] = useState<string>("all");
+  const [timelineEventTypeFilter, setTimelineEventTypeFilter] = useState<string>("all");
+  const [timelineSeverityFilter, setTimelineSeverityFilter] = useState<string>("all");
+  const [timelineSourceFilter, setTimelineSourceFilter] = useState<string>("all");
+  const [timelineReasonFilter, setTimelineReasonFilter] = useState<string>("all");
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
@@ -259,6 +267,37 @@ export function RuntimeCostView() {
     () => buildProcessingAnalytics(filteredProcessingSessions),
     [filteredProcessingSessions]
   );
+  const replay = useMemo(
+    () =>
+      buildGovernanceReplay({
+        processingSessions: filteredProcessingSessions,
+        processingAuditTrail,
+        feedItems,
+        runtimeAlerts: alerts,
+        syncWarnings,
+      }),
+    [alerts, feedItems, filteredProcessingSessions, processingAuditTrail, syncWarnings]
+  );
+  const replayEvents = useMemo(
+    () =>
+      replay.events.filter((event) => {
+        if (timelineEventTypeFilter !== "all" && event.eventType !== timelineEventTypeFilter) return false;
+        if (timelineSeverityFilter !== "all" && event.severity !== timelineSeverityFilter) return false;
+        if (timelineSourceFilter !== "all" && event.source !== timelineSourceFilter) return false;
+        if (timelineReasonFilter !== "all" && event.relatedReasonCategory !== timelineReasonFilter) return false;
+        return true;
+      }),
+    [replay.events, timelineEventTypeFilter, timelineReasonFilter, timelineSeverityFilter, timelineSourceFilter]
+  );
+  const historicalContinuityExplanation = useMemo(() => {
+    const recent = replayEvents.slice(0, 3);
+    const reviewDensity = recent.filter((event) => event.eventType === "review_requested").length;
+    const runtimeDensity = recent.filter((event) => event.eventType === "runtime_advisory").length;
+    if (reviewDensity === 0 && runtimeDensity === 0) {
+      return "Governance score remains stable because recent events did not increase review or runtime advisory density.";
+    }
+    return `Governance score shifted because review density (${reviewDensity}) and runtime advisories (${runtimeDensity}) increased across the latest ${recent.length} events.`;
+  }, [replayEvents]);
 
   return (
     <AppShell
@@ -849,6 +888,7 @@ export function RuntimeCostView() {
           <GovernanceExplainabilityCard
             explanation={filteredAnalytics.continuityExplanation}
             breakdown={filteredAnalytics.scoreBreakdown}
+            historicalExplanation={historicalContinuityExplanation}
           />
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <Link href={`/organization-feed?gov=continuity_events`} className="font-medium text-accent hover:underline">
@@ -857,6 +897,74 @@ export function RuntimeCostView() {
             <Link href={`/organization-feed?gov=runtime_governance`} className="font-medium text-accent hover:underline">
               Runtime governance →
             </Link>
+          </div>
+        </Card>
+
+        <Card title="Governance Timeline / Operational Replay">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-xs text-muted">
+              Event type
+              <select
+                value={timelineEventTypeFilter}
+                onChange={(e) => setTimelineEventTypeFilter(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">all</option>
+                <option value="review_requested">review requested</option>
+                <option value="review_resolved">review resolved</option>
+                <option value="processing_paused">processing paused</option>
+                <option value="runtime_advisory">runtime advisory</option>
+                <option value="governance_summary">governance summary</option>
+              </select>
+            </label>
+            <label className="text-xs text-muted">
+              Severity
+              <select
+                value={timelineSeverityFilter}
+                onChange={(e) => setTimelineSeverityFilter(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">all</option>
+                <option value="low">low</option>
+                <option value="moderate">moderate</option>
+                <option value="elevated">elevated</option>
+                <option value="critical_review">critical review</option>
+              </select>
+            </label>
+            <label className="text-xs text-muted">
+              Source
+              <select
+                value={timelineSourceFilter}
+                onChange={(e) => setTimelineSourceFilter(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">all</option>
+                <option value="Runtime Observer">Runtime Observer</option>
+                <option value="COO">COO</option>
+                <option value="Nova">Nova</option>
+                <option value="CEO">CEO</option>
+              </select>
+            </label>
+            <label className="text-xs text-muted">
+              Reason category
+              <select
+                value={timelineReasonFilter}
+                onChange={(e) => setTimelineReasonFilter(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">all</option>
+                <option value="runtime_stability">runtime stability</option>
+                <option value="provider_instability">provider instability</option>
+                <option value="dependency_blocker">dependency blocker</option>
+                <option value="advisory_review">advisory review</option>
+              </select>
+            </label>
+          </div>
+          <div className="mt-4">
+            <OperationalReplayPanel
+              replay={{ ...replay, events: replayEvents }}
+              missionNameMap={missionNameMap}
+            />
           </div>
         </Card>
 

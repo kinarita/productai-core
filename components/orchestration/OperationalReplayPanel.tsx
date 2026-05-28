@@ -1,0 +1,21 @@
+import { ExecutiveSnapshotCard } from "@/components/orchestration/ExecutiveSnapshotCard";
+import { GovernanceTimeline } from "@/components/orchestration/GovernanceTimeline";
+import type { GovernanceReplayBundle } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
+
+export function OperationalReplayPanel({
+  replay,
+  missionNameMap,
+}: {
+  replay: GovernanceReplayBundle;
+  missionNameMap?: Record<string, string>;
+}) {
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-background p-3">
+      <ExecutiveSnapshotCard snapshot={replay.latestSnapshot} />
+      <div className="rounded-lg border border-border bg-surface p-3">
+        <p className="mb-2 text-xs font-medium uppercase text-muted">Governance timeline</p>
+        <GovernanceTimeline events={replay.events} missionNameMap={missionNameMap} />
+      </div>
+    </div>
+  );
+}
