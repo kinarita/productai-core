@@ -6,6 +6,11 @@ export type QueueLifecycleStatus =
   | "reserved"
   | "worker_prepared"
   | "awaiting_execution_authorization"
+  | "authorization_requested"
+  | "authorized"
+  | "execution_authorized"
+  | "denied"
+  | "revoked"
   | "executing"
   | "completed";
 

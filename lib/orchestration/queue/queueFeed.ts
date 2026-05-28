@@ -5,7 +5,11 @@ export function queueFeedMessage(
     | "queued"
     | "worker_prepared"
     | "awaiting_authorization"
-    | "runtime_lock",
+    | "runtime_lock"
+    | "authorization_requested"
+    | "authorization_granted"
+    | "authorization_denied"
+    | "authorization_revoked",
   detail?: string
 ): string {
   switch (action) {
@@ -21,6 +25,14 @@ export function queueFeedMessage(
       return `Execution preparation awaiting human authorization${detail ? ` for ${detail}` : ""}. No execution was initiated.`;
     case "runtime_lock":
       return `Runtime Observer paused queue progression due to sync degradation${detail ? ` — ${detail}` : ""}. Recommendation only.`;
+    case "authorization_requested":
+      return `COO requested execution authorization${detail ? ` for ${detail}` : ""}.`;
+    case "authorization_granted":
+      return `CEO authorized execution boundary review${detail ? ` for ${detail}` : ""}.`;
+    case "authorization_denied":
+      return `Execution authorization was denied under governance review${detail ? ` for ${detail}` : ""}.`;
+    case "authorization_revoked":
+      return `Execution authorization was revoked under governance review${detail ? ` for ${detail}` : ""}.`;
     default:
       return "Queue governance event recorded.";
   }

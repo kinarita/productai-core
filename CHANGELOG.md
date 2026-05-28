@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 4-6 human execution authorization foundation)
+
+- Human execution authorization layer in `lib/orchestration/authorization/`.
+- Authorization request/signature/audit models and store.
+- Authorization policy gates and deny/revoke flows.
+- Execution intent review in Task Detail and queue cards.
+- Runtime authorization governance summary.
+- Documentation: `docs/PHASE4_EXECUTION_AUTHORIZATION.md`.
+
 ### Added (Phase 4-5 controlled execution queue foundation)
 
 - Controlled execution queue in `lib/orchestration/queue/` with gating, reservations, and worker preparation.

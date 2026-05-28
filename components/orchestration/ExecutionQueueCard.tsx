@@ -1,12 +1,18 @@
 "use client";
 
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
+import { AuthorizationRequestCard } from "@/components/orchestration/AuthorizationRequestCard";
 import { QueueLifecycleView } from "@/components/orchestration/QueueLifecycleView";
 import { ReadinessScoreBadge } from "@/components/orchestration/ReadinessScoreBadge";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
+import type {
+  AuthorizationAuditEntry,
+  ExecutionAuthorizationRequest,
+  ExecutionAuthorizationSignature,
+} from "@/lib/orchestration/authorization/authorizationTypes";
 import type { ExecutionQueueItem } from "@/lib/orchestration/queue/executionQueueTypes";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
-import { Bookmark, BookmarkX, Layers, ShieldCheck } from "lucide-react";
+import { Bookmark, BookmarkX, Layers, ShieldCheck, UserCheck, UserX, Undo2 } from "lucide-react";
 
 interface ExecutionQueueCardProps {
   item: ExecutionQueueItem;
@@ -18,6 +24,13 @@ interface ExecutionQueueCardProps {
   onCompleteReview: () => void;
   onEnqueue?: () => void;
   showEnqueue?: boolean;
+  authorizationRequest?: ExecutionAuthorizationRequest;
+  authorizationSignature?: ExecutionAuthorizationSignature;
+  authorizationAudit?: AuthorizationAuditEntry[];
+  onRequestAuthorization?: () => void;
+  onAuthorizeExecution?: () => void;
+  onDenyAuthorization?: () => void;
+  onRevokeAuthorization?: () => void;
 }
 
 export function ExecutionQueueCard({
@@ -30,6 +43,13 @@ export function ExecutionQueueCard({
   onCompleteReview,
   onEnqueue,
   showEnqueue,
+  authorizationRequest,
+  authorizationSignature,
+  authorizationAudit = [],
+  onRequestAuthorization,
+  onAuthorizeExecution,
+  onDenyAuthorization,
+  onRevokeAuthorization,
 }: ExecutionQueueCardProps) {
   return (
     <article className="rounded-lg border border-border bg-surface p-4">
@@ -134,7 +154,60 @@ export function ExecutionQueueCard({
             Complete Preparation Review
           </button>
         ) : null}
+        {item.queueStatus === "awaiting_execution_authorization" && onRequestAuthorization ? (
+          <button
+            type="button"
+            onClick={onRequestAuthorization}
+            disabled={runtimeLockActive}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface disabled:opacity-60"
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            Request Execution Authorization
+          </button>
+        ) : null}
+        {item.queueStatus === "authorization_requested" ? (
+          <>
+            {onAuthorizeExecution ? (
+              <button
+                type="button"
+                onClick={onAuthorizeExecution}
+                disabled={runtimeLockActive}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+              >
+                <UserCheck className="h-3.5 w-3.5" />
+                Authorize Execution
+              </button>
+            ) : null}
+            {onDenyAuthorization ? (
+              <button
+                type="button"
+                onClick={onDenyAuthorization}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+              >
+                <UserX className="h-3.5 w-3.5" />
+                Deny Authorization
+              </button>
+            ) : null}
+          </>
+        ) : null}
+        {(item.queueStatus === "execution_authorized" || item.queueStatus === "authorized") &&
+        onRevokeAuthorization ? (
+          <button
+            type="button"
+            onClick={onRevokeAuthorization}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Revoke Authorization
+          </button>
+        ) : null}
       </div>
+      <AuthorizationRequestCard
+        item={item}
+        request={authorizationRequest}
+        signature={authorizationSignature}
+        auditEntries={authorizationAudit}
+      />
     </article>
   );
 }

@@ -7,6 +7,8 @@ const ORDER: QueueLifecycleStatus[] = [
   "reserved",
   "worker_prepared",
   "awaiting_execution_authorization",
+  "authorization_requested",
+  "execution_authorized",
 ];
 
 interface QueueLifecycleViewProps {

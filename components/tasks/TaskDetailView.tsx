@@ -32,6 +32,8 @@ import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCar
 import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
+import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
+import { ExecutionIntentReview } from "@/components/orchestration/ExecutionIntentReview";
 import type { TaskEvent, TaskStatus } from "@/types/productai";
 
 const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
@@ -78,6 +80,13 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const prepareWorkerForItem = useExecutionQueueStore((s) => s.prepareWorkerForItem);
   const completePreparationReview = useExecutionQueueStore((s) => s.completePreparationReview);
   const refreshRuntimeLock = useExecutionQueueStore((s) => s.refreshRuntimeLock);
+  const requestAuthorization = useExecutionAuthorizationStore((s) => s.requestAuthorization);
+  const authorizeExecution = useExecutionAuthorizationStore((s) => s.authorizeExecution);
+  const denyAuthorization = useExecutionAuthorizationStore((s) => s.denyAuthorization);
+  const revokeAuthorization = useExecutionAuthorizationStore((s) => s.revokeAuthorization);
+  const getRequestForQueueItem = useExecutionAuthorizationStore((s) => s.getRequestForQueueItem);
+  const getAuditForQueueItem = useExecutionAuthorizationStore((s) => s.getAuditForQueueItem);
+  const signatures = useExecutionAuthorizationStore((s) => s.signatures);
 
   const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
 
@@ -343,10 +352,23 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
               <GovernanceNote>{validateExecutionBoundary()}</GovernanceNote>
               {queueItem ? (
                 <div className="mt-4">
+                  {queueItem.queueStatus === "awaiting_execution_authorization" ||
+                  queueItem.queueStatus === "authorization_requested" ||
+                  queueItem.queueStatus === "execution_authorized" ? (
+                    <div className="mb-3">
+                      <ExecutionIntentReview
+                        item={queueItem}
+                        request={getRequestForQueueItem(queueItem.id)}
+                      />
+                    </div>
+                  ) : null}
                   <ExecutionQueueCard
                     item={queueItem}
                     taskTitle={task.title}
                     runtimeLockActive={runtimeLock.active}
+                    authorizationRequest={getRequestForQueueItem(queueItem.id)}
+                    authorizationSignature={signatures[queueItem.id]}
+                    authorizationAudit={getAuditForQueueItem(queueItem.id)}
                     onReserve={() => {
                       refreshRuntimeLock(syncWarnings.length, alerts.length);
                       if (reserveSlot(queueItem.id, "COO")) pushQueueFeed("slot_reserved");
@@ -363,6 +385,26 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     onCompleteReview={() => {
                       if (completePreparationReview(queueItem.id)) {
                         pushQueueFeed("awaiting_authorization");
+                      }
+                    }}
+                    onRequestAuthorization={() => {
+                      if (requestAuthorization(queueItem.id)) {
+                        pushQueueFeed("authorization_requested");
+                      }
+                    }}
+                    onAuthorizeExecution={() => {
+                      if (authorizeExecution(queueItem.id)) {
+                        pushQueueFeed("authorization_granted");
+                      }
+                    }}
+                    onDenyAuthorization={() => {
+                      if (denyAuthorization(queueItem.id)) {
+                        pushQueueFeed("authorization_denied");
+                      }
+                    }}
+                    onRevokeAuthorization={() => {
+                      if (revokeAuthorization(queueItem.id)) {
+                        pushQueueFeed("authorization_revoked");
                       }
                     }}
                   />

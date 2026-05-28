@@ -1,5 +1,26 @@
 # ProductAI Development Progress
 
+## 2026-05-28 — Phase 4-6 human execution authorization foundation
+
+### Objective
+
+Add final human authorization boundary for controlled execution queue items, including intent review, signatures, and revoke/deny governance.
+
+### Implemented in Phase 4-6
+
+- Authorization layer under `lib/orchestration/authorization/`
+- `executionAuthorizationStore` for requests, signatures, and authorization audit
+- Authorization policy gates for request/authorize/revoke conditions
+- Queue lifecycle extension: `authorization_requested`, `execution_authorized`, `denied`, `revoked`
+- Task Detail: execution intent review + authorization controls + audit continuity
+- Runtime & Cost: authorization governance summary visibility
+- Feed events for request / grant / deny / revoke
+- Documentation: `docs/PHASE4_EXECUTION_AUTHORIZATION.md`
+
+### Scope boundaries (kept)
+
+- No actual execution, MCP/GitHub/Claude Code execution, background processing, or autonomous loops
+
 ## 2026-05-28 — Phase 4-5 controlled execution queue foundation
 
 ### Objective

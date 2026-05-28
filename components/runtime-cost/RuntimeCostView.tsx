@@ -19,6 +19,7 @@ import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
 import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCard";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
+import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
 import { describeAllExecutionBoundaries } from "@/lib/orchestration/execution/executionAdapters";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
@@ -71,6 +72,14 @@ export function RuntimeCostView() {
   const queueSummary = useExecutionQueueStore((s) => s.getGovernanceSummary());
   const runtimeLock = useExecutionQueueStore((s) => s.runtimeLock);
   const refreshRuntimeLock = useExecutionQueueStore((s) => s.refreshRuntimeLock);
+  const authorizationSummary = useExecutionAuthorizationStore((s) => s.getSummary());
+  const requestAuthorization = useExecutionAuthorizationStore((s) => s.requestAuthorization);
+  const authorizeExecution = useExecutionAuthorizationStore((s) => s.authorizeExecution);
+  const denyAuthorization = useExecutionAuthorizationStore((s) => s.denyAuthorization);
+  const revokeAuthorization = useExecutionAuthorizationStore((s) => s.revokeAuthorization);
+  const getRequestForQueueItem = useExecutionAuthorizationStore((s) => s.getRequestForQueueItem);
+  const getAuditForQueueItem = useExecutionAuthorizationStore((s) => s.getAuditForQueueItem);
+  const signatures = useExecutionAuthorizationStore((s) => s.signatures);
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
@@ -354,6 +363,9 @@ export function RuntimeCostView() {
                       item={item}
                       taskTitle={task?.title}
                       runtimeLockActive={runtimeLock.active}
+                      authorizationRequest={getRequestForQueueItem(item.id)}
+                      authorizationSignature={signatures[item.id]}
+                      authorizationAudit={getAuditForQueueItem(item.id)}
                       onReserve={() => {
                         useExecutionQueueStore.getState().reserveSlot(item.id, "COO");
                       }}
@@ -367,6 +379,18 @@ export function RuntimeCostView() {
                       }}
                       onCompleteReview={() => {
                         useExecutionQueueStore.getState().completePreparationReview(item.id);
+                      }}
+                      onRequestAuthorization={() => {
+                        requestAuthorization(item.id);
+                      }}
+                      onAuthorizeExecution={() => {
+                        authorizeExecution(item.id);
+                      }}
+                      onDenyAuthorization={() => {
+                        denyAuthorization(item.id);
+                      }}
+                      onRevokeAuthorization={() => {
+                        revokeAuthorization(item.id);
                       }}
                     />
                   </li>
@@ -447,6 +471,30 @@ export function RuntimeCostView() {
               ))}
             </ul>
           </details>
+        </Card>
+
+        <Card title="Authorization Governance">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Pending requests</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{authorizationSummary.pending}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Authorized items</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{authorizationSummary.authorized}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Denied</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{authorizationSummary.denied}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Revoked</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{authorizationSummary.revoked}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            AI may request authorization after preparation. Only humans may authorize execution.
+          </p>
         </Card>
 
         <Card title="Runtime Observer Insight">
