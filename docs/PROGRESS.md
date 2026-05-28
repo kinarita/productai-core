@@ -622,3 +622,12 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added replay continuity query compatibility normalization (`stable/degraded` legacy mapping).
 - Applied replay window wording consistency helper to CEO and Mission views.
 
+## 2026-05-28 (Phase 6-2 metadata API verification and fallback hardening)
+
+- Added replay metadata taxonomy validation and safe fallback helper.
+- Hardened feed API and repository to normalize invalid metadata without failing requests.
+- Hardened feed domain row mapping with defensive metadata normalization for invalid DB values.
+- Extended mapper payload creation to consistently send normalized replay metadata.
+- Added metadata API verification scripts for POST/GET roundtrip and fallback coverage.
+- Documented verification flow, fallback philosophy, and compatibility mapping.
+

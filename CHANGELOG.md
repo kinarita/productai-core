@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 6-2 metadata API verification and safe fallback hardening)
+
+- Replay metadata validation helper for taxonomy normalization and compatibility fallback.
+- Feed API metadata normalization for invalid payload tolerance.
+- Feed repository/domain defensive normalization for invalid persisted metadata.
+- Verification scripts for feed metadata API roundtrip and fallback behavior.
+- Documentation: `docs/PHASE6_METADATA_API_VERIFICATION.md`.
+
 ### Added (Phase 6-1 backend schema alignment for replay metadata)
 
 - SQLite `feed_items` metadata columns and safe additive bootstrap migration.

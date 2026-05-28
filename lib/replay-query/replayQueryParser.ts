@@ -1,4 +1,5 @@
 import { replayQueryDefaults } from "@/lib/replay-query/replayQueryDefaults";
+import { coerceContinuityCategory } from "@/lib/replay-query/replayValidation";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 
 type QueryInput = URLSearchParams | Record<string, string | string[] | undefined>;
@@ -11,13 +12,8 @@ function getValue(input: QueryInput, key: string): string | undefined {
 }
 
 function normalizeContinuityValue(value: string): string {
-  if (value === "stable") return "continuity_stable";
-  if (value === "degraded") return "continuity_advisory";
-  if (value === "review") return "continuity_review";
-  if (value === "runtime") return "continuity_runtime";
-  if (value === "governance") return "continuity_governance";
-  if (value === "replay") return "continuity_replay";
-  return value;
+  if (value === "all") return "all";
+  return coerceContinuityCategory(value);
 }
 
 export function parseReplayQuery(input: QueryInput): ReplayQueryState {

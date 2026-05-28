@@ -204,7 +204,8 @@ export function OrganizationFeedView({
         return (
           item.governanceCategory === "governance_runtime" ||
           item.replayCategory === "replay_runtime" ||
-          item.replaySource === "runtime_observer"
+          item.replaySource === "runtime_observer" ||
+          item.replaySource === "runtime"
         );
       }
       if (activeGovernanceFilter === "processing_governance") {
@@ -230,8 +231,8 @@ export function OrganizationFeedView({
   if (replayQuery.advisory !== "all") {
     filtered = filtered.filter((item) =>
       replayQuery.advisory === "advisory"
-        ? item.advisoryLevel !== "advisory_low"
-        : item.advisoryLevel === "advisory_low"
+        ? item.advisoryLevel !== "advisory_low" && item.advisoryLevel !== "informational"
+        : item.advisoryLevel === "advisory_low" || item.advisoryLevel === "informational"
     );
   }
   if (replayQuery.review !== "all") {

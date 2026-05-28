@@ -1,3 +1,5 @@
+import { validateReplayMetadata } from "@/lib/replay-query/replayValidation";
+
 export interface FeedItemRecord {
   id: string;
   missionId: string;
@@ -29,6 +31,11 @@ function safeJsonParse<T>(value: string | null): T | null {
   }
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
 export function mapFeedItemRow(row: {
   id: string;
   mission_id: string;
@@ -51,7 +58,16 @@ export function mapFeedItemRow(row: {
   metadata_json?: string | null;
 }): FeedItemRecord {
   const replayTags = safeJsonParse<string[]>(row.replay_tags_json ?? null);
-  const metadata = safeJsonParse<Record<string, unknown>>(row.metadata_json ?? null);
+  const metadata = asRecord(safeJsonParse<unknown>(row.metadata_json ?? null));
+  const validated = validateReplayMetadata({
+    governanceCategory: row.governance_category ?? undefined,
+    replayCategory: row.replay_category ?? undefined,
+    continuityCategory: row.continuity_category ?? undefined,
+    advisoryLevel: row.advisory_level ?? undefined,
+    replaySeverity: row.replay_severity ?? undefined,
+    replaySource: row.replay_source ?? undefined,
+    replayTags: replayTags ?? undefined,
+  });
   return {
     id: row.id,
     missionId: row.mission_id,
@@ -64,13 +80,13 @@ export function mapFeedItemRow(row: {
     authorName: row.author_name,
     message: row.message,
     createdAt: row.created_at,
-    governanceCategory: row.governance_category ?? null,
-    replayCategory: row.replay_category ?? null,
-    continuityCategory: row.continuity_category ?? null,
-    advisoryLevel: row.advisory_level ?? null,
-    replaySeverity: row.replay_severity ?? null,
-    replaySource: row.replay_source ?? null,
-    replayTags,
+    governanceCategory: validated.governanceCategory,
+    replayCategory: validated.replayCategory,
+    continuityCategory: validated.continuityCategory,
+    advisoryLevel: validated.advisoryLevel,
+    replaySeverity: validated.replaySeverity,
+    replaySource: validated.replaySource,
+    replayTags: validated.replayTags,
     metadata,
   };
 }

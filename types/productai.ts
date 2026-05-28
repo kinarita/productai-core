@@ -237,10 +237,27 @@ export interface OrganizationFeedItem {
     | "continuity_runtime"
     | "continuity_governance"
     | "continuity_replay";
-  advisoryLevel?: "advisory_low" | "advisory_moderate" | "advisory_elevated";
+  advisoryLevel?:
+    | "informational"
+    | "advisory"
+    | "elevated"
+    | "advisory_low"
+    | "advisory_moderate"
+    | "advisory_elevated";
   replayTags?: string[];
   replaySeverity?: "low" | "moderate" | "elevated" | "critical_review";
-  replaySource?: "runtime_observer" | "coo" | "ceo" | "system";
+  replaySource?:
+    | "queue"
+    | "governance"
+    | "runtime"
+    | "replay"
+    | "memory"
+    | "orchestration"
+    | "advisory"
+    | "runtime_observer"
+    | "coo"
+    | "ceo"
+    | "system";
 }
 
 export interface RuntimeCost {

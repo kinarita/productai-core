@@ -42,6 +42,7 @@ export function mapTaskPatchPayload(
 }
 
 export function mapFeedItemToCreatePayload(item: Omit<OrganizationFeedItem, "id" | "timestamp">) {
+  const metadata = normalizeReplayMetadata(item);
   return {
     missionId: item.missionId,
     taskId: item.taskId ?? null,
@@ -53,13 +54,13 @@ export function mapFeedItemToCreatePayload(item: Omit<OrganizationFeedItem, "id"
     title: item.title,
     author: item.author,
     authorName: item.authorName,
-    governanceCategory: item.governanceCategory,
-    replayCategory: item.replayCategory,
-    continuityCategory: item.continuityCategory,
-    advisoryLevel: item.advisoryLevel,
-    replayTags: item.replayTags ?? [],
-    replaySeverity: item.replaySeverity,
-    replaySource: item.replaySource,
+    governanceCategory: metadata.governanceCategory,
+    replayCategory: metadata.replayCategory,
+    continuityCategory: metadata.continuityCategory,
+    advisoryLevel: metadata.advisoryLevel,
+    replayTags: metadata.replayTags,
+    replaySeverity: metadata.replaySeverity,
+    replaySource: metadata.replaySource,
   };
 }
 

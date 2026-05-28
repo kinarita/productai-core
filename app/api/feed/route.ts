@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/server/api/response";
 import { bootstrapDatabase } from "@/lib/server/db/bootstrap";
+import {
+  coerceContinuityCategory,
+  coerceReplayCategory,
+  coerceReplaySeverity,
+  coerceReplaySource,
+  validateReplayMetadata,
+} from "@/lib/replay-query/replayValidation";
 import { feedRepository } from "@/lib/server/repositories/feedRepository";
 import { missionRepository } from "@/lib/server/repositories/missionRepository";
 
@@ -15,10 +22,16 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") ?? undefined;
     const status = searchParams.get("status") ?? undefined;
     const governanceCategory = searchParams.get("governanceCategory") ?? undefined;
-    const replayCategory = searchParams.get("replayCategory") ?? undefined;
-    const continuityCategory = searchParams.get("continuityCategory") ?? undefined;
-    const replaySeverity = searchParams.get("replaySeverity") ?? undefined;
-    const replaySource = searchParams.get("replaySource") ?? undefined;
+    const replayCategoryRaw = searchParams.get("replayCategory") ?? undefined;
+    const continuityCategoryRaw = searchParams.get("continuityCategory") ?? undefined;
+    const replaySeverityRaw = searchParams.get("replaySeverity") ?? undefined;
+    const replaySourceRaw = searchParams.get("replaySource") ?? undefined;
+    const replayCategory = replayCategoryRaw ? coerceReplayCategory(replayCategoryRaw) : undefined;
+    const continuityCategory = continuityCategoryRaw
+      ? coerceContinuityCategory(continuityCategoryRaw)
+      : undefined;
+    const replaySeverity = replaySeverityRaw ? coerceReplaySeverity(replaySeverityRaw) : undefined;
+    const replaySource = replaySourceRaw ? coerceReplaySource(replaySourceRaw) : undefined;
 
     const feed = feedRepository.list({
       missionId,
@@ -61,6 +74,21 @@ export async function POST(request: NextRequest) {
       metadata?: Record<string, unknown>;
     };
 
+    const metadata = validateReplayMetadata({
+      governanceCategory: body.governanceCategory,
+      replayCategory: body.replayCategory,
+      continuityCategory: body.continuityCategory,
+      advisoryLevel: body.advisoryLevel,
+      replaySeverity: body.replaySeverity,
+      replaySource: body.replaySource,
+      replayTags: body.replayTags,
+    });
+    const rawMetadata = body.metadata;
+    const safeMetadata =
+      rawMetadata && typeof rawMetadata === "object" && !Array.isArray(rawMetadata)
+        ? rawMetadata
+        : null;
+
     if (!body.missionId || !body.type || !body.message) {
       return fail("Invalid feed payload", 400);
     }
@@ -79,14 +107,14 @@ export async function POST(request: NextRequest) {
       author: body.author ?? "COO",
       authorName: body.authorName ?? "Nova",
       message: body.message,
-      governanceCategory: body.governanceCategory ?? null,
-      replayCategory: body.replayCategory ?? null,
-      continuityCategory: body.continuityCategory ?? null,
-      advisoryLevel: body.advisoryLevel ?? null,
-      replaySeverity: body.replaySeverity ?? null,
-      replaySource: body.replaySource ?? null,
-      replayTags: body.replayTags ?? [],
-      metadata: body.metadata ?? null,
+      governanceCategory: metadata.governanceCategory,
+      replayCategory: metadata.replayCategory,
+      continuityCategory: metadata.continuityCategory,
+      advisoryLevel: metadata.advisoryLevel,
+      replaySeverity: metadata.replaySeverity,
+      replaySource: metadata.replaySource,
+      replayTags: metadata.replayTags,
+      metadata: safeMetadata,
       createdAt: "Just now",
     });
     return ok({ feedItem: created }, { status: 201 });

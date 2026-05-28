@@ -1,4 +1,5 @@
 import type { OrganizationFeedItem } from "@/types/productai";
+import { validateReplayMetadata } from "@/lib/replay-query/replayValidation";
 
 export interface ReplayMetadata {
   governanceCategory: NonNullable<OrganizationFeedItem["governanceCategory"]>;
@@ -12,12 +13,12 @@ export interface ReplayMetadata {
 
 const defaults: Required<ReplayMetadata> = {
   governanceCategory: "governance_summary",
-  replayCategory: "replay_timeline",
-  continuityCategory: "continuity_stable",
-  advisoryLevel: "advisory_low",
+  replayCategory: "replay_governance",
+  continuityCategory: "continuity_governance",
+  advisoryLevel: "advisory",
   replayTags: [],
-  replaySeverity: "low",
-  replaySource: "system",
+  replaySeverity: "moderate",
+  replaySource: "governance",
 };
 
 export function resolveReplaySeverity(input: {
@@ -25,9 +26,15 @@ export function resolveReplaySeverity(input: {
   governanceCategory?: ReplayMetadata["governanceCategory"];
 }): ReplayMetadata["replaySeverity"] {
   if (input.governanceCategory === "governance_review") return "moderate";
-  if (input.advisoryLevel === "advisory_elevated") return "elevated";
-  if (input.advisoryLevel === "advisory_moderate") return "moderate";
-  return "low";
+  if (input.advisoryLevel === "advisory_elevated" || input.advisoryLevel === "elevated") return "elevated";
+  if (
+    input.advisoryLevel === "advisory_moderate" ||
+    input.advisoryLevel === "advisory" ||
+    input.advisoryLevel === "advisory_low" ||
+    input.advisoryLevel === "informational"
+  )
+    return "moderate";
+  return "moderate";
 }
 
 export function buildReplayMetadata(partial: ReplayMetadata): ReplayMetadata {
@@ -44,18 +51,19 @@ export function buildReplayMetadata(partial: ReplayMetadata): ReplayMetadata {
 }
 
 export function normalizeReplayMetadata(partial?: Partial<OrganizationFeedItem>): ReplayMetadata {
+  const validated = validateReplayMetadata(partial ?? {});
   return {
-    governanceCategory: partial?.governanceCategory ?? defaults.governanceCategory,
-    replayCategory: partial?.replayCategory ?? defaults.replayCategory,
-    continuityCategory: partial?.continuityCategory ?? defaults.continuityCategory,
-    advisoryLevel: partial?.advisoryLevel ?? defaults.advisoryLevel,
-    replayTags: partial?.replayTags ?? defaults.replayTags,
+    governanceCategory: validated.governanceCategory ?? defaults.governanceCategory,
+    replayCategory: validated.replayCategory ?? defaults.replayCategory,
+    continuityCategory: validated.continuityCategory ?? defaults.continuityCategory,
+    advisoryLevel: validated.advisoryLevel ?? defaults.advisoryLevel,
+    replayTags: validated.replayTags ?? defaults.replayTags,
     replaySeverity:
-      partial?.replaySeverity ??
+      validated.replaySeverity ??
       resolveReplaySeverity({
-        advisoryLevel: partial?.advisoryLevel,
-        governanceCategory: partial?.governanceCategory,
+        advisoryLevel: validated.advisoryLevel,
+        governanceCategory: validated.governanceCategory,
       }),
-    replaySource: partial?.replaySource ?? defaults.replaySource,
+    replaySource: validated.replaySource ?? defaults.replaySource,
   };
 }

@@ -1,4 +1,5 @@
 import { mapFeedItemRow, type FeedItemRecord } from "@/lib/domain/feed";
+import { validateReplayMetadata } from "@/lib/replay-query/replayValidation";
 import { db } from "@/lib/server/db/client";
 
 interface ListFeedFilters {
@@ -168,6 +169,15 @@ export class FeedRepository {
 
   create(input: CreateFeedInput): FeedItemRecord {
     this.ensureFeedMetadataColumns();
+    const metadata = validateReplayMetadata({
+      governanceCategory: input.governanceCategory ?? undefined,
+      replayCategory: input.replayCategory ?? undefined,
+      continuityCategory: input.continuityCategory ?? undefined,
+      advisoryLevel: input.advisoryLevel ?? undefined,
+      replaySeverity: input.replaySeverity ?? undefined,
+      replaySource: input.replaySource ?? undefined,
+      replayTags: input.replayTags ?? undefined,
+    });
     db.prepare(
       `INSERT INTO feed_items (
          id, mission_id, mission_name, task_id, decision_id, type, status, author, author_name, message,
@@ -189,13 +199,13 @@ export class FeedRepository {
       author: input.author,
       authorName: input.authorName,
       message: input.message,
-      governanceCategory: input.governanceCategory ?? null,
-      replayCategory: input.replayCategory ?? null,
-      continuityCategory: input.continuityCategory ?? null,
-      advisoryLevel: input.advisoryLevel ?? null,
-      replaySeverity: input.replaySeverity ?? null,
-      replaySource: input.replaySource ?? null,
-      replayTagsJson: JSON.stringify(input.replayTags ?? []),
+      governanceCategory: metadata.governanceCategory,
+      replayCategory: metadata.replayCategory,
+      continuityCategory: metadata.continuityCategory,
+      advisoryLevel: metadata.advisoryLevel,
+      replaySeverity: metadata.replaySeverity,
+      replaySource: metadata.replaySource,
+      replayTagsJson: JSON.stringify(metadata.replayTags),
       metadataJson: input.metadata ? JSON.stringify(input.metadata) : null,
       createdAt: input.createdAt,
     });
