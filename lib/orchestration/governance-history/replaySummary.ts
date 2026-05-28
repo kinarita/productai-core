@@ -8,6 +8,7 @@ import type {
 } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
 import type { ProcessingSession } from "@/lib/orchestration/processing/processingTypes";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
+import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 
 export function buildExecutiveReplaySummary(input: {
   events: GovernanceTimelineEvent[];
@@ -32,6 +33,9 @@ export function buildExecutiveReplaySummary(input: {
     visibleEventCount: input.events.length,
     timelineDensity: input.events.length > 24 ? "expanded" : "compact",
     activeReplayWindow: input.query.replayWindow,
+    replayWindowDescription: replayWindowDescriptions[input.query.replayWindow],
+    continuityContext: `Continuity view is centered on ${input.query.continuity.replaceAll("_", " ")} signals.`,
+    governanceFocusSummary: `Replay focus emphasizes ${input.query.scope.replaceAll("_", " ")} governance context.`,
     governanceHealthSummary:
       analytics.summary.governanceHealthScore >= 70
         ? "Governance replay indicates stable continuity with manageable review pressure."

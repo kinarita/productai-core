@@ -15,6 +15,13 @@ export const replayWindowLabels: Record<ReplayWindow, string> = {
   extended: "Extended",
 };
 
+export const replayWindowDescriptions: Record<ReplayWindow, string> = {
+  latest: "Focused operational replay window",
+  short: "Condensed continuity replay",
+  medium: "Balanced governance replay",
+  extended: "Extended continuity replay context",
+};
+
 export const replaySeverityLabels: Record<string, string> = {
   all: "All severity",
   low: "Low",

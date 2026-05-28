@@ -1,3 +1,5 @@
+import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
+
 export type QueueFeedAction =
     | "slot_reserved"
     | "reservation_released"
@@ -101,58 +103,77 @@ export function queueFeedMessage(action: QueueFeedAction, detail?: string): stri
 }
 
 export function queueFeedMetadata(action: QueueFeedAction): {
-  governanceCategory: "summary" | "review" | "continuity" | "runtime" | "processing" | "replay";
-  replayCategory: "timeline" | "memory" | "summary" | "review" | "advisory";
-  continuityCategory: "stable" | "degraded" | "review_required";
-  advisoryLevel: "low" | "moderate" | "elevated";
+  governanceCategory:
+    | "governance_summary"
+    | "governance_review"
+    | "governance_continuity"
+    | "governance_runtime"
+    | "governance_processing"
+    | "governance_replay";
+  replayCategory:
+    | "replay_summary"
+    | "replay_memory"
+    | "replay_review"
+    | "replay_runtime"
+    | "replay_governance"
+    | "replay_advisory"
+    | "replay_timeline";
+  continuityCategory:
+    | "continuity_stable"
+    | "continuity_review"
+    | "continuity_advisory"
+    | "continuity_runtime"
+    | "continuity_governance"
+    | "continuity_replay";
+  advisoryLevel: "advisory_low" | "advisory_moderate" | "advisory_elevated";
   replayTags: string[];
   replaySeverity: "low" | "moderate" | "elevated" | "critical_review";
   replaySource: "runtime_observer" | "coo" | "ceo" | "system";
 } {
   if (action === "runtime_governance_summary" || action === "runtime_lock") {
-    return {
-      governanceCategory: "runtime",
-      replayCategory: "advisory",
-      continuityCategory: "degraded",
-      advisoryLevel: "elevated",
+    return buildReplayMetadata({
+      governanceCategory: "governance_runtime",
+      replayCategory: "replay_runtime",
+      continuityCategory: "continuity_runtime",
+      advisoryLevel: "advisory_elevated",
       replayTags: ["runtime", "advisory", "continuity"],
       replaySeverity: "elevated",
       replaySource: "runtime_observer",
-    };
+    });
   }
   if (action.includes("review")) {
-    return {
-      governanceCategory: "review",
-      replayCategory: "review",
+    return buildReplayMetadata({
+      governanceCategory: "governance_review",
+      replayCategory: "replay_review",
       continuityCategory:
-        action === "processing_review_required" ? "review_required" : "degraded",
-      advisoryLevel: "moderate",
+        action === "processing_review_required" ? "continuity_review" : "continuity_governance",
+      advisoryLevel: "advisory_moderate",
       replayTags: ["review", "governance"],
       replaySeverity:
         action === "processing_review_denied" || action === "processing_review_revoked"
           ? "critical_review"
           : "moderate",
       replaySource: action.includes("denied") || action.includes("revoked") ? "ceo" : "coo",
-    };
+    });
   }
   if (action.includes("summary") || action.includes("continuity")) {
-    return {
-      governanceCategory: "summary",
-      replayCategory: "summary",
-      continuityCategory: "stable",
-      advisoryLevel: "low",
+    return buildReplayMetadata({
+      governanceCategory: "governance_summary",
+      replayCategory: "replay_summary",
+      continuityCategory: "continuity_stable",
+      advisoryLevel: "advisory_low",
       replayTags: ["summary", "replay"],
       replaySeverity: "low",
       replaySource: "coo",
-    };
+    });
   }
-  return {
-    governanceCategory: "processing",
-    replayCategory: "timeline",
-    continuityCategory: "stable",
-    advisoryLevel: "low",
+  return buildReplayMetadata({
+    governanceCategory: "governance_processing",
+    replayCategory: "replay_timeline",
+    continuityCategory: "continuity_stable",
+    advisoryLevel: "advisory_low",
     replayTags: ["processing", "timeline"],
     replaySeverity: "low",
     replaySource: "coo",
-  };
+  });
 }

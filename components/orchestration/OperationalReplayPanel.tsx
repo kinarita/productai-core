@@ -16,6 +16,9 @@ export function OperationalReplayPanel({
       <ExecutiveSnapshotCard snapshot={replay.latestSnapshot} />
       <div className="rounded-lg border border-border bg-surface p-3">
         <p className="mb-2 text-xs font-medium uppercase text-muted">Governance timeline</p>
+        <p className="mb-2 text-xs text-muted">
+          Replay visibility emphasizes governance continuity across advisory and review transitions.
+        </p>
         <GovernanceTimeline events={replay.events} missionNameMap={missionNameMap} maxEvents={maxEvents} />
       </div>
     </div>

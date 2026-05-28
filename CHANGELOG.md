@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-10 governance replay metadata stabilization)
+
+- Replay metadata helper for normalized governance/replay feed metadata.
+- Continuity category and replay category normalization for feed/query consistency.
+- Metadata-driven timeline/feed filtering refinements and reduced message parsing dependency.
+- Replay wording consistency updates across summary/explainability/panel surfaces.
+- Documentation: `docs/PHASE5_COMPLETION_SUMMARY.md`.
+
 ### Added (Phase 5-9 governance replay filtering and readability polish)
 
 - Metadata-driven governance feed filtering model and feed metadata fields.

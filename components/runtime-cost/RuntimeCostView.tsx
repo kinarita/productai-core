@@ -55,6 +55,8 @@ import { ReplayScopeSwitcher } from "@/components/orchestration/ReplayScopeSwitc
 import { ReplayWindowSelector } from "@/components/orchestration/ReplayWindowSelector";
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 import { ReplayFilterChips } from "@/components/orchestration/ReplayFilterChips";
+import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
+import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 
 export function RuntimeCostView() {
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
@@ -292,10 +294,48 @@ export function RuntimeCostView() {
       ...replaySummary.recommendedExecutiveFocus,
     ].join("\n");
     void navigator.clipboard.writeText(text);
+    addFeedItem({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: "organization",
+      missionName: "Organization",
+      message: "COO prepared executive replay summary for sharing.",
+      status: "active",
+      requiresCeoApproval: false,
+      ...buildReplayMetadata({
+        governanceCategory: "governance_replay",
+        replayCategory: "replay_summary",
+        continuityCategory: "continuity_replay",
+        advisoryLevel: "advisory_low",
+        replayTags: ["replay", "summary", "export"],
+        replaySeverity: "low",
+        replaySource: "coo",
+      }),
+    });
   };
   const shareReplayView = () => {
     const href = `${window.location.origin}/runtime-cost${filterQuery}`;
     void navigator.clipboard.writeText(href);
+    addFeedItem({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: "organization",
+      missionName: "Organization",
+      message: "COO shared replay view context for executive governance review.",
+      status: "active",
+      requiresCeoApproval: false,
+      ...buildReplayMetadata({
+        governanceCategory: "governance_replay",
+        replayCategory: "replay_summary",
+        continuityCategory: "continuity_replay",
+        advisoryLevel: "advisory_low",
+        replayTags: ["replay", "share", "continuity"],
+        replaySeverity: "low",
+        replaySource: "coo",
+      }),
+    });
   };
 
   const publishGovernanceSummary = () => {
@@ -360,7 +400,7 @@ export function RuntimeCostView() {
   }, [replayEvents]);
   const replayExplanation = useMemo(
     () =>
-      `Replay visibility currently emphasizes ${replayQuery.scope.replaceAll("_", " ")} context across a ${replayQuery.replayWindow} window.`,
+      `This explanation reflects ${replayWindowDescriptions[replayQuery.replayWindow]} focused on ${replayQuery.scope.replaceAll("_", " ")} continuity context.`,
     [replayQuery.replayWindow, replayQuery.scope]
   );
   const continuityShiftExplanation = useMemo(() => {

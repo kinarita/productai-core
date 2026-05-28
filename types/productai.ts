@@ -215,10 +215,29 @@ export interface OrganizationFeedItem {
   updatedAt?: string;
   syncedAt?: string;
   requiresCeoApproval?: boolean;
-  governanceCategory?: "summary" | "review" | "continuity" | "runtime" | "processing" | "replay";
-  replayCategory?: "timeline" | "memory" | "summary" | "review" | "advisory";
-  continuityCategory?: "stable" | "degraded" | "review_required";
-  advisoryLevel?: "low" | "moderate" | "elevated";
+  governanceCategory?:
+    | "governance_summary"
+    | "governance_review"
+    | "governance_continuity"
+    | "governance_runtime"
+    | "governance_processing"
+    | "governance_replay";
+  replayCategory?:
+    | "replay_summary"
+    | "replay_memory"
+    | "replay_review"
+    | "replay_runtime"
+    | "replay_governance"
+    | "replay_advisory"
+    | "replay_timeline";
+  continuityCategory?:
+    | "continuity_stable"
+    | "continuity_review"
+    | "continuity_advisory"
+    | "continuity_runtime"
+    | "continuity_governance"
+    | "continuity_replay";
+  advisoryLevel?: "advisory_low" | "advisory_moderate" | "advisory_elevated";
   replayTags?: string[];
   replaySeverity?: "low" | "moderate" | "elevated" | "critical_review";
   replaySource?: "runtime_observer" | "coo" | "ceo" | "system";

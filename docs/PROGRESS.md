@@ -604,3 +604,12 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Improved timeline readability with compact/expanded behavior by replay window.
 - Refined explainability wording to reflect replay scope and replay window context.
 
+## 2026-05-28 (Phase 5-10 governance replay stabilization)
+
+- Completed metadata normalization for governance/replay feed pathways.
+- Added replay metadata helper (`buildReplayMetadata`, `normalizeReplayMetadata`, `resolveReplaySeverity`).
+- Hardened continuity category values and replay category taxonomy.
+- Reduced message-parsing dependency in timeline/feed filtering by adopting metadata fields.
+- Unified replay wording for scope/window/continuity readability.
+- Added Phase 5 completion documentation for governance replay foundation boundaries.
+

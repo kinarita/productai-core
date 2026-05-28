@@ -1,10 +1,12 @@
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
+import { replayScopeLabels, replayWindowLabels, replaySeverityLabels } from "@/lib/replay-query/replayLabels";
 
 export function ReplayQuerySummary({ query }: { query: ReplayQueryState }) {
   return (
     <p className="text-xs text-muted">
-      Scope: {query.scope.replaceAll("_", " ")} · Window: {query.replayWindow} · Severity:{" "}
-      {query.severity.replaceAll("_", " ")} · Advisory: {query.advisory} · Continuity: {query.continuity}
+      Scope: {replayScopeLabels[query.scope]} · Window: {replayWindowLabels[query.replayWindow]} · Severity:{" "}
+      {replaySeverityLabels[query.severity] ?? query.severity.replaceAll("_", " ")} · Advisory:{" "}
+      {query.advisory.replaceAll("_", " ")} · Continuity: {query.continuity.replaceAll("_", " ")}
     </p>
   );
 }

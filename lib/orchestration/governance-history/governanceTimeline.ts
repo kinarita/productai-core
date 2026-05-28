@@ -50,12 +50,11 @@ export function buildGovernanceTimeline(input: {
   });
 
   input.feedItems.slice(0, 40).forEach((feed) => {
-    const lower = feed.message.toLowerCase();
     let eventType: GovernanceTimelineEventType = "governance_summary";
-    if (lower.includes("review")) eventType = "review_requested";
-    if (lower.includes("resolved")) eventType = "review_resolved";
-    if (lower.includes("runtime")) eventType = "runtime_advisory";
-    if (lower.includes("continuity score")) eventType = "continuity_score_changed";
+    if (feed.governanceCategory === "governance_review") eventType = "review_requested";
+    if (feed.continuityCategory === "continuity_review") eventType = "review_resolved";
+    if (feed.governanceCategory === "governance_runtime") eventType = "runtime_advisory";
+    if (feed.replayCategory === "replay_summary") eventType = "continuity_score_changed";
     events.push({
       id: `timeline-feed-${feed.id}`,
       timestamp: feed.timestamp,
@@ -63,7 +62,7 @@ export function buildGovernanceTimeline(input: {
       missionId: feed.missionId ?? "organization",
       taskId: feed.taskId,
       source: feed.authorName,
-      severity: severityByType(eventType),
+      severity: feed.replaySeverity ?? severityByType(eventType),
       title: feed.type,
       summary: feed.message,
       relatedFeedItemId: feed.id,

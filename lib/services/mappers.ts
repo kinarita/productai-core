@@ -1,5 +1,6 @@
 import { agents } from "@/data/mockData";
 import { markSyncedAt, withSyncedAt } from "@/lib/services/syncMetadata";
+import { normalizeReplayMetadata } from "@/lib/replay-query/replayMetadata";
 import type { FeedItemRecord } from "@/lib/domain/feed";
 import type { JudgmentRecord } from "@/lib/domain/judgment";
 import type { MissionRecord } from "@/lib/domain/mission";
@@ -52,6 +53,13 @@ export function mapFeedItemToCreatePayload(item: Omit<OrganizationFeedItem, "id"
     title: item.title,
     author: item.author,
     authorName: item.authorName,
+    governanceCategory: item.governanceCategory,
+    replayCategory: item.replayCategory,
+    continuityCategory: item.continuityCategory,
+    advisoryLevel: item.advisoryLevel,
+    replayTags: item.replayTags ?? [],
+    replaySeverity: item.replaySeverity,
+    replaySource: item.replaySource,
   };
 }
 
@@ -176,6 +184,15 @@ export function mapFeedRecordToFeedItem(
     createdAt: record.createdAt,
     updatedAt: record.createdAt,
     syncedAt: markSyncedAt(),
+    ...normalizeReplayMetadata({
+      governanceCategory: base?.governanceCategory,
+      replayCategory: base?.replayCategory,
+      continuityCategory: base?.continuityCategory,
+      advisoryLevel: base?.advisoryLevel,
+      replayTags: base?.replayTags,
+      replaySeverity: base?.replaySeverity,
+      replaySource: base?.replaySource,
+    }),
   };
 }
 

@@ -14,7 +14,7 @@ export function GovernanceMemoryCard({
       <p className="text-xs font-medium uppercase text-muted">{item.memoryType.replaceAll("_", " ")}</p>
       <p className="text-sm font-medium text-foreground">{item.title}</p>
       <p className="text-xs text-muted">{item.summary}</p>
-      <p className="text-xs text-muted">Recommendation: {item.recommendation}</p>
+      <p className="text-xs text-muted">Continuity recommendation: {item.recommendation}</p>
       <div className="flex flex-wrap gap-2 text-xs">
         {item.relatedMissionIds.slice(0, 3).map((missionId) => (
           <Link key={missionId} href={`/missions/${missionId}`} className="font-medium text-accent hover:underline">
