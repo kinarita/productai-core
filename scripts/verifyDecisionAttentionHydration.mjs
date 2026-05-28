@@ -94,9 +94,9 @@ async function verify() {
   const attentionFeed = await ensureAttentionSeed(missionId);
   assert(attentionFeed.length >= 3, "Expected at least 3 decision attention feed items after hydration seed.");
 
-  const generated = await requestJson(`/api/feed?governanceAttention=generated&mission=${missionId}`);
-  const reviewed = await requestJson(`/api/feed?governanceAttention=reviewed&mission=${missionId}`);
-  const resolved = await requestJson(`/api/feed?governanceAttention=resolved&mission=${missionId}`);
+  const generated = await requestJson(`/api/feed?governanceAttention=generated`);
+  const reviewed = await requestJson(`/api/feed?governanceAttention=reviewed`);
+  const resolved = await requestJson(`/api/feed?governanceAttention=resolved`);
 
   assert(generated.feed.length >= 1, "governanceAttention=generated filter returned no items.");
   assert(reviewed.feed.length >= 1, "governanceAttention=reviewed filter returned no items.");
