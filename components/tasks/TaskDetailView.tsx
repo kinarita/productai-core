@@ -35,6 +35,7 @@ import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
 import { ExecutionIntentReview } from "@/components/orchestration/ExecutionIntentReview";
 import { useExecuteStore } from "@/lib/store/executeStore";
+import { useExecutionSessionStore } from "@/lib/store/executionSessionStore";
 import type { TaskEvent, TaskStatus } from "@/types/productai";
 
 const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
@@ -94,6 +95,13 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const revokeExecuteReady = useExecuteStore((s) => s.revokeExecuteReady);
   const getExecuteStub = useExecuteStore((s) => s.getStubForQueueItem);
   const getExecuteAudit = useExecuteStore((s) => s.getAuditForQueueItem);
+  const requestExecutionStart = useExecutionSessionStore((s) => s.requestExecutionStart);
+  const confirmExecutionBoundary = useExecutionSessionStore((s) => s.confirmExecutionBoundary);
+  const startExecutionSession = useExecutionSessionStore((s) => s.startExecutionSession);
+  const denyExecutionStart = useExecutionSessionStore((s) => s.denyExecutionStart);
+  const revokeExecutionSession = useExecutionSessionStore((s) => s.revokeExecutionSession);
+  const getExecutionSession = useExecutionSessionStore((s) => s.getSessionForQueueItem);
+  const getExecutionSessionAudit = useExecutionSessionStore((s) => s.getAuditForQueueItem);
 
   const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
 
@@ -378,6 +386,8 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     authorizationAudit={getAuditForQueueItem(queueItem.id)}
                     executeStub={getExecuteStub(queueItem.id)}
                     executeAudit={getExecuteAudit(queueItem.id)}
+                    executionSession={getExecutionSession(queueItem.id)}
+                    executionSessionAudit={getExecutionSessionAudit(queueItem.id)}
                     onReserve={() => {
                       refreshRuntimeLock(syncWarnings.length, alerts.length);
                       if (reserveSlot(queueItem.id, "COO")) pushQueueFeed("slot_reserved");
@@ -434,6 +444,36 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     onRevokeExecuteReady={() => {
                       if (revokeExecuteReady(queueItem.id)) {
                         pushQueueFeed("execute_ready_revoked");
+                      }
+                    }}
+                    onRequestExecutionStart={() => {
+                      if (
+                        requestExecutionStart(
+                          queueItem.id,
+                          runtimeLock.active ? "Runtime lock advisory is active." : undefined
+                        )
+                      ) {
+                        pushQueueFeed("execution_start_requested");
+                      }
+                    }}
+                    onConfirmExecutionBoundary={() => {
+                      if (confirmExecutionBoundary(queueItem.id)) {
+                        pushQueueFeed("execution_boundary_confirmed");
+                      }
+                    }}
+                    onStartExecutionSession={() => {
+                      if (startExecutionSession(queueItem.id)) {
+                        pushQueueFeed("execution_session_started");
+                      }
+                    }}
+                    onDenyExecutionStart={() => {
+                      if (denyExecutionStart(queueItem.id)) {
+                        pushQueueFeed("execution_start_denied");
+                      }
+                    }}
+                    onRevokeExecutionSession={() => {
+                      if (revokeExecutionSession(queueItem.id)) {
+                        pushQueueFeed("execution_session_revoked");
                       }
                     }}
                   />

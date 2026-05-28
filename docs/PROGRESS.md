@@ -1,5 +1,26 @@
 # ProductAI Development Progress
 
+## 2026-05-28 — Phase 5-1 controlled execution session governance layer
+
+### Objective
+
+Connect `execute_ready` to `execution_session_active` with final boundary confirmation, operator signature, and session audit continuity.
+
+### Implemented in Phase 5-1
+
+- Execution start layer under `lib/orchestration/execution-start/`
+- `executionSessionStore` with request/confirm/start/deny/revoke flow
+- Queue lifecycle extension for execution start states
+- Execution boundary confirmation and operator signature components
+- Task Detail execution session controls and audit visibility
+- Runtime & Cost execution session governance summary
+- Feed events for execution session governance transitions
+- Documentation: `docs/PHASE5_EXECUTION_START.md`
+
+### Scope boundaries (kept)
+
+- No actual execution, adapters, background workers, or autonomous processing
+
 ## 2026-05-28 — Phase 4-7 controlled execute-ready governance layer
 
 ### Objective

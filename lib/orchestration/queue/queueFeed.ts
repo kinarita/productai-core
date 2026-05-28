@@ -13,7 +13,12 @@ export function queueFeedMessage(
     | "execute_review_requested"
     | "execute_ready_validated"
     | "execute_ready_denied"
-    | "execute_ready_revoked",
+    | "execute_ready_revoked"
+    | "execution_start_requested"
+    | "execution_boundary_confirmed"
+    | "execution_session_started"
+    | "execution_start_denied"
+    | "execution_session_revoked",
   detail?: string
 ): string {
   switch (action) {
@@ -45,6 +50,16 @@ export function queueFeedMessage(
       return `Execute readiness was denied under governance review${detail ? ` for ${detail}` : ""}.`;
     case "execute_ready_revoked":
       return `Execute readiness was revoked pending runtime stabilization${detail ? ` for ${detail}` : ""}.`;
+    case "execution_start_requested":
+      return `COO requested execution session start${detail ? ` for ${detail}` : ""}.`;
+    case "execution_boundary_confirmed":
+      return `Execution boundary confirmation completed under governance review${detail ? ` for ${detail}` : ""}.`;
+    case "execution_session_started":
+      return "Execution session entered active governance state. No execution has been initiated.";
+    case "execution_start_denied":
+      return `Execution session start was denied under governance review${detail ? ` for ${detail}` : ""}.`;
+    case "execution_session_revoked":
+      return `Execution session activation was revoked pending stabilization${detail ? ` for ${detail}` : ""}.`;
     default:
       return "Queue governance event recorded.";
   }

@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-1 controlled execution session governance layer)
+
+- Controlled execution start layer in `lib/orchestration/execution-start/`.
+- ExecutionSession model, operator signature, and runtime reservation mock.
+- Execution start policy and audit continuity.
+- Queue UI flow for request/confirm/start/deny/revoke session governance states.
+- Runtime and Task detail visibility for execution session governance.
+- Documentation: `docs/PHASE5_EXECUTION_START.md`.
+
 ### Added (Phase 4-7 controlled execute-ready governance layer)
 
 - Controlled execute stub architecture in `lib/orchestration/execute/`.

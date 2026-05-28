@@ -21,6 +21,7 @@ import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
 import { useExecuteStore } from "@/lib/store/executeStore";
+import { useExecutionSessionStore } from "@/lib/store/executionSessionStore";
 import { describeAllExecutionBoundaries } from "@/lib/orchestration/execution/executionAdapters";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
@@ -88,6 +89,14 @@ export function RuntimeCostView() {
   const revokeExecuteReady = useExecuteStore((s) => s.revokeExecuteReady);
   const getExecuteStub = useExecuteStore((s) => s.getStubForQueueItem);
   const getExecuteAudit = useExecuteStore((s) => s.getAuditForQueueItem);
+  const sessionSummary = useExecutionSessionStore((s) => s.getSummary());
+  const requestExecutionStart = useExecutionSessionStore((s) => s.requestExecutionStart);
+  const confirmExecutionBoundary = useExecutionSessionStore((s) => s.confirmExecutionBoundary);
+  const startExecutionSession = useExecutionSessionStore((s) => s.startExecutionSession);
+  const denyExecutionStart = useExecutionSessionStore((s) => s.denyExecutionStart);
+  const revokeExecutionSession = useExecutionSessionStore((s) => s.revokeExecutionSession);
+  const getExecutionSession = useExecutionSessionStore((s) => s.getSessionForQueueItem);
+  const getExecutionSessionAudit = useExecutionSessionStore((s) => s.getAuditForQueueItem);
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
@@ -376,6 +385,8 @@ export function RuntimeCostView() {
                       authorizationAudit={getAuditForQueueItem(item.id)}
                       executeStub={getExecuteStub(item.id)}
                       executeAudit={getExecuteAudit(item.id)}
+                      executionSession={getExecutionSession(item.id)}
+                      executionSessionAudit={getExecutionSessionAudit(item.id)}
                       onReserve={() => {
                         useExecutionQueueStore.getState().reserveSlot(item.id, "COO");
                       }}
@@ -413,6 +424,24 @@ export function RuntimeCostView() {
                       }}
                       onRevokeExecuteReady={() => {
                         revokeExecuteReady(item.id);
+                      }}
+                      onRequestExecutionStart={() => {
+                        requestExecutionStart(
+                          item.id,
+                          runtimeLock.active ? "Runtime lock advisory is active." : undefined
+                        );
+                      }}
+                      onConfirmExecutionBoundary={() => {
+                        confirmExecutionBoundary(item.id);
+                      }}
+                      onStartExecutionSession={() => {
+                        startExecutionSession(item.id);
+                      }}
+                      onDenyExecutionStart={() => {
+                        denyExecutionStart(item.id);
+                      }}
+                      onRevokeExecutionSession={() => {
+                        revokeExecutionSession(item.id);
                       }}
                     />
                   </li>
@@ -540,6 +569,30 @@ export function RuntimeCostView() {
           </div>
           <p className="mt-3 text-xs text-muted">
             execute_ready indicates validated readiness only. Execution is not initiated in this phase.
+          </p>
+        </Card>
+
+        <Card title="Execution Session Governance">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Start requested</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{sessionSummary.requested}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Session active</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{sessionSummary.active}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Denied</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{sessionSummary.denied}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Revoked</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{sessionSummary.revoked}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            execution_session_active is governance state only. No execution processing is running.
           </p>
         </Card>
 

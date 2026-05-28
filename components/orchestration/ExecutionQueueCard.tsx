@@ -5,6 +5,9 @@ import { AuthorizationRequestCard } from "@/components/orchestration/Authorizati
 import { ExecuteAuditTimeline } from "@/components/orchestration/ExecuteAuditTimeline";
 import { ExecuteGovernanceCard } from "@/components/orchestration/ExecuteGovernanceCard";
 import { ExecutionIntentConfirmation } from "@/components/orchestration/ExecutionIntentConfirmation";
+import { ExecutionBoundaryReview } from "@/components/orchestration/ExecutionBoundaryReview";
+import { ExecutionSessionCard } from "@/components/orchestration/ExecutionSessionCard";
+import { ExecutionSessionTimeline } from "@/components/orchestration/ExecutionSessionTimeline";
 import { QueueLifecycleView } from "@/components/orchestration/QueueLifecycleView";
 import { ReadinessScoreBadge } from "@/components/orchestration/ReadinessScoreBadge";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
@@ -16,7 +19,8 @@ import type {
 import type { ExecutionQueueItem } from "@/lib/orchestration/queue/executionQueueTypes";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import type { ExecuteAuditEntry, ExecuteStub } from "@/lib/orchestration/execute/executeTypes";
-import { Bookmark, BookmarkX, Layers, ShieldCheck, UserCheck, UserX, Undo2, ClipboardCheck, Ban } from "lucide-react";
+import type { ExecutionSession, ExecutionStartAuditEntry } from "@/lib/orchestration/execution-start/executionStartTypes";
+import { Bookmark, BookmarkX, Layers, ShieldCheck, UserCheck, UserX, Undo2, ClipboardCheck, Ban, PlayCircle } from "lucide-react";
 
 interface ExecutionQueueCardProps {
   item: ExecutionQueueItem;
@@ -41,6 +45,13 @@ interface ExecutionQueueCardProps {
   onMarkExecuteReady?: () => void;
   onDenyExecuteReady?: () => void;
   onRevokeExecuteReady?: () => void;
+  executionSession?: ExecutionSession;
+  executionSessionAudit?: ExecutionStartAuditEntry[];
+  onRequestExecutionStart?: () => void;
+  onConfirmExecutionBoundary?: () => void;
+  onStartExecutionSession?: () => void;
+  onDenyExecutionStart?: () => void;
+  onRevokeExecutionSession?: () => void;
 }
 
 export function ExecutionQueueCard({
@@ -66,6 +77,13 @@ export function ExecutionQueueCard({
   onMarkExecuteReady,
   onDenyExecuteReady,
   onRevokeExecuteReady,
+  executionSession,
+  executionSessionAudit = [],
+  onRequestExecutionStart,
+  onConfirmExecutionBoundary,
+  onStartExecutionSession,
+  onDenyExecutionStart,
+  onRevokeExecutionSession,
 }: ExecutionQueueCardProps) {
   return (
     <article className="rounded-lg border border-border bg-surface p-4">
@@ -118,9 +136,21 @@ export function ExecutionQueueCard({
       ) : null}
       {(item.queueStatus === "execution_authorized" ||
         item.queueStatus === "execute_review_pending" ||
-        item.queueStatus === "execute_ready") ? (
+        item.queueStatus === "execute_ready" ||
+        item.queueStatus === "execution_start_requested" ||
+        item.queueStatus === "execution_session_active") ? (
         <div className="mt-3">
           <ExecutionIntentConfirmation
+            item={item}
+            runtimeAdvisory={runtimeLockActive ? "Runtime advisory lock is active." : undefined}
+          />
+        </div>
+      ) : null}
+      {(item.queueStatus === "execution_start_requested" ||
+        item.queueStatus === "execution_started" ||
+        item.queueStatus === "execution_session_active") ? (
+        <div className="mt-3">
+          <ExecutionBoundaryReview
             item={item}
             runtimeAdvisory={runtimeLockActive ? "Runtime advisory lock is active." : undefined}
           />
@@ -273,6 +303,62 @@ export function ExecutionQueueCard({
             Revoke Execute Readiness
           </button>
         ) : null}
+        {item.queueStatus === "execute_ready" && onRequestExecutionStart ? (
+          <button
+            type="button"
+            onClick={onRequestExecutionStart}
+            disabled={runtimeLockActive}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface disabled:opacity-60"
+          >
+            <PlayCircle className="h-3.5 w-3.5" />
+            Request Execution Start
+          </button>
+        ) : null}
+        {item.queueStatus === "execution_start_requested" ? (
+          <>
+            {onConfirmExecutionBoundary ? (
+              <button
+                type="button"
+                onClick={onConfirmExecutionBoundary}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface"
+              >
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                Confirm Execution Boundary
+              </button>
+            ) : null}
+            {onStartExecutionSession ? (
+              <button
+                type="button"
+                onClick={onStartExecutionSession}
+                disabled={runtimeLockActive}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+              >
+                <PlayCircle className="h-3.5 w-3.5" />
+                Start Execution Session
+              </button>
+            ) : null}
+            {onDenyExecutionStart ? (
+              <button
+                type="button"
+                onClick={onDenyExecutionStart}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+              >
+                <Ban className="h-3.5 w-3.5" />
+                Deny Execution Start
+              </button>
+            ) : null}
+          </>
+        ) : null}
+        {item.queueStatus === "execution_session_active" && onRevokeExecutionSession ? (
+          <button
+            type="button"
+            onClick={onRevokeExecutionSession}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Revoke Execution Session
+          </button>
+        ) : null}
       </div>
       <AuthorizationRequestCard
         item={item}
@@ -285,6 +371,12 @@ export function ExecutionQueueCard({
       </div>
       <div className="mt-3">
         <ExecuteAuditTimeline entries={executeAudit} />
+      </div>
+      <div className="mt-3">
+        <ExecutionSessionCard session={executionSession} />
+      </div>
+      <div className="mt-3">
+        <ExecutionSessionTimeline entries={executionSessionAudit} />
       </div>
     </article>
   );
