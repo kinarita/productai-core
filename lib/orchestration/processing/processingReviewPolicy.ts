@@ -20,7 +20,7 @@ export function requiresProcessingReview(
   if (input.continuityValid === false) {
     return { required: true, reason: "Governance continuity issue requires review." };
   }
-  if (input.reason?.severity === "high") {
+  if (input.reason?.severity === "critical_review" || input.reason?.severity === "elevated") {
     return { required: true, reason: "Elevated risk reason requires review." };
   }
   return { required: false, reason: "No mandatory review trigger detected." };

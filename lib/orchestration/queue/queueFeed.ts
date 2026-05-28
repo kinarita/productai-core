@@ -27,7 +27,8 @@ export function queueFeedMessage(
     | "processing_review_resolved"
     | "processing_review_denied"
     | "processing_review_revoked"
-    | "processing_governance_reason_added",
+    | "processing_governance_reason_added"
+    | "processing_governance_summary",
   detail?: string
 ): string {
   switch (action) {
@@ -87,6 +88,8 @@ export function queueFeedMessage(
       return `Processing governance was revoked after review${detail ? ` for ${detail}` : ""}.`;
     case "processing_governance_reason_added":
       return `Runtime Observer requested processing governance review${detail ? ` — ${detail}` : ""}.`;
+    case "processing_governance_summary":
+      return `COO escalated governance review visibility for operational continuity${detail ? ` — ${detail}` : ""}.`;
     default:
       return "Queue governance event recorded.";
   }

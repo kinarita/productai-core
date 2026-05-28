@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card, StatCard } from "@/components/Card";
 import { Badge } from "@/components/Badge";
@@ -13,12 +13,15 @@ import { getHandoffBoundaryMessage } from "@/lib/orchestration/execution/executi
 import { ExecutionReadinessCard } from "@/components/orchestration/ExecutionReadinessCard";
 import { buildExecutionQueue } from "@/lib/orchestration/materialization/executionQueue";
 import { useExecutionStore } from "@/lib/store/executionStore";
+import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useMaterializationStore } from "@/lib/store/materializationStore";
 import { useTaskStore } from "@/lib/store/taskStore";
 import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
 import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCard";
+import { GovernanceAnalyticsCard } from "@/components/orchestration/GovernanceAnalyticsCard";
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
+import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
 import { useExecuteStore } from "@/lib/store/executeStore";
 import { useExecutionSessionStore } from "@/lib/store/executionSessionStore";
@@ -53,6 +56,7 @@ export function RuntimeCostView() {
   const missionTickets = useExecutionStore((s) => s.tickets);
   const materializationRecords = useMaterializationStore((s) => s.records);
   const allTasks = useTaskStore((s) => s.tasks);
+  const addFeedItem = useOrganizationStore((s) => s.addFeedItemWithSync);
 
   const orgReadinessSummary = {
     missionId: "organization",
@@ -108,6 +112,12 @@ export function RuntimeCostView() {
   const revokeProcessing = useProcessingStore((s) => s.revokeProcessing);
   const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
   const getProcessingAudit = useProcessingStore((s) => s.getAuditForQueueItem);
+  const processingSessions = useProcessingStore((s) => s.getSessions());
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterSeverity, setFilterSeverity] = useState<string>("all");
+  const [filterAdvisory, setFilterAdvisory] = useState<string>("all");
+  const [filterMission, setFilterMission] = useState<string>("all");
+  const [filterReviewState, setFilterReviewState] = useState<string>("all");
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
@@ -138,6 +148,39 @@ export function RuntimeCostView() {
     const context = buildOrchestrationContext();
     const insight = await orchestrator.generateRuntimeObserverInsight(context);
     setRuntimeInsight(insight);
+  };
+
+  const filteredProcessingSessions = useMemo(() => {
+    return processingSessions.filter((session) => {
+      const reason = session.latestReviewReason;
+      if (filterCategory !== "all" && reason?.category !== filterCategory) return false;
+      if (filterSeverity !== "all" && reason?.severity !== filterSeverity) return false;
+      if (filterAdvisory !== "all") {
+        if (filterAdvisory === "advisory" && !reason?.advisoryOnly) return false;
+        if (filterAdvisory === "decision" && reason?.advisoryOnly) return false;
+      }
+      if (filterMission !== "all" && session.missionId !== filterMission) return false;
+      if (filterReviewState !== "all" && session.processingStatus !== filterReviewState) return false;
+      return true;
+    });
+  }, [filterAdvisory, filterCategory, filterMission, filterReviewState, filterSeverity, processingSessions]);
+
+  const missionIds = useMemo(
+    () => Array.from(new Set(processingSessions.map((session) => session.missionId))),
+    [processingSessions]
+  );
+
+  const publishGovernanceSummary = () => {
+    addFeedItem({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: "organization",
+      missionName: "Organization",
+      message: queueFeedMessage("processing_governance_summary"),
+      status: "active",
+      requiresCeoApproval: false,
+    });
   };
 
   return (
@@ -664,6 +707,93 @@ export function RuntimeCostView() {
           <p className="mt-3 text-xs text-muted">
             processing_active is governance continuity only. No operational execution has been initiated.
           </p>
+        </Card>
+
+        <Card title="Processing Governance Analytics">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <label className="text-xs text-muted">
+              Category
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">All categories</option>
+                <option value="runtime_stability">runtime stability</option>
+                <option value="provider_instability">provider instability</option>
+                <option value="sync_instability">sync instability</option>
+                <option value="dependency_blocker">dependency blocker</option>
+                <option value="governance_review">governance review</option>
+                <option value="elevated_risk">elevated risk</option>
+              </select>
+            </label>
+            <label className="text-xs text-muted">
+              Severity
+              <select
+                value={filterSeverity}
+                onChange={(e) => setFilterSeverity(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">All severities</option>
+                <option value="low">low</option>
+                <option value="moderate">moderate</option>
+                <option value="elevated">elevated</option>
+                <option value="critical_review">critical review</option>
+              </select>
+            </label>
+            <label className="text-xs text-muted">
+              Advisory
+              <select
+                value={filterAdvisory}
+                onChange={(e) => setFilterAdvisory(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">All</option>
+                <option value="advisory">Advisory only</option>
+                <option value="decision">Governance decision</option>
+              </select>
+            </label>
+            <label className="text-xs text-muted">
+              Mission
+              <select
+                value={filterMission}
+                onChange={(e) => setFilterMission(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">All missions</option>
+                {missionIds.map((missionId) => (
+                  <option key={missionId} value={missionId}>
+                    {missionId}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-muted">
+              Review state
+              <select
+                value={filterReviewState}
+                onChange={(e) => setFilterReviewState(e.target.value)}
+                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">All states</option>
+                <option value="processing_review_required">review required</option>
+                <option value="processing_active">active</option>
+                <option value="processing_paused">paused</option>
+                <option value="processing_denied">denied</option>
+                <option value="processing_revoked">revoked</option>
+              </select>
+            </label>
+          </div>
+          <div className="mt-4">
+            <GovernanceAnalyticsCard sessions={filteredProcessingSessions} />
+          </div>
+          <button
+            type="button"
+            onClick={publishGovernanceSummary}
+            className="mt-3 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Publish Governance Visibility Summary
+          </button>
         </Card>
 
         <Card title="Processing Governance Review">

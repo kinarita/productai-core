@@ -49,6 +49,9 @@ import { ExecutionReadinessCard } from "@/components/orchestration/ExecutionRead
 import { useMaterializationStore } from "@/lib/store/materializationStore";
 import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
 import { useSyncStore } from "@/lib/store/syncStore";
+import { useProcessingStore } from "@/lib/store/processingStore";
+import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
+import { GovernanceHealthBadge } from "@/components/orchestration/GovernanceHealthBadge";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -113,10 +116,19 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
   );
   const missionQueueItems = useExecutionQueueStore((s) => s.getItemsForMission(missionId));
   const queueGovernance = useExecutionQueueStore((s) => s.getGovernanceSummary());
+  const processingSessions = useProcessingStore((s) => s.getSessions());
 
   const missionDecisions = useMemo(
     () => allDecisions.filter((d) => d.relatedMissionId === missionId),
     [allDecisions, missionId]
+  );
+  const missionProcessingSessions = useMemo(
+    () => processingSessions.filter((session) => session.missionId === missionId),
+    [missionId, processingSessions]
+  );
+  const missionProcessingAnalytics = useMemo(
+    () => buildProcessingAnalytics(missionProcessingSessions),
+    [missionProcessingSessions]
   );
 
   const missionFeed = useMemo(
@@ -654,6 +666,52 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
                 {queueGovernance.awaitingAuthorization} awaiting authorization
               </p>
             ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Processing Governance Summary"
+              description="Mission-level continuity and review visibility"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted">Continuity health</p>
+              <GovernanceHealthBadge score={missionProcessingAnalytics.summary.governanceHealthScore} />
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Active sessions:{" "}
+                <span className="font-medium text-foreground">
+                  {missionProcessingAnalytics.summary.activeProcessingCount}
+                </span>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Review required:{" "}
+                <span className="font-medium text-foreground">
+                  {missionProcessingAnalytics.summary.reviewRequiredCount}
+                </span>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Paused/revoked:{" "}
+                <span className="font-medium text-foreground">
+                  {
+                    missionProcessingSessions.filter(
+                      (session) =>
+                        session.processingStatus === "processing_paused" ||
+                        session.processingStatus === "processing_revoked"
+                    ).length
+                  }
+                </span>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Runtime advisories:{" "}
+                <span className="font-medium text-foreground">
+                  {missionProcessingAnalytics.summary.runtimeInstabilityCount}
+                </span>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-muted">
+              Governance continuity remains human-prioritized. Analytics are review guidance only.
+            </p>
           </Card>
 
           <Card>

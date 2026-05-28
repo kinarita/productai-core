@@ -43,6 +43,7 @@ interface ProcessingState {
   denyProcessing: (queueItemId: string, note?: string) => boolean;
   pauseProcessing: (queueItemId: string, note?: string) => boolean;
   revokeProcessing: (queueItemId: string, note?: string) => boolean;
+  getSessions: () => ProcessingSession[];
   getSessionForQueueItem: (queueItemId: string) => ProcessingSession | undefined;
   getAuditForQueueItem: (queueItemId: string) => ProcessingAuditEntry[];
   getSummary: () => {
@@ -350,6 +351,7 @@ export const useProcessingStore = create<ProcessingState>((set, get) => ({
     return true;
   },
 
+  getSessions: () => get().sessions,
   getSessionForQueueItem: (queueItemId) => get().sessions.find((s) => s.queueItemId === queueItemId),
   getAuditForQueueItem: (queueItemId) => get().auditTrail.filter((a) => a.queueItemId === queueItemId),
   getSummary: () => {
@@ -361,7 +363,9 @@ export const useProcessingStore = create<ProcessingState>((set, get) => ({
       revoked: sessions.filter((s) => s.processingStatus === "processing_revoked").length,
       denied: sessions.filter((s) => s.processingStatus === "processing_denied").length,
       reviewRequired: sessions.filter((s) => s.processingStatus === "processing_review_required").length,
-      elevatedRisk: sessions.filter((s) => s.activeReasons.some((r) => r.severity === "high")).length,
+      elevatedRisk: sessions.filter((s) =>
+        s.activeReasons.some((r) => r.severity === "elevated" || r.severity === "critical_review")
+      ).length,
     };
   },
 }));

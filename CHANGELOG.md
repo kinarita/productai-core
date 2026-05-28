@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-4 processing governance visibility analytics)
+
+- Processing governance analytics module with severity/category/risk distributions.
+- Governance continuity scoring and executive visibility summary model.
+- Runtime & Cost processing analytics card, review queue, and calm filtering controls.
+- Mission-level processing governance summary and CEO risk visibility section.
+- Task-level processing reason filters for executive reviewability.
+- Documentation: `docs/PHASE5_PROCESSING_VISIBILITY.md`.
+
 ### Added (Phase 5-3 processing review governance taxonomy)
 
 - Processing reason taxonomy and structured governance reason model.

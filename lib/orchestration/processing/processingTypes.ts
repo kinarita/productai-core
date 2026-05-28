@@ -20,7 +20,18 @@ export type ProcessingReasonCategory =
   | "manual_governance_pause"
   | "advisory_review";
 
-export type GovernanceSeverity = "low" | "medium" | "high";
+export type GovernanceSeverity = "low" | "moderate" | "elevated" | "critical_review";
+
+export interface ProcessingGovernanceSummary {
+  totalProcessingSessions: number;
+  activeProcessingCount: number;
+  reviewRequiredCount: number;
+  elevatedRiskCount: number;
+  runtimeInstabilityCount: number;
+  governanceHealthScore: number;
+  advisoryOnlyCount: number;
+  continuityStable: boolean;
+}
 
 export interface ProcessingGovernanceReason {
   id: string;

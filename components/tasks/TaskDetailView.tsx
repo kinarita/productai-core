@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { MissionLink } from "@/components/MissionLink";
@@ -37,6 +37,7 @@ import { ExecutionIntentReview } from "@/components/orchestration/ExecutionInten
 import { useExecuteStore } from "@/lib/store/executeStore";
 import { useExecutionSessionStore } from "@/lib/store/executionSessionStore";
 import { useProcessingStore } from "@/lib/store/processingStore";
+import { ProcessingReasonCard } from "@/components/orchestration/ProcessingReasonCard";
 import type { TaskEvent, TaskStatus } from "@/types/productai";
 
 const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
@@ -112,6 +113,8 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const revokeProcessing = useProcessingStore((s) => s.revokeProcessing);
   const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
   const getProcessingAudit = useProcessingStore((s) => s.getAuditForQueueItem);
+  const [reasonSeverityFilter, setReasonSeverityFilter] = useState<string>("all");
+  const [reasonCategoryFilter, setReasonCategoryFilter] = useState<string>("all");
 
   const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
 
@@ -197,6 +200,12 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
 
   const suggestions = getSuggestedActionsForTask(task, tasks);
   const waitingOnDep = isWaitingOnDependency(task, tasks);
+  const processingSession = queueItem ? getProcessingSession(queueItem.id) : undefined;
+  const filteredReasons = (processingSession?.activeReasons ?? []).filter((reason) => {
+    if (reasonSeverityFilter !== "all" && reason.severity !== reasonSeverityFilter) return false;
+    if (reasonCategoryFilter !== "all" && reason.category !== reasonCategoryFilter) return false;
+    return true;
+  });
 
   return (
     <AppShell>
@@ -655,6 +664,63 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                   </li>
                 ))}
               </ul>
+            )}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Processing Governance Reasons"
+              description="Structured reviewability for executive continuity decisions"
+            />
+            {processingSession ? (
+              <div className="space-y-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="text-xs text-muted">
+                    Severity
+                    <select
+                      value={reasonSeverityFilter}
+                      onChange={(e) => setReasonSeverityFilter(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                    >
+                      <option value="all">All severities</option>
+                      <option value="low">low</option>
+                      <option value="moderate">moderate</option>
+                      <option value="elevated">elevated</option>
+                      <option value="critical_review">critical review</option>
+                    </select>
+                  </label>
+                  <label className="text-xs text-muted">
+                    Category
+                    <select
+                      value={reasonCategoryFilter}
+                      onChange={(e) => setReasonCategoryFilter(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                    >
+                      <option value="all">All categories</option>
+                      <option value="runtime_stability">runtime stability</option>
+                      <option value="provider_instability">provider instability</option>
+                      <option value="sync_instability">sync instability</option>
+                      <option value="dependency_blocker">dependency blocker</option>
+                      <option value="authorization_continuity">authorization continuity</option>
+                    </select>
+                  </label>
+                </div>
+                {filteredReasons.length > 0 ? (
+                  <div className="space-y-2">
+                    {filteredReasons.slice(0, 4).map((reason) => (
+                      <ProcessingReasonCard key={reason.id} reason={reason} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted">
+                    No governance reasons match the selected filter for this task.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted">
+                Processing governance reasons will appear after processing continuity is prepared.
+              </p>
             )}
           </Card>
 

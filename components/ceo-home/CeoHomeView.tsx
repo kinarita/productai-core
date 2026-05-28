@@ -10,6 +10,9 @@ import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useTaskStore } from "@/lib/store/taskStore";
+import { useProcessingStore } from "@/lib/store/processingStore";
+import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
+import { GovernanceHealthBadge } from "@/components/orchestration/GovernanceHealthBadge";
 import { getDependencyWarnings } from "@/lib/task/taskDependencies";
 import { getImportantTasks, getRecentlyCreatedTasks } from "@/lib/task/taskSelectors";
 import { getBlockerAge } from "@/lib/task/missionExecutionInsights";
@@ -37,6 +40,7 @@ export function CeoHomeView() {
   const decisions = useOrganizationStore((s) => s.decisions);
   const runtimeAlerts = useRuntimeStore((s) => s.alerts);
   const tasks = useTaskStore((s) => s.tasks);
+  const processingSessions = useProcessingStore((s) => s.getSessions());
   const importantTasks = getImportantTasks(tasks, 6);
   const recentlyCreated = getRecentlyCreatedTasks(tasks, 5);
   const dependencyWarnings = getDependencyWarnings(tasks).slice(0, 5);
@@ -49,6 +53,10 @@ export function CeoHomeView() {
   const orgHealth = computeOrganizationHealth(missions, runtimeAlerts);
   const activeMissions = missions.filter((m) => m.status === "active" || m.status === "planning");
   const pendingDecisions = decisions.filter((d) => d.status === "pending");
+  const processingAnalytics = buildProcessingAnalytics(processingSessions);
+  const missionRiskRows = Object.entries(processingAnalytics.missionRisk)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -231,6 +239,59 @@ export function CeoHomeView() {
               ))}
             </ul>
           ) : null}
+        </Card>
+
+        <Card title="Governance Risk Summary" description="Executive visibility over processing continuity risk">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <p className="text-xs text-muted">Governance continuity health</p>
+            <GovernanceHealthBadge score={processingAnalytics.summary.governanceHealthScore} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+              <p className="text-xs font-medium uppercase text-muted">High severity items</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {processingAnalytics.summary.elevatedRiskCount}
+              </p>
+            </Link>
+            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+              <p className="text-xs font-medium uppercase text-muted">Review-required sessions</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {processingAnalytics.summary.reviewRequiredCount}
+              </p>
+            </Link>
+            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+              <p className="text-xs font-medium uppercase text-muted">Runtime continuity concerns</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {processingAnalytics.summary.runtimeInstabilityCount}
+              </p>
+            </Link>
+            <Link href="/runtime-cost" className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-background">
+              <p className="text-xs font-medium uppercase text-muted">Processing pauses/revokes</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {
+                  processingSessions.filter(
+                    (session) =>
+                      session.processingStatus === "processing_paused" ||
+                      session.processingStatus === "processing_revoked"
+                  ).length
+                }
+              </p>
+            </Link>
+          </div>
+          {missionRiskRows.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {missionRiskRows.map(([missionId, score]) => (
+                <li key={missionId} className="rounded-lg border border-border bg-surface px-3 py-2">
+                  <Link href={`/missions/${missionId}`} className="text-sm font-medium text-foreground hover:text-accent">
+                    {missionId}
+                  </Link>
+                  <p className="mt-0.5 text-xs text-muted">Governance risk density score: {score}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">No mission-level governance review load at this time.</p>
+          )}
         </Card>
 
         <Card title="Cross-mission Blocker List" description="Organization-wide execution bottlenecks">
