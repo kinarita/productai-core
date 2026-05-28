@@ -60,6 +60,8 @@ import { ReplayNavigationContext } from "@/components/orchestration/ReplayNaviga
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
+import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
+import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -188,14 +190,25 @@ export function MissionDetailView({
   const replay = useMemo(
     () =>
       buildGovernanceReplay({
-        processingSessions,
+        processingSessions: filteredMissionProcessingSessions,
         processingAuditTrail,
-        feedItems: allFeed,
+        feedItems: missionFeed,
         runtimeAlerts: alerts,
         syncWarnings,
+        replayQuery: { ...replayQuery, mission: missionId },
       }),
-    [alerts, allFeed, processingAuditTrail, processingSessions, syncWarnings]
+    [
+      alerts,
+      filteredMissionProcessingSessions,
+      missionFeed,
+      missionId,
+      processingAuditTrail,
+      replayQuery,
+      syncWarnings,
+    ]
   );
+  const replayDiagnostics = replay.diagnostics;
+  const validationMetrics = getReplayValidationMetrics();
 
   useEffect(() => {
     setActiveMission(missionId);
@@ -806,6 +819,49 @@ export function MissionDetailView({
                 feedHref={buildReplayHref("/organization-feed", { ...replayQuery, mission: missionId })}
               />
             </div>
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Mission Replay Diagnostics"
+              description="Mission-scoped continuity semantics and visibility diagnostics"
+            />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Replay visibility score:{" "}
+                <span className="font-medium text-foreground">{replayDiagnostics.replayVisibilityScore}</span>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Replay confidence:{" "}
+                <span className="font-medium text-foreground">{replayDiagnostics.replayConfidence}</span>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Continuity stability:{" "}
+                <span className="font-medium text-foreground">
+                  {getContinuityStabilityLabel(replayDiagnostics.continuityStability)}
+                </span>
+              </div>
+              <div className="rounded-lg border border-border bg-surface p-2 text-xs text-muted">
+                Metadata completeness:{" "}
+                <span className="font-medium text-foreground">
+                  {Math.round(replayDiagnostics.metadataCompletenessRatio * 100)}%
+                </span>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-muted">{replayDiagnostics.continuityExplanation}</p>
+            <p className="mt-1 text-xs text-muted">{replayDiagnostics.visibilityExplanation}</p>
+            {replayDiagnostics.diagnosticsWarnings.length > 0 ? (
+              <ul className="mt-2 space-y-1 text-xs text-muted">
+                {replayDiagnostics.diagnosticsWarnings.slice(0, 3).map((warning) => (
+                  <li key={warning}>- {warning}</li>
+                ))}
+              </ul>
+            ) : null}
+            {process.env.NODE_ENV !== "production" ? (
+              <p className="mt-2 text-[11px] text-muted">
+                Dev normalization summary: alias normalized {validationMetrics.aliasNormalizationCount} times.
+              </p>
+            ) : null}
           </Card>
 
           <Card>

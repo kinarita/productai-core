@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 6-5 cross-view replay diagnostics consistency)
+
+- Replay diagnostics configuration module for weights and thresholds.
+- Shared replay diagnostics wording helper for continuity and visibility summaries.
+- CEO Home and Mission Detail replay diagnostics summaries with shared continuity semantics.
+- Governance explainability portability improvements using direct replay diagnostics props.
+- Replay summary and operational replay wording consistency updates for density semantics.
+- Documentation: `docs/PHASE6_CROSS_VIEW_DIAGNOSTICS.md`.
+
 ### Added (Phase 6-4 replay diagnostics and governance observability)
 
 - Replay diagnostics module with visibility score, confidence semantics, continuity diagnostics, and advisory warnings.

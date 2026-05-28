@@ -17,6 +17,7 @@ import { buildProcessingAnalytics } from "@/lib/orchestration/processing/process
 import { GovernanceHealthBadge } from "@/components/orchestration/GovernanceHealthBadge";
 import { ExecutiveSnapshotCard } from "@/components/orchestration/ExecutiveSnapshotCard";
 import { buildExecutiveGovernanceSnapshot } from "@/lib/orchestration/governance-history/governanceSnapshot";
+import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import { ReplayNavigationContext } from "@/components/orchestration/ReplayNavigationContext";
@@ -29,6 +30,8 @@ import { StatusPill } from "@/components/StatusPill";
 import type { TaskStatus } from "@/types/productai";
 import { agents } from "@/data/mockData";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock } from "lucide-react";
+import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
+import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 
 const healthVariant = {
   stable: "success" as const,
@@ -56,6 +59,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
   const tasks = useTaskStore((s) => s.tasks);
   const processingSessions = useProcessingStore((s) => s.getSessions());
+  const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
   const filteredProcessingSessions = processingSessions.filter((session) => {
     if (replayQuery.mission !== "all" && session.missionId !== replayQuery.mission) return false;
     if (replayQuery.severity !== "all") {
@@ -108,6 +112,20 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
   const replayHref = useMemo(() => buildReplayHref("/runtime-cost", replayQuery), [replayQuery]);
+  const replay = useMemo(
+    () =>
+      buildGovernanceReplay({
+        processingSessions: filteredProcessingSessions,
+        processingAuditTrail,
+        feedItems,
+        runtimeAlerts,
+        syncWarnings,
+        replayQuery,
+      }),
+    [feedItems, filteredProcessingSessions, processingAuditTrail, replayQuery, runtimeAlerts, syncWarnings]
+  );
+  const diagnostics = replay.diagnostics;
+  const validationMetrics = getReplayValidationMetrics();
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -345,6 +363,42 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           ) : (
             <p className="mt-3 text-sm text-muted">No mission-level governance review load at this time.</p>
           )}
+        </Card>
+
+        <Card title="Governance Replay Diagnostics Summary" description="Cross-view continuity diagnostics for executive visibility">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Replay visibility score</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">{diagnostics.replayVisibilityScore}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Replay confidence</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">{diagnostics.replayConfidence}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Continuity stability</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{getContinuityStabilityLabel(diagnostics.continuityStability)}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-3">
+              <p className="text-xs font-medium uppercase text-muted">Metadata completeness</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {Math.round(diagnostics.metadataCompletenessRatio * 100)}%
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted">{diagnostics.continuityExplanation}</p>
+          {diagnostics.diagnosticsWarnings.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-xs text-muted">
+              {diagnostics.diagnosticsWarnings.slice(0, 4).map((warning) => (
+                <li key={warning}>- {warning}</li>
+              ))}
+            </ul>
+          ) : null}
+          {process.env.NODE_ENV !== "production" ? (
+            <p className="mt-2 text-[11px] text-muted">
+              Dev normalization summary: alias normalized {validationMetrics.aliasNormalizationCount} times.
+            </p>
+          ) : null}
         </Card>
 
         <Card title="Executive Governance Snapshot" description="Current governance context and focus">

@@ -10,6 +10,7 @@ import type { ProcessingSession } from "@/lib/orchestration/processing/processin
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
+import { buildReplayDiagnosticsSummary } from "@/lib/replay-query/replayDiagnosticsHelpers";
 
 export function buildExecutiveReplaySummary(input: {
   events: GovernanceTimelineEvent[];
@@ -49,7 +50,7 @@ export function buildExecutiveReplaySummary(input: {
     ],
     reviewPressureSummary: `${reviewEvents} replay event(s) requested governance review in the current window.`,
     runtimeGovernanceSummary: `${runtimeEvents} replay event(s) reflected runtime governance advisory context.`,
-    diagnosticsSummary: `Visibility ${input.diagnostics.replayVisibilityScore} · Confidence ${input.diagnostics.replayConfidence} · Metadata completeness ${Math.round(
+    diagnosticsSummary: `${buildReplayDiagnosticsSummary(input.diagnostics, input.query)} · Metadata completeness ${Math.round(
       input.diagnostics.metadataCompletenessRatio * 100
     )}%`,
     recommendedExecutiveFocus: [

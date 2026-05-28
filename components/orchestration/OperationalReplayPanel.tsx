@@ -1,6 +1,7 @@
 import { ExecutiveSnapshotCard } from "@/components/orchestration/ExecutiveSnapshotCard";
 import { GovernanceTimeline } from "@/components/orchestration/GovernanceTimeline";
 import type { GovernanceReplayBundle } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
+import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
 
 export function OperationalReplayPanel({
   replay,
@@ -18,6 +19,10 @@ export function OperationalReplayPanel({
         <p className="mb-2 text-xs font-medium uppercase text-muted">Governance timeline</p>
         <p className="mb-2 text-xs text-muted">
           Replay visibility emphasizes governance continuity across advisory and review transitions.
+        </p>
+        <p className="mb-2 text-xs text-muted">
+          Visibility {replay.diagnostics.replayVisibilityScore} · Confidence {replay.diagnostics.replayConfidence} ·{" "}
+          {getContinuityStabilityLabel(replay.diagnostics.continuityStability)}
         </p>
         {replay.diagnostics.compressedEventCount ? (
           <p className="mb-2 text-xs text-muted">

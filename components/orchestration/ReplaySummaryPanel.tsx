@@ -21,7 +21,9 @@ export function ReplaySummaryPanel({
       </p>
       <p className="text-xs text-muted">
         Viewing {summary.activeReplayWindow} operational replay window · {summary.visibleEventCount} visible events ·{" "}
-        {summary.timelineDensity === "compact" ? "compact timeline view" : "expanded timeline context"}
+        {summary.timelineDensity === "compact"
+          ? "condensed replay view for executive readability"
+          : "expanded replay context for continuity visibility"}
       </p>
       <p className="text-xs text-muted">{summary.continuityContext}</p>
       <p className="text-xs text-muted">{summary.governanceFocusSummary}</p>

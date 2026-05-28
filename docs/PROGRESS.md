@@ -649,3 +649,12 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Linked governance memory patterns into diagnostics warnings for continuity interpretation context.
 - Added Phase 6 replay diagnostics documentation.
 
+## 2026-05-28 (Phase 6-5 cross-view replay diagnostics consistency)
+
+- Added diagnostics configuration layer for replay visibility weights and thresholds.
+- Added shared diagnostics helper for continuity stability labels and summary wording.
+- Expanded replay diagnostics summary into CEO Home and Mission Detail using shared derivation.
+- Aligned operational replay and summary wording for condensed vs expanded replay semantics.
+- Updated governance explainability component for portable replay diagnostics props.
+- Added Phase 6 cross-view diagnostics consistency documentation.
+

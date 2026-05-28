@@ -1068,9 +1068,7 @@ export function RuntimeCostView() {
             historicalExplanation={historicalContinuityExplanation}
             replayExplanation={replayExplanation}
             continuityShiftExplanation={continuityShiftExplanation}
-            replayDiagnosticsExplanation={replayDiagnostics.continuityExplanation}
-            replayVisibilityExplanation={replayDiagnostics.visibilityExplanation}
-            replayConfidenceExplanation={replayDiagnostics.confidenceExplanation}
+            replayDiagnostics={replayDiagnostics}
           />
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <Link href={`/organization-feed?gov=continuity_events`} className="font-medium text-accent hover:underline">

@@ -1,5 +1,6 @@
 import { ContinuityScoreBreakdown } from "@/components/orchestration/ContinuityScoreBreakdown";
 import type { GovernanceContinuityExplanation } from "@/lib/orchestration/processing/processingTypes";
+import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 
 export function GovernanceExplainabilityCard({
   explanation,
@@ -10,6 +11,7 @@ export function GovernanceExplainabilityCard({
   replayDiagnosticsExplanation,
   replayVisibilityExplanation,
   replayConfidenceExplanation,
+  replayDiagnostics,
 }: {
   explanation: GovernanceContinuityExplanation;
   breakdown: {
@@ -25,7 +27,11 @@ export function GovernanceExplainabilityCard({
   replayDiagnosticsExplanation?: string;
   replayVisibilityExplanation?: string;
   replayConfidenceExplanation?: string;
+  replayDiagnostics?: ReplayDiagnostics;
 }) {
+  const diagnosticsContinuity = replayDiagnostics?.continuityExplanation ?? replayDiagnosticsExplanation;
+  const diagnosticsVisibility = replayDiagnostics?.visibilityExplanation ?? replayVisibilityExplanation;
+  const diagnosticsConfidence = replayDiagnostics?.confidenceExplanation ?? replayConfidenceExplanation;
   return (
     <div className="space-y-3 rounded-lg border border-border bg-surface p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-muted">Analytics explainability</p>
@@ -47,19 +53,19 @@ export function GovernanceExplainabilityCard({
           {continuityShiftExplanation}
         </p>
       ) : null}
-      {replayDiagnosticsExplanation ? (
+      {diagnosticsContinuity ? (
         <p className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
-          {replayDiagnosticsExplanation}
+          {diagnosticsContinuity}
         </p>
       ) : null}
-      {replayVisibilityExplanation ? (
+      {diagnosticsVisibility ? (
         <p className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
-          {replayVisibilityExplanation}
+          {diagnosticsVisibility}
         </p>
       ) : null}
-      {replayConfidenceExplanation ? (
+      {diagnosticsConfidence ? (
         <p className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
-          {replayConfidenceExplanation}
+          {diagnosticsConfidence}
         </p>
       ) : null}
       <ContinuityScoreBreakdown breakdown={breakdown} />

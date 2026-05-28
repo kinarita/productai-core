@@ -2,6 +2,7 @@ import type { OrganizationFeedItem } from "@/types/productai";
 import type { GovernanceMemoryItem, GovernanceTimelineEvent } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
+import { replayDiagnosticsConfig } from "@/lib/replay-query/replayDiagnosticsConfig";
 
 export interface ReplayDiagnostics {
   generatedAt: string;
@@ -52,24 +53,31 @@ export function buildReplayDiagnostics(input: {
   const reviewDensity = visibleEventCount === 0 ? 0 : reviewEvents / visibleEventCount;
   const advisoryDensity = visibleEventCount === 0 ? 0 : advisoryEvents / visibleEventCount;
   const metadataCompletenessRatio = calculateCompleteness(input.feedItems);
-  const replayConcentrationPenalty = compressedEventCount ? Math.min(20, compressedEventCount / 2) : 0;
+  const replayConcentrationPenalty = compressedEventCount
+    ? Math.min(
+        replayDiagnosticsConfig.compressionPenaltyCap,
+        compressedEventCount / replayDiagnosticsConfig.compressionPenaltyDivisor
+      )
+    : 0;
   const visibilityRawScore =
-    metadataCompletenessRatio * 55 +
-    (1 - Math.min(0.6, reviewDensity + advisoryDensity)) * 30 +
-    (input.replayQuery.continuity === "all" ? 10 : 15) -
+    metadataCompletenessRatio * replayDiagnosticsConfig.metadataCompletenessWeight +
+    (1 - Math.min(replayDiagnosticsConfig.densityCap, reviewDensity + advisoryDensity)) *
+      replayDiagnosticsConfig.densityStabilityWeight +
+    (input.replayQuery.continuity === "all" ? 10 : replayDiagnosticsConfig.continuityScopeWeight) -
     replayConcentrationPenalty;
   const replayVisibilityScore = clampScore(visibilityRawScore);
 
   const continuityStability: ReplayDiagnostics["continuityStability"] =
-    advisoryDensity >= 0.35
+    advisoryDensity >= replayDiagnosticsConfig.advisoryDensityThreshold
       ? "advisory_dense"
-      : reviewDensity >= 0.3
+      : reviewDensity >= replayDiagnosticsConfig.reviewDensityThreshold
         ? "elevated_review"
         : "stable";
   const replayConfidence: ReplayDiagnostics["replayConfidence"] =
-    replayVisibilityScore >= 80 && metadataCompletenessRatio >= 0.9
+    replayVisibilityScore >= replayDiagnosticsConfig.confidenceThresholds.highScore &&
+    metadataCompletenessRatio >= replayDiagnosticsConfig.confidenceThresholds.highCompleteness
       ? "high"
-      : replayVisibilityScore >= 55
+      : replayVisibilityScore >= replayDiagnosticsConfig.confidenceThresholds.moderateScore
         ? "moderate"
         : "limited";
   const continuityExplanation =
@@ -90,11 +98,17 @@ export function buildReplayDiagnostics(input: {
         : "Replay confidence is limited because metadata coverage or replay concentration reduces interpretability.";
 
   const warnings: string[] = [];
-  if (metadataCompletenessRatio < 0.95) warnings.push("Metadata completeness is reduced in this replay view.");
+  if (metadataCompletenessRatio < replayDiagnosticsConfig.completenessWarningThreshold) {
+    warnings.push("Metadata completeness is reduced in this replay view.");
+  }
   if (compressedEventCount && compressedEventCount > 0)
     warnings.push("Replay view has been condensed for executive readability.");
-  if (advisoryDensity >= 0.35) warnings.push("Advisory density is elevated in the selected replay window.");
-  if (reviewDensity >= 0.3) warnings.push("Review concentration is elevated in the selected replay scope.");
+  if (advisoryDensity >= replayDiagnosticsConfig.advisoryDensityThreshold) {
+    warnings.push("Advisory density is elevated in the selected replay window.");
+  }
+  if (reviewDensity >= replayDiagnosticsConfig.reviewDensityThreshold) {
+    warnings.push("Review concentration is elevated in the selected replay scope.");
+  }
   if (input.memoryItems.some((item) => item.memoryType === "repeated_review_pattern")) {
     warnings.push("Historical governance memory indicates recurring review concentration in this scope.");
   }
