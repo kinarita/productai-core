@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card, StatCard } from "@/components/Card";
 import { Badge } from "@/components/Badge";
@@ -15,6 +15,10 @@ import { buildExecutionQueue } from "@/lib/orchestration/materialization/executi
 import { useExecutionStore } from "@/lib/store/executionStore";
 import { useMaterializationStore } from "@/lib/store/materializationStore";
 import { useTaskStore } from "@/lib/store/taskStore";
+import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
+import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCard";
+import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
+import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { describeAllExecutionBoundaries } from "@/lib/orchestration/execution/executionAdapters";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
@@ -63,8 +67,19 @@ export function RuntimeCostView() {
   };
 
   const executionQueue = buildExecutionQueue(missionTickets, materializationRecords);
+  const queueItems = useExecutionQueueStore((s) => s.items);
+  const queueSummary = useExecutionQueueStore((s) => s.getGovernanceSummary());
+  const runtimeLock = useExecutionQueueStore((s) => s.runtimeLock);
+  const refreshRuntimeLock = useExecutionQueueStore((s) => s.refreshRuntimeLock);
+
+  useEffect(() => {
+    refreshRuntimeLock(syncWarnings.length, alerts.length);
+  }, [syncWarnings.length, alerts.length, refreshRuntimeLock]);
 
   const apiHealth = getOverallApiHealth(providerHealth);
+  const providerDegraded = providerHealth.some(
+    (p) => p.health === "degraded" || p.health === "down"
+  );
   const budgetUsed = Math.round((totalCostUsd / budgetUsd) * 100);
 
   const rows = runtimeCosts.map((mock) => {
@@ -282,6 +297,87 @@ export function RuntimeCostView() {
                 </li>
               ))}
             </ul>
+          )}
+        </Card>
+
+        <Card title="Execution Queue Governance">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <RuntimeLockBadge status={runtimeLock.active ? "advisory_locked" : "unlocked"} />
+            {runtimeLock.active ? (
+              <p className="text-xs text-muted">{runtimeLock.reason}</p>
+            ) : null}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Queued</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{queueSummary.queued}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Reserved</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{queueSummary.reserved}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Awaiting authorization</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {queueSummary.awaitingAuthorization}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Worker prepared</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {queueSummary.workerPrepared}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Blocked preparation</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {queueSummary.blockedPreparation}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Runtime locked items</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {queueSummary.runtimeLocked}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <GovernanceNote>{validateExecutionBoundary()}</GovernanceNote>
+          </div>
+          {queueItems.length > 0 ? (
+            <ul className="mt-4 space-y-3">
+              {queueItems.slice(0, 4).map((item) => {
+                const task = allTasks.find((t) => t.id === item.taskId);
+                return (
+                  <li key={item.id}>
+                    <ExecutionQueueCard
+                      item={item}
+                      taskTitle={task?.title}
+                      runtimeLockActive={runtimeLock.active}
+                      onReserve={() => {
+                        useExecutionQueueStore.getState().reserveSlot(item.id, "COO");
+                      }}
+                      onRelease={() => {
+                        useExecutionQueueStore.getState().releaseReservation(item.id);
+                      }}
+                      onPrepareWorker={() => {
+                        useExecutionQueueStore
+                          .getState()
+                          .prepareWorkerForItem(item.id, providerDegraded);
+                      }}
+                      onCompleteReview={() => {
+                        useExecutionQueueStore.getState().completePreparationReview(item.id);
+                      }}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-4 text-xs text-muted">
+              No tasks in the controlled execution queue. Materialize tasks from Executive Sync to
+              begin preparation.
+            </p>
           )}
         </Card>
 

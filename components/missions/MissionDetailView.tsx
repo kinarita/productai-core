@@ -47,6 +47,7 @@ import {
 import { useUiStore } from "@/lib/store/uiStore";
 import { ExecutionReadinessCard } from "@/components/orchestration/ExecutionReadinessCard";
 import { useMaterializationStore } from "@/lib/store/materializationStore";
+import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
 import { useSyncStore } from "@/lib/store/syncStore";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
@@ -110,6 +111,8 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
     () => getQueueForMission(missionId),
     [getQueueForMission, missionId]
   );
+  const missionQueueItems = useExecutionQueueStore((s) => s.getItemsForMission(missionId));
+  const queueGovernance = useExecutionQueueStore((s) => s.getGovernanceSummary());
 
   const missionDecisions = useMemo(
     () => allDecisions.filter((d) => d.relatedMissionId === missionId),
@@ -642,8 +645,15 @@ export function MissionDetailView({ missionId }: MissionDetailViewProps) {
             />
             <ExecutionReadinessCard
               summary={readinessSummary}
-              queueSize={executionQueue.length}
+              queueSize={executionQueue.length + missionQueueItems.length}
             />
+            {missionQueueItems.length > 0 ? (
+              <p className="mt-3 text-xs text-muted">
+                Controlled queue: {missionQueueItems.length} task
+                {missionQueueItems.length === 1 ? "" : "s"} ·{" "}
+                {queueGovernance.awaitingAuthorization} awaiting authorization
+              </p>
+            ) : null}
           </Card>
 
           <Card>

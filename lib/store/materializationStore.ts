@@ -13,6 +13,7 @@ import type {
 import { countReadiness } from "@/lib/orchestration/materialization/provenanceTracker";
 import { materializeTasksFromPlan } from "@/lib/orchestration/materialization/taskMaterializer";
 import { useExecutionStore } from "@/lib/store/executionStore";
+import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
 import { useTaskStore } from "@/lib/store/taskStore";
 
 interface MaterializationState {
@@ -141,6 +142,13 @@ export const useMaterializationStore = create<MaterializationState>((set, get) =
     set((state) => ({
       records: [record, ...state.records.filter((r) => r.ticketId !== ticketId)].slice(0, 24),
     }));
+
+    useExecutionQueueStore
+      .getState()
+      .enqueueMaterializedTasks(taskIds, ticketId, syncWarningCount, runtimeAlertCount);
+    useExecutionQueueStore
+      .getState()
+      .refreshRuntimeLock(syncWarningCount, runtimeAlertCount);
 
     return record;
   },

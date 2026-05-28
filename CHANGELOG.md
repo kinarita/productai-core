@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 4-5 controlled execution queue foundation)
+
+- Controlled execution queue in `lib/orchestration/queue/` with gating, reservations, and worker preparation.
+- `executionQueueStore` and readiness scoring (0–100).
+- Runtime lock advisory pausing queue progression without automated recovery.
+- Task Detail queue status and Runtime execution queue governance views.
+- Queue UI components and feed governance events.
+- Documentation: `docs/PHASE4_EXECUTION_QUEUE.md`.
+
 ### Added (Phase 4-4 controlled task materialization)
 
 - Task materialization layer in `lib/orchestration/materialization/`.

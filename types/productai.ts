@@ -43,6 +43,7 @@ export interface TaskProvenance {
   executionReadiness?: ExecutionReadiness;
   governanceNotes?: string[];
   executionBoundaryNote?: string;
+  queueItemId?: string;
 }
 
 export type DecisionStatus = "pending" | "approved" | "rejected";

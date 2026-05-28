@@ -26,6 +26,12 @@ import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useTaskStore } from "@/lib/store/taskStore";
+import { useSyncStore } from "@/lib/store/syncStore";
+import { useExecutionQueueStore } from "@/lib/store/executionQueueStore";
+import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCard";
+import { queueFeedMessage } from "@/lib/orchestration/queue/queueFeed";
+import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
+import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import type { TaskEvent, TaskStatus } from "@/types/productai";
 
 const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
@@ -62,8 +68,23 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const storeMission = useMissionStore((s) => s.missions);
   const proposals = useProposalStore((s) => s.proposals);
   const executionTickets = useExecutionStore((s) => s.tickets);
+  const addFeedItem = useOrganizationStore((s) => s.addFeedItemWithSync);
+  const syncWarnings = useSyncStore((s) => s.syncWarnings);
+  const queueItem = useExecutionQueueStore((s) => s.getItemForTask(taskId));
+  const runtimeLock = useExecutionQueueStore((s) => s.runtimeLock);
+  const enqueueTask = useExecutionQueueStore((s) => s.enqueueTask);
+  const reserveSlot = useExecutionQueueStore((s) => s.reserveSlot);
+  const releaseReservation = useExecutionQueueStore((s) => s.releaseReservation);
+  const prepareWorkerForItem = useExecutionQueueStore((s) => s.prepareWorkerForItem);
+  const completePreparationReview = useExecutionQueueStore((s) => s.completePreparationReview);
+  const refreshRuntimeLock = useExecutionQueueStore((s) => s.refreshRuntimeLock);
 
   const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
+
+  const providerDegraded = useMemo(
+    () => providerHealth.some((p) => p.health === "degraded" || p.health === "down"),
+    [providerHealth]
+  );
 
   const provenanceProposal = useMemo(() => {
     if (!task?.provenance?.createdFromProposalId) return undefined;
@@ -125,6 +146,20 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   if (!task) {
     notFound();
   }
+
+  const pushQueueFeed = (action: Parameters<typeof queueFeedMessage>[0]) => {
+    addFeedItem({
+      type: "coordination",
+      author: action === "runtime_lock" ? "Runtime Observer" : "COO",
+      authorName: action === "runtime_lock" ? "Pulse" : "Nova",
+      missionId: task.missionId,
+      missionName: task.missionName,
+      taskId: task.id,
+      message: queueFeedMessage(action, task.title),
+      status: "active",
+      requiresCeoApproval: false,
+    });
+  };
 
   const suggestions = getSuggestedActionsForTask(task, tasks);
   const waitingOnDep = isWaitingOnDependency(task, tasks);
@@ -296,6 +331,73 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                 proposal={provenanceProposal}
                 ticket={provenanceTicket}
               />
+            </Card>
+          ) : null}
+
+          {task.createdFrom === "materialization" ? (
+            <Card>
+              <SectionHeader
+                title="Execution Queue Status"
+                description="Controlled preparation — no autonomous execution"
+              />
+              <GovernanceNote>{validateExecutionBoundary()}</GovernanceNote>
+              {queueItem ? (
+                <div className="mt-4">
+                  <ExecutionQueueCard
+                    item={queueItem}
+                    taskTitle={task.title}
+                    runtimeLockActive={runtimeLock.active}
+                    onReserve={() => {
+                      refreshRuntimeLock(syncWarnings.length, alerts.length);
+                      if (reserveSlot(queueItem.id, "COO")) pushQueueFeed("slot_reserved");
+                    }}
+                    onRelease={() => {
+                      if (releaseReservation(queueItem.id)) pushQueueFeed("reservation_released");
+                    }}
+                    onPrepareWorker={() => {
+                      refreshRuntimeLock(syncWarnings.length, alerts.length);
+                      if (prepareWorkerForItem(queueItem.id, providerDegraded)) {
+                        pushQueueFeed("worker_prepared");
+                      }
+                    }}
+                    onCompleteReview={() => {
+                      if (completePreparationReview(queueItem.id)) {
+                        pushQueueFeed("awaiting_authorization");
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <ExecutionQueueCard
+                    item={{
+                      id: "pending",
+                      taskId: task.id,
+                      missionId: task.missionId,
+                      executionTarget: provenanceTicket?.executionTarget ?? "InternalAgent",
+                      queueStatus: "execution_ready",
+                      governanceBoundary: validateExecutionBoundary(),
+                      runtimeLockStatus: runtimeLock.active ? "advisory_locked" : "unlocked",
+                      readinessScore: 0,
+                      blockingConditions: [],
+                      createdAt: "—",
+                    }}
+                    taskTitle={task.title}
+                    runtimeLockActive={runtimeLock.active}
+                    showEnqueue
+                    onEnqueue={() => {
+                      refreshRuntimeLock(syncWarnings.length, alerts.length);
+                      const item = enqueueTask(task.id, syncWarnings.length, alerts.length);
+                      if (item) pushQueueFeed("queued");
+                      if (runtimeLock.active) pushQueueFeed("runtime_lock");
+                    }}
+                    onReserve={() => {}}
+                    onRelease={() => {}}
+                    onPrepareWorker={() => {}}
+                    onCompleteReview={() => {}}
+                  />
+                </div>
+              )}
             </Card>
           ) : null}
 

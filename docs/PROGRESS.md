@@ -1,5 +1,28 @@
 # ProductAI Development Progress
 
+## 2026-05-28 — Phase 4-5 controlled execution queue foundation
+
+### Objective
+
+Connect execution-ready tasks to a controlled execution queue with gating, reservations, worker preparation, and runtime lock — without actual execution.
+
+### Implemented in Phase 4-5
+
+- Execution queue layer under `lib/orchestration/queue/`
+- `executionQueueStore` with enqueue, reserve, release, prepare, complete review
+- Auto-enqueue on task materialization
+- Runtime lock (advisory, no auto recovery)
+- Readiness scoring 0–100
+- UI: `ExecutionQueueCard`, `ReadinessScoreBadge`, `RuntimeLockBadge`, `QueueLifecycleView`
+- Task Detail execution queue status section
+- Runtime & Cost execution queue governance section
+- Organization Feed queue governance events
+- Documentation: `docs/PHASE4_EXECUTION_QUEUE.md`
+
+### Scope boundaries (kept)
+
+- No actual execution, workers, MCP, GitHub, Claude Code, or autonomous queue processing
+
 ## 2026-05-28 — Phase 4-4 controlled task materialization
 
 ### Objective
