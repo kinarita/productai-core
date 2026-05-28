@@ -35,6 +35,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
+import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 
 const healthVariant = {
   stable: "success" as const,
@@ -58,6 +59,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
   const missions = useMissionStore((s) => s.missions);
   const decisions = useOrganizationStore((s) => s.decisions);
   const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
+  const addFeedItemWithSync = useOrganizationStore((s) => s.addFeedItemWithSync);
   const runtimeAlerts = useRuntimeStore((s) => s.alerts);
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
   const tasks = useTaskStore((s) => s.tasks);
@@ -415,7 +417,20 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           ) : null}
         </Card>
 
-        <DecisionAttentionQueue items={decisionAttentionItems} />
+        <DecisionAttentionQueue
+          items={decisionAttentionItems}
+          replayQuery={replayQuery}
+          onGenerateFeedVisibility={(item) => {
+            const feedEvent = buildDecisionAttentionFeedEvent({
+              action: "decision_attention_generated",
+              item,
+              replayDiagnostics: diagnostics,
+              memoryItems: replay.memoryItems,
+              replayQuery,
+            });
+            addFeedItemWithSync(feedEvent);
+          }}
+        />
 
         <Card title="Governance Explainability" description="Cross-view explainability semantics aligned with runtime diagnostics">
           <GovernanceExplainabilityCard

@@ -29,6 +29,8 @@ export function parseReplayQuery(input: QueryInput): ReplayQueryState {
     advisory: getValue(input, "advisory") ?? replayQueryDefaults.advisory,
     review: getValue(input, "review") ?? replayQueryDefaults.review,
     governance: getValue(input, "governance") ?? replayQueryDefaults.governance,
+    governanceAttention:
+      getValue(input, "governanceAttention") ?? replayQueryDefaults.governanceAttention,
     replayWindow: (getValue(input, "replayWindow") as ReplayQueryState["replayWindow"]) ?? replayQueryDefaults.replayWindow,
     scope: (getValue(input, "scope") as ReplayQueryState["scope"]) ?? replayQueryDefaults.scope,
   };

@@ -1,10 +1,16 @@
 import Link from "next/link";
 import type { DecisionAttentionItem } from "@/lib/orchestration/decision-attention/decisionAttention";
+import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
+import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 
 export function DecisionAttentionQueue({
   items,
+  replayQuery,
+  onGenerateFeedVisibility,
 }: {
   items: DecisionAttentionItem[];
+  replayQuery: ReplayQueryState;
+  onGenerateFeedVisibility?: (item: DecisionAttentionItem) => void;
 }) {
   return (
     <div className="space-y-3 rounded-lg border border-border bg-surface p-3">
@@ -32,10 +38,44 @@ export function DecisionAttentionQueue({
                 <Link href={item.drilldownHref} className="font-medium text-accent hover:underline">
                   Open replay context →
                 </Link>
+                <Link
+                  href={buildReplayHref("/organization-feed", {
+                    ...replayQuery,
+                    mission: item.missionId === "organization" ? replayQuery.mission : item.missionId,
+                    governanceAttention: "decision_attention",
+                  })}
+                  className="font-medium text-accent hover:underline"
+                >
+                  Open feed trace →
+                </Link>
+                <Link
+                  href={buildReplayHref("/judgment", {
+                    ...replayQuery,
+                    mission: item.missionId === "organization" ? replayQuery.mission : item.missionId,
+                    governanceAttention: "decision_attention",
+                  })}
+                  className="font-medium text-accent hover:underline"
+                >
+                  Open judgment context →
+                </Link>
                 {item.missionId !== "organization" ? (
                   <Link href={`/missions/${item.missionId}`} className="font-medium text-accent hover:underline">
                     Open mission →
                   </Link>
+                ) : null}
+                {item.taskId ? (
+                  <Link href={`/tasks/${item.taskId}`} className="font-medium text-accent hover:underline">
+                    Open task →
+                  </Link>
+                ) : null}
+                {onGenerateFeedVisibility ? (
+                  <button
+                    type="button"
+                    onClick={() => onGenerateFeedVisibility(item)}
+                    className="font-medium text-accent hover:underline"
+                  >
+                    Generate Feed Visibility
+                  </button>
                 ) : null}
               </div>
             </li>

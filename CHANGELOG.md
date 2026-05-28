@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-2 decision attention feed traceability)
+
+- Decision attention metadata fields on organization feed items for lifecycle and replay continuity context.
+- Decision attention feed lifecycle events and normalized helper (`buildDecisionAttentionFeedEvent`).
+- Governance attention replay query dimension (`governanceAttention`) for cross-view filter portability.
+- Organization Feed attention filtering, traceability display, and replay drilldown continuity links.
+- Judgment integration for attention lifecycle recording on review actions.
+- Documentation: `docs/PHASE7_DECISION_ATTENTION_FEED.md`.
+
 ### Added (Phase 7-1 executive decision attention workflow)
 
 - Decision attention derivation module with replay-informed executive review routing.

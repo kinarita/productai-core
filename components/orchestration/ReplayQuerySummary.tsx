@@ -12,7 +12,8 @@ export function ReplayQuerySummary({ query }: { query: ReplayQueryState }) {
       Scope: {replayScopeLabels[query.scope]} · Window: {replayWindowLabels[query.replayWindow]} · Severity:{" "}
       {replaySeverityLabels[query.severity] ?? query.severity.replaceAll("_", " ")} · Advisory:{" "}
       {query.advisory.replaceAll("_", " ")} · Continuity:{" "}
-      {replayContinuityLabels[query.continuity] ?? query.continuity.replaceAll("_", " ")}
+      {replayContinuityLabels[query.continuity] ?? query.continuity.replaceAll("_", " ")} · Attention:{" "}
+      {query.governanceAttention.replaceAll("_", " ")}
     </p>
   );
 }

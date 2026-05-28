@@ -24,6 +24,7 @@ import { ReplayFilterChips } from "@/components/orchestration/ReplayFilterChips"
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 import { parseReplayQuery, mergeReplayQuery } from "@/lib/replay-query/replayQueryParser";
 import { buildReplayQuery } from "@/lib/replay-query/replayQueryBuilder";
+import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
 
@@ -39,6 +40,10 @@ const typeLabels: Record<string, string> = {
   approval_required: "Approval Required",
   runtime: "Runtime Signal",
   memory: "Memory",
+  decision_attention_generated: "Decision Attention Generated",
+  decision_attention_reviewed: "Decision Attention Reviewed",
+  decision_attention_resolved: "Decision Attention Resolved",
+  decision_attention_deferred: "Decision Attention Deferred",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -53,6 +58,10 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   approval_required: "danger",
   runtime: "warning",
   memory: "accent",
+  decision_attention_generated: "info",
+  decision_attention_reviewed: "accent",
+  decision_attention_resolved: "default",
+  decision_attention_deferred: "warning",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
@@ -72,6 +81,8 @@ function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): bool
       item.type === "architecture" ||
       item.type === "approval_required" ||
       item.type === "coordination" ||
+      item.type.startsWith("decision_attention_") ||
+      Boolean(item.decisionAttentionId) ||
       Boolean(item.decisionId)
     );
   }
@@ -145,6 +156,7 @@ export function OrganizationFeedView({
       eventType: undefined,
       source: undefined,
       reasonCategory: undefined,
+      governanceAttention: undefined,
       replayWindow: undefined,
       scope: undefined,
     })
@@ -238,6 +250,14 @@ export function OrganizationFeedView({
   if (replayQuery.review !== "all") {
     filtered = filtered.filter((item) => item.governanceCategory === "governance_review");
   }
+  if (replayQuery.governanceAttention !== "all") {
+    filtered = filtered.filter(
+      (item) =>
+        item.type.startsWith("decision_attention_") ||
+        item.decisionAttentionCategory === replayQuery.governanceAttention ||
+        item.decisionAttentionId !== undefined
+    );
+  }
   const govOptions = useMemo(
     () => [
       { id: "all", label: "all" },
@@ -248,12 +268,16 @@ export function OrganizationFeedView({
       { id: "runtime_governance", label: "runtime governance" },
       { id: "processing_governance", label: "processing governance" },
       { id: "timeline_memory", label: "timeline & memory" },
+      { id: "decision_attention", label: "decision attention" },
     ],
     []
   );
   const onGovernanceFilterChange = (value: string) => {
     setActiveGovernanceFilter(value);
-    const next = mergeReplayQuery(replayQuery, { governance: value });
+    const next = mergeReplayQuery(replayQuery, {
+      governance: value,
+      governanceAttention: value === "decision_attention" ? "decision_attention" : "all",
+    });
     setReplayQuery(next);
     window.history.replaceState({}, "", `/organization-feed${buildReplayQuery(next)}`);
   };
@@ -506,7 +530,17 @@ export function OrganizationFeedView({
                   ) : null}
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-foreground">{item.message}</p>
-                {(item.taskId || item.decisionId) && (
+                {item.decisionAttentionId ? (
+                  <div className="mt-2 space-y-1 text-xs text-muted">
+                    <p>
+                      Attention {item.decisionAttentionSeverity?.replaceAll("_", " ")} ·{" "}
+                      {item.decisionAttentionCategory?.replaceAll("_", " ")} · confidence{" "}
+                      {item.decisionAttentionReplayConfidence}
+                    </p>
+                    <p>{item.decisionAttentionReason}</p>
+                  </div>
+                ) : null}
+                {(item.taskId || item.decisionId || item.decisionAttentionId) && (
                   <div className="mt-2 flex flex-wrap gap-3 text-xs">
                     {item.taskId ? (
                       <Link href={`/tasks/${item.taskId}`} className="font-medium text-accent hover:underline">
@@ -519,6 +553,18 @@ export function OrganizationFeedView({
                         className="font-medium text-accent hover:underline"
                       >
                         View decision →
+                      </Link>
+                    ) : null}
+                    {item.decisionAttentionId ? (
+                      <Link
+                        href={buildReplayHref("/runtime-cost", {
+                          ...replayQuery,
+                          mission: item.missionId,
+                          governanceAttention: "decision_attention",
+                        })}
+                        className="font-medium text-accent hover:underline"
+                      >
+                        Attention replay query →
                       </Link>
                     ) : null}
                   </div>

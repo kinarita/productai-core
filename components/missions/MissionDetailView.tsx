@@ -65,6 +65,7 @@ import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationM
 import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
 import { DecisionAttentionQueue } from "@/components/orchestration/DecisionAttentionQueue";
 import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
+import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -117,6 +118,7 @@ export function MissionDetailView({
   const tasks = useTaskStore((s) => s.tasks);
   const allDecisions = useOrganizationStore((s) => s.decisions);
   const allFeed = useOrganizationStore((s) => s.organizationFeedItems);
+  const addFeedItemWithSync = useOrganizationStore((s) => s.addFeedItemWithSync);
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
   const alerts = useRuntimeStore((s) => s.alerts);
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
@@ -885,7 +887,21 @@ export function MissionDetailView({
             ) : null}
           </Card>
 
-          <DecisionAttentionQueue items={decisionAttentionItems} />
+          <DecisionAttentionQueue
+            items={decisionAttentionItems}
+            replayQuery={{ ...replayQuery, mission: missionId }}
+            onGenerateFeedVisibility={(item) => {
+              addFeedItemWithSync(
+                buildDecisionAttentionFeedEvent({
+                  action: "decision_attention_generated",
+                  item,
+                  replayDiagnostics,
+                  memoryItems: replay.memoryItems,
+                  replayQuery: { ...replayQuery, mission: missionId },
+                })
+              );
+            }}
+          />
 
           <Card>
             <SectionHeader

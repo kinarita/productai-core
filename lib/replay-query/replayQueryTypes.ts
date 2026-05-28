@@ -17,6 +17,7 @@ export interface ReplayQueryState {
   advisory: string;
   review: string;
   governance: string;
+  governanceAttention: string;
   replayWindow: ReplayWindow;
   scope: ReplayScope;
 }

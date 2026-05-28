@@ -56,6 +56,12 @@ export interface TaskProvenance {
 }
 
 export type DecisionStatus = "pending" | "approved" | "rejected";
+export type DecisionAttentionSeverity =
+  | "informational"
+  | "advisory"
+  | "elevated_review"
+  | "executive_focus";
+export type DecisionAttentionLifecycle = "generated" | "reviewed" | "resolved" | "deferred";
 
 export type ReleaseState = "candidate" | "staging" | "production" | "rolled_back";
 
@@ -206,7 +212,11 @@ export interface OrganizationFeedItem {
     | "escalation"
     | "approval_required"
     | "runtime"
-    | "memory";
+    | "memory"
+    | "decision_attention_generated"
+    | "decision_attention_reviewed"
+    | "decision_attention_resolved"
+    | "decision_attention_deferred";
   author: AgentRole;
   authorName: string;
   missionId: string;
@@ -231,6 +241,14 @@ export interface OrganizationFeedItem {
   replayTags?: string[];
   replaySeverity?: ReplaySeverity;
   replaySource?: ReplaySource | "runtime_observer" | "coo" | "ceo" | "system";
+  decisionAttentionId?: string;
+  decisionAttentionSeverity?: DecisionAttentionSeverity;
+  decisionAttentionCategory?: string;
+  decisionAttentionReason?: string;
+  decisionAttentionSource?: string;
+  decisionAttentionReplayConfidence?: "high" | "moderate" | "limited";
+  decisionAttentionContinuityCategory?: ContinuityCategory;
+  decisionAttentionLifecycle?: DecisionAttentionLifecycle;
 }
 
 export interface RuntimeCost {

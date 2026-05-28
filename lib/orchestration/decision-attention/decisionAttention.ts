@@ -4,15 +4,20 @@ import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import type { RuntimeAlert } from "@/lib/store/runtimeStore";
+import type { DecisionAttentionSeverity } from "@/types/productai";
 
 export interface DecisionAttentionItem {
   id: string;
   missionId: string;
   taskId?: string;
-  severity: "informational" | "advisory" | "elevated_review" | "executive_focus";
+  severity: DecisionAttentionSeverity;
+  category: "executive_review" | "replay_continuity" | "runtime_advisory" | "governance_memory";
+  source: "diagnostics" | "runtime" | "memory";
   continuityCategory: string;
+  replayWindow: ReplayQueryState["replayWindow"];
   replayConfidence: ReplayDiagnostics["replayConfidence"];
   replayVisibilityScore: number;
+  continuityStability: ReplayDiagnostics["continuityStability"];
   governanceReason: string;
   recommendedReviewAction: string;
   drilldownHref: string;
@@ -47,9 +52,13 @@ export function buildDecisionAttentionQueue(input: {
         missionId,
         taskId: reviewRequired[0].queueItemId,
         severity: "executive_focus",
+        category: "executive_review",
+        source: "diagnostics",
         continuityCategory: "continuity_review",
+        replayWindow: input.replayQuery.replayWindow,
         replayConfidence: input.replayDiagnostics.replayConfidence,
         replayVisibilityScore: input.replayDiagnostics.replayVisibilityScore,
+        continuityStability: input.replayDiagnostics.continuityStability,
         governanceReason: "Review-required processing continuity remains unresolved.",
         recommendedReviewAction:
           "Executive review is recommended due to elevated continuity review concentration.",
@@ -72,9 +81,13 @@ export function buildDecisionAttentionQueue(input: {
       buildItem({
         missionId: input.replayQuery.mission === "all" ? "organization" : input.replayQuery.mission,
         severity: "advisory",
+        category: "replay_continuity",
+        source: "diagnostics",
         continuityCategory: "continuity_governance",
+        replayWindow: input.replayQuery.replayWindow,
         replayConfidence: input.replayDiagnostics.replayConfidence,
         replayVisibilityScore: input.replayDiagnostics.replayVisibilityScore,
+        continuityStability: input.replayDiagnostics.continuityStability,
         governanceReason: "Replay visibility score indicates reduced interpretability.",
         recommendedReviewAction:
           "Review replay scope and continuity filters before final executive judgment.",
@@ -93,9 +106,13 @@ export function buildDecisionAttentionQueue(input: {
       buildItem({
         missionId: input.replayQuery.mission === "all" ? "organization" : input.replayQuery.mission,
         severity: "elevated_review",
+        category: "runtime_advisory",
+        source: "runtime",
         continuityCategory: "continuity_runtime",
+        replayWindow: input.replayQuery.replayWindow,
         replayConfidence: input.replayDiagnostics.replayConfidence,
         replayVisibilityScore: input.replayDiagnostics.replayVisibilityScore,
+        continuityStability: input.replayDiagnostics.continuityStability,
         governanceReason: "Runtime governance advisories remain active.",
         recommendedReviewAction:
           "Confirm runtime advisory context before finalizing continuity-sensitive executive decisions.",
@@ -122,9 +139,13 @@ export function buildDecisionAttentionQueue(input: {
       buildItem({
         missionId: recurringMemory.relatedMissionIds[0] ?? "organization",
         severity: "informational",
+        category: "governance_memory",
+        source: "memory",
         continuityCategory: "continuity_replay",
+        replayWindow: input.replayQuery.replayWindow,
         replayConfidence: input.replayDiagnostics.replayConfidence,
         replayVisibilityScore: input.replayDiagnostics.replayVisibilityScore,
+        continuityStability: input.replayDiagnostics.continuityStability,
         governanceReason: recurringMemory.title,
         recommendedReviewAction:
           "Use governance memory context to calibrate review sequencing across replay scopes.",
@@ -149,4 +170,13 @@ export function buildDecisionAttentionSummary(items: DecisionAttentionItem[]): s
     return "Current executive focus remains stable with no concentrated decision attention items.";
   }
   return `Current executive focus includes ${items.length} replay-informed decision attention item(s) across continuity and governance review context.`;
+}
+
+export function buildDecisionAttentionTraceability(items: DecisionAttentionItem[]): string {
+  if (items.length === 0) {
+    return "Decision attention traceability remains stable with no active replay-linked review concentration.";
+  }
+  const continuityLinked = items.filter((item) => item.continuityCategory !== "continuity_stable").length;
+  const executiveFocus = items.filter((item) => item.severity === "executive_focus").length;
+  return `Decision attention traceability: ${items.length} active items · ${continuityLinked} continuity-linked · ${executiveFocus} executive-focus review item(s).`;
 }

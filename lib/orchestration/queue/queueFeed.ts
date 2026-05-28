@@ -1,4 +1,10 @@
 import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
+import type { GovernanceMemoryItem } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
+import type { DecisionAttentionItem } from "@/lib/orchestration/decision-attention/decisionAttention";
+import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
+import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
+import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
+import type { OrganizationFeedItem } from "@/types/productai";
 
 export type QueueFeedAction =
     | "slot_reserved"
@@ -31,7 +37,11 @@ export type QueueFeedAction =
     | "processing_governance_reason_added"
     | "processing_governance_summary"
     | "continuity_advisory"
-    | "runtime_governance_summary";
+    | "runtime_governance_summary"
+    | "decision_attention_generated"
+    | "decision_attention_reviewed"
+    | "decision_attention_resolved"
+    | "decision_attention_deferred";
 
 export function queueFeedMessage(action: QueueFeedAction, detail?: string): string {
   switch (action) {
@@ -97,6 +107,14 @@ export function queueFeedMessage(action: QueueFeedAction, detail?: string): stri
       return "Governance continuity remains stable under elevated advisory review density.";
     case "runtime_governance_summary":
       return "Runtime Observer reported increased provider instability review load.";
+    case "decision_attention_generated":
+      return "Executive review attention has been recorded for continuity interpretation.";
+    case "decision_attention_reviewed":
+      return "Executive review attention has been reviewed with replay continuity context.";
+    case "decision_attention_resolved":
+      return "Executive review attention was resolved after continuity interpretation.";
+    case "decision_attention_deferred":
+      return "Executive review attention was deferred pending additional replay context.";
     default:
       return "Queue governance event recorded.";
   }
@@ -173,6 +191,18 @@ export function queueFeedMetadata(action: QueueFeedAction): {
       replaySource: action.includes("denied") || action.includes("revoked") ? "ceo" : "coo",
     });
   }
+  if (action.startsWith("decision_attention_")) {
+    return buildReplayMetadata({
+      governanceCategory: "governance_review",
+      replayCategory: "replay_review",
+      continuityCategory: "continuity_review",
+      advisoryLevel: action === "decision_attention_resolved" ? "advisory_low" : "advisory_moderate",
+      replayTags: ["decision_attention", "executive_review", "traceability"],
+      replaySeverity:
+        action === "decision_attention_generated" ? "moderate" : action === "decision_attention_reviewed" ? "elevated" : "low",
+      replaySource: "coo",
+    });
+  }
   if (action.includes("summary") || action.includes("continuity")) {
     return buildReplayMetadata({
       governanceCategory: "governance_summary",
@@ -193,4 +223,47 @@ export function queueFeedMetadata(action: QueueFeedAction): {
     replaySeverity: "low",
     replaySource: "coo",
   });
+}
+
+export function buildDecisionAttentionFeedEvent(input: {
+  action:
+    | "decision_attention_generated"
+    | "decision_attention_reviewed"
+    | "decision_attention_resolved"
+    | "decision_attention_deferred";
+  item: DecisionAttentionItem;
+  replayDiagnostics: ReplayDiagnostics;
+  memoryItems: GovernanceMemoryItem[];
+  replayQuery: ReplayQueryState;
+}): Omit<OrganizationFeedItem, "id" | "timestamp" | "createdAt" | "updatedAt" | "syncedAt"> {
+  const metadata = queueFeedMetadata(input.action);
+  const topMemory = input.memoryItems[0];
+  return {
+    type: input.action,
+    author: "COO",
+    authorName: "Nova",
+    missionId: input.item.missionId,
+    missionName: input.item.missionId === "organization" ? "Organization" : input.item.missionId,
+    taskId: input.item.taskId,
+    status: "in_review",
+    requiresCeoApproval: false,
+    message: `${queueFeedMessage(input.action)} Visibility ${input.replayDiagnostics.replayVisibilityScore}, confidence ${input.replayDiagnostics.replayConfidence}, stability ${input.replayDiagnostics.continuityStability}. ${input.item.recommendedReviewAction}`,
+    ...metadata,
+    replayTags: [
+      ...(metadata.replayTags ?? []),
+      "decision_attention",
+      input.item.category,
+      `window_${input.replayQuery.replayWindow}`,
+      topMemory ? `memory_${topMemory.memoryType}` : "memory_none",
+    ],
+    decisionAttentionId: input.item.id,
+    decisionAttentionSeverity: input.item.severity,
+    decisionAttentionCategory: input.item.category,
+    decisionAttentionReason: `${input.item.governanceReason} · replay: ${buildReplayHref("/runtime-cost", input.replayQuery)}`,
+    decisionAttentionSource: input.item.source,
+    decisionAttentionReplayConfidence: input.item.replayConfidence,
+    decisionAttentionContinuityCategory: input.item.continuityCategory as OrganizationFeedItem["continuityCategory"],
+    decisionAttentionLifecycle: input.action.replace("decision_attention_", "") as OrganizationFeedItem["decisionAttentionLifecycle"],
+    title: "Decision attention traceability",
+  };
 }

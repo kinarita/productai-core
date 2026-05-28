@@ -99,4 +99,5 @@ export interface ExecutiveReplaySummary {
   recommendedExecutiveFocus: string[];
   diagnosticsSummary: string;
   decisionAttentionSummary?: string;
+  decisionAttentionTraceability?: string;
 }

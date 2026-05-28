@@ -32,6 +32,7 @@ import { GovernanceExplainabilityCard } from "@/components/orchestration/Governa
 import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
 import { DecisionWorkflowSummary } from "@/components/orchestration/DecisionWorkflowSummary";
 import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
+import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 
 const statusVariant = {
   pending: "warning" as const,
@@ -179,6 +180,25 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
       message: resolveDecisionActionMessage(decision, action),
       requiresCeoApproval: false,
     });
+    const relatedAttention = decisionAttentionItems.find(
+      (item) => item.missionId === decision.relatedMissionId || item.taskId
+    );
+    if (relatedAttention) {
+      addFeedItem(
+        buildDecisionAttentionFeedEvent({
+          action:
+            action === "approved"
+              ? "decision_attention_resolved"
+              : action === "revision"
+                ? "decision_attention_reviewed"
+                : "decision_attention_deferred",
+          item: relatedAttention,
+          replayDiagnostics: replay.diagnostics,
+          memoryItems: replay.memoryItems,
+          replayQuery: missionFilter ? { ...replayQuery, mission: missionFilter } : replayQuery,
+        })
+      );
+    }
   };
 
   const handleRecommendation = async (decisionId: string) => {
@@ -223,6 +243,16 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
             <div className="mt-3">
               <DecisionWorkflowSummary items={decisionAttentionItems} />
             </div>
+            {decisionAttentionItems.length > 0 ? (
+              <ul className="mt-3 space-y-1 text-xs text-muted">
+                {decisionAttentionItems.slice(0, 3).map((item) => (
+                  <li key={item.id}>
+                    - {item.governanceReason} · confidence {item.replayConfidence} ·{" "}
+                    {item.continuityCategory.replaceAll("_", " ")}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </Card>
           {filtered.map((decision) => {
             const isResolved = decision.status !== "pending";

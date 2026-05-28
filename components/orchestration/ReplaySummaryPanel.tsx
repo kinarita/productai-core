@@ -38,6 +38,9 @@ export function ReplaySummaryPanel({
       {summary.decisionAttentionSummary ? (
         <p className="text-xs text-muted">{summary.decisionAttentionSummary}</p>
       ) : null}
+      {summary.decisionAttentionTraceability ? (
+        <p className="text-xs text-muted">{summary.decisionAttentionTraceability}</p>
+      ) : null}
       <ul className="space-y-1 text-xs text-muted">
         {summary.recommendedExecutiveFocus.slice(0, 3).map((item) => (
           <li key={item}>- {item}</li>

@@ -10,6 +10,7 @@ export const replayQueryDefaults: ReplayQueryState = {
   advisory: "all",
   review: "all",
   governance: "all",
+  governanceAttention: "all",
   replayWindow: "latest",
   scope: "organization",
 };
