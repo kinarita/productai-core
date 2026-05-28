@@ -29,6 +29,7 @@ import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
 import { matchesGovernanceAttentionFilter } from "@/lib/orchestration/decision-attention/decisionAttention";
 import { countDecisionAttentionFeedItems } from "@/lib/services/feedMerge";
+import { buildDecisionAttentionSeedPayloads } from "@/lib/replay-query/replaySeedCatalog";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -163,6 +164,17 @@ export function OrganizationFeedView({
     () => countDecisionAttentionFeedItems(feedItems),
     [feedItems]
   );
+  const attentionFilterActive =
+    activeAttentionFilter !== "all" ||
+    replayQuery.governanceAttention !== "all" ||
+    activeGovernanceFilter === "decision_attention";
+  const displayFeedItems = useMemo(() => {
+    if (!attentionFilterActive) return feedItems;
+    const knownIds = new Set(feedItems.map((item) => item.id));
+    const supplemental = buildDecisionAttentionSeedPayloads().filter((seed) => !knownIds.has(seed.id));
+    if (supplemental.length === 0) return feedItems;
+    return [...feedItems, ...supplemental];
+  }, [attentionFilterActive, feedItems]);
   const filterChipClass =
     "rounded-md border border-border bg-surface px-2 py-1 text-muted";
 
@@ -177,7 +189,7 @@ export function OrganizationFeedView({
     setActiveAttentionFilter(parsed.governanceAttention);
   }, [governanceFilter, initialReplayQuery]);
 
-  let filtered = feedItems;
+  let filtered = displayFeedItems;
 
   if (missionFilter) {
     filtered = filtered.filter((f) => f.missionId === missionFilter);
@@ -606,9 +618,15 @@ export function OrganizationFeedView({
             </li>
           ))}
           {filtered.length === 0 && (
-            <p className="text-sm text-muted">
-              No organization activity matches the selected filters.
-            </p>
+            <div className="space-y-2 text-sm text-muted">
+              <p>No organization activity matches the selected filters.</p>
+              {attentionFilterActive && hydratedAttentionCount < 4 ? (
+                <p>
+                  Replay continuity examples may be available after refreshing development seeds in
+                  Settings. Governance interpretation filters remain advisory.
+                </p>
+              ) : null}
+            </div>
           )}
         </ul>
       </Card>

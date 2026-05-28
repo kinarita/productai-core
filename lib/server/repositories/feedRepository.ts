@@ -253,6 +253,17 @@ export class FeedRepository {
 
     return this.getById(input.id) as FeedItemRecord;
   }
+
+  upsertReplaySeedFeedItem(
+    input: CreateFeedInput
+  ): { action: "inserted" | "skipped"; record: FeedItemRecord | null } {
+    this.ensureFeedMetadataColumns();
+    const existing = this.getById(input.id);
+    if (existing) {
+      return { action: "skipped", record: existing };
+    }
+    return { action: "inserted", record: this.create(input) };
+  }
 }
 
 export const feedRepository = new FeedRepository();

@@ -63,10 +63,15 @@ import { buildReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 import { ReplayDiagnosticsDefinition } from "@/components/orchestration/ReplayDiagnosticsDefinition";
 import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
 import { DecisionWorkflowSummary } from "@/components/orchestration/DecisionWorkflowSummary";
+import { fetchReplaySeedDiagnostics } from "@/lib/services/replaySeedRefresh";
+import type { ReplaySeedDiagnostics } from "@/lib/replay-query/replaySeedDiagnostics";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
+  const [replaySeedDiagnostics, setReplaySeedDiagnostics] = useState<ReplaySeedDiagnostics | null>(
+    null
+  );
   const providerHealth = useRuntimeStore((s) => s.providerHealth);
   const tokenUsage = useRuntimeStore((s) => s.tokenUsage);
   const totalCostUsd = useRuntimeStore((s) => s.totalCostUsd);
@@ -163,6 +168,13 @@ export function RuntimeCostView() {
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
   }, [syncWarnings.length, alerts.length, refreshRuntimeLock]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    void fetchReplaySeedDiagnostics()
+      .then(setReplaySeedDiagnostics)
+      .catch(() => setReplaySeedDiagnostics(null));
+  }, []);
 
   useEffect(() => {
     const parsed = parseReplayQuery(new URLSearchParams(window.location.search));
@@ -1250,6 +1262,52 @@ export function RuntimeCostView() {
             </p>
           )}
         </Card>
+        {process.env.NODE_ENV !== "production" ? (
+          <Card title="Replay Seed Status">
+            {replaySeedDiagnostics ? (
+              <ul className="space-y-1 text-xs text-muted">
+                <li>
+                  Available seeds:{" "}
+                  <span className="text-foreground">
+                    {replaySeedDiagnostics.availableSeeds} / {replaySeedDiagnostics.totalSeeds}
+                  </span>
+                </li>
+                <li>
+                  Missing seed ids:{" "}
+                  <span className="text-foreground">
+                    {replaySeedDiagnostics.missingSeeds.length > 0
+                      ? replaySeedDiagnostics.missingSeeds.join(", ")
+                      : "none"}
+                  </span>
+                </li>
+                <li>
+                  Last refresh:{" "}
+                  <span className="text-foreground">
+                    {replaySeedDiagnostics.lastRefreshAt ?? "Not recorded"}
+                  </span>
+                </li>
+                <li>
+                  Hydration-ready:{" "}
+                  <span className="text-foreground">
+                    {replaySeedDiagnostics.hydrationReady ? "yes" : "pending"}
+                  </span>
+                </li>
+                <li>
+                  Continuity coverage:{" "}
+                  <span className="text-foreground">
+                    {Object.entries(replaySeedDiagnostics.continuityCoverage)
+                      .map(([lifecycle, covered]) => `${lifecycle}:${covered ? "yes" : "no"}`)
+                      .join(" · ")}
+                  </span>
+                </li>
+              </ul>
+            ) : (
+              <p className="text-xs text-muted">
+                Replay seed diagnostics will appear when backend sync is available.
+              </p>
+            )}
+          </Card>
+        ) : null}
         {process.env.NODE_ENV !== "production" ? (
           <Card title="Replay Metadata Normalization">
             <ul className="space-y-1 text-xs text-muted">

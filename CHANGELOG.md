@@ -4,6 +4,16 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-5 decision attention seed refresh and development stability)
+
+- Idempotent decision attention seed refresh (`refreshDecisionAttentionSeeds`) with INSERT IF MISSING semantics.
+- `FeedRepository.upsertReplaySeedFeedItem` and taxonomy-driven `replaySeedCatalog` for normalized metadata.
+- Replay seed diagnostics (`buildReplaySeedDiagnostics`) and `GET/POST /api/feed/replay-seeds`.
+- Settings “Replay Development Seeds” section and dev-only Runtime Cost “Replay Seed Status”.
+- Organization Feed attention filter stabilization with minimal supplemental continuity examples.
+- Verification script: `scripts/verifyReplaySeedRefresh.mjs`.
+- Documentation: `docs/PHASE7_REPLAY_SEED_REFRESH.md`.
+
 ### Added (Phase 7-4 decision attention hydration and replay continuity)
 
 - Feed merge hardening via `mergeOrganizationFeedItem` to preserve decision attention metadata during hydration.

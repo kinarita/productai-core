@@ -8,6 +8,10 @@ import { getPersistenceMode } from "@/lib/config/persistenceMode";
 import { refreshBackendHealth } from "@/lib/services/backendHealth";
 import { hydrateProductAIState, runSyncRetry } from "@/lib/services/readHydrationService";
 import {
+  fetchReplaySeedDiagnostics,
+  refreshDecisionAttentionSeeds,
+} from "@/lib/services/replaySeedRefresh";
+import {
   formatBackendHealthLabel,
   getRemoteModeExplanation,
   getSuggestedRetryLabel,
@@ -17,6 +21,8 @@ import { resetAllProductAIState } from "@/lib/store/resetProductAIState";
 
 export function SettingsView() {
   const [runningAction, setRunningAction] = useState<string | null>(null);
+  const [replaySeedMessage, setReplaySeedMessage] = useState<string | null>(null);
+  const [replaySeedStatus, setReplaySeedStatus] = useState<string | null>(null);
   const s = organizationSettings;
   const persistenceMode = getPersistenceMode();
   const hydrationStatus = useSyncStore((state) => state.hydrationStatus);
@@ -31,6 +37,47 @@ export function SettingsView() {
 
   const retryLabel = getSuggestedRetryLabel(pendingHydrationCount);
   const backendLabel = formatBackendHealthLabel(backendHealth);
+
+  const loadReplaySeedStatus = async () => {
+    try {
+      const diagnostics = await fetchReplaySeedDiagnostics();
+      const continuityReady = Object.values(diagnostics.continuityCoverage).every(Boolean);
+      setReplaySeedStatus(
+        diagnostics.hydrationReady
+          ? "Seed status: decision attention seeds available · hydration-ready replay examples available"
+          : continuityReady
+            ? "Seed status: decision attention seeds available · hydration examples partially available"
+            : "Seed status: replay continuity examples may need refresh for full lifecycle coverage"
+      );
+    } catch {
+      setReplaySeedStatus(
+        "Seed status: replay continuity examples will be confirmed after backend connection."
+      );
+    }
+  };
+
+  const runReplaySeedRefresh = async () => {
+    setRunningAction("replay-seeds");
+    setReplaySeedMessage(null);
+    try {
+      const result = await refreshDecisionAttentionSeeds();
+      setReplaySeedMessage(
+        result.inserted > 0
+          ? `${result.message} (${result.inserted} added, ${result.skipped} already present.)`
+          : result.message
+      );
+      await hydrateProductAIState();
+      await loadReplaySeedStatus();
+    } catch (error) {
+      setReplaySeedMessage(
+        error instanceof Error
+          ? error.message
+          : "Replay seed refresh could not be completed. Retry when backend sync is available."
+      );
+    } finally {
+      setRunningAction(null);
+    }
+  };
 
   const runManualAction = async (action: "refresh" | "hydrate" | "retry") => {
     setRunningAction(action);
@@ -128,6 +175,42 @@ export function SettingsView() {
               </li>
             ))}
           </ul>
+        </Card>
+
+        <Card title="Replay Development Seeds">
+          <p className="text-sm text-muted">
+            Replay continuity examples support governance interpretation during development.
+            Refresh adds missing decision attention seeds without overwriting existing records.
+          </p>
+          {replaySeedStatus ? (
+            <p className="mt-3 text-xs text-muted">{replaySeedStatus}</p>
+          ) : (
+            <p className="mt-3 text-xs text-muted">
+              Seed status: decision attention seeds available · hydration-ready replay examples
+              available
+            </p>
+          )}
+          {replaySeedMessage ? (
+            <p className="mt-2 text-xs text-foreground">{replaySeedMessage}</p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void loadReplaySeedStatus()}
+              disabled={runningAction !== null || persistenceMode === "local"}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Check seed status
+            </button>
+            <button
+              type="button"
+              onClick={() => void runReplaySeedRefresh()}
+              disabled={runningAction !== null || persistenceMode === "local"}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Refresh Replay Seeds
+            </button>
+          </div>
         </Card>
 
         <Card title="Sync Operations">

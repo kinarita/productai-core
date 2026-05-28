@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-5 decision attention seed refresh and development stability)
+
+- Added idempotent replay seed refresh service (`refreshDecisionAttentionSeeds`) with INSERT IF MISSING policy.
+- Added `upsertReplaySeedFeedItem` repository helper and taxonomy-driven replay seed catalog.
+- Added replay seed diagnostics API and development Settings / Runtime Cost visibility.
+- Stabilized Organization Feed attention filters with minimal supplemental seed display when needed.
+- Added replay seed refresh verification script and documentation.
+
 ## 2026-05-28 (Phase 7-4 decision attention hydration and replay continuity)
 
 - Hardened organization feed remote merge to preserve decision attention and replay metadata across hydration.
