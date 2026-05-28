@@ -1,4 +1,5 @@
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
+import { ProcessingReasonCard } from "@/components/orchestration/ProcessingReasonCard";
 import { ProcessingStateBadge } from "@/components/orchestration/ProcessingStateBadge";
 import type { ProcessingSession } from "@/lib/orchestration/processing/processingTypes";
 
@@ -17,6 +18,12 @@ export function ProcessingGovernanceCard({ session }: { session?: ProcessingSess
         {session.runtimeReservation.note}
       </p>
       <p className="text-xs text-muted">Runtime advisory: {session.advisoryState}</p>
+      {session.latestReviewReason ? <ProcessingReasonCard reason={session.latestReviewReason} /> : null}
+      {session.reviewRequired ? (
+        <p className="text-xs text-muted">
+          Processing governance is currently in review-required continuity state.
+        </p>
+      ) : null}
       <GovernanceNote>{session.governanceContinuity}</GovernanceNote>
     </div>
   );

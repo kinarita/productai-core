@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-3 processing review governance taxonomy)
+
+- Processing reason taxonomy and structured governance reason model.
+- Processing review policy gates for review_required resume/deny/revoke flow.
+- Processing review UI actions and reason visibility cards.
+- Processing audit continuity extension for review and reason events.
+- Runtime & Cost processing governance review section.
+- Documentation: `docs/PHASE5_PROCESSING_REVIEW_POLICY.md`.
+
 ### Added (Phase 5-2 controlled processing governance stub)
 
 - Controlled processing governance layer in `lib/orchestration/processing/`.

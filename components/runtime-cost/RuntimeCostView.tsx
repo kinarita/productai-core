@@ -101,6 +101,9 @@ export function RuntimeCostView() {
   const processingSummary = useProcessingStore((s) => s.getSummary());
   const prepareProcessing = useProcessingStore((s) => s.prepareProcessing);
   const activateProcessing = useProcessingStore((s) => s.activateProcessing);
+  const requestProcessingReview = useProcessingStore((s) => s.requestProcessingReview);
+  const resumeProcessing = useProcessingStore((s) => s.resumeProcessing);
+  const denyProcessing = useProcessingStore((s) => s.denyProcessing);
   const pauseProcessing = useProcessingStore((s) => s.pauseProcessing);
   const revokeProcessing = useProcessingStore((s) => s.revokeProcessing);
   const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
@@ -467,6 +470,18 @@ export function RuntimeCostView() {
                       onPauseProcessing={() => {
                         pauseProcessing(item.id, "Runtime Observer recommended temporary pause.");
                       }}
+                      onRequestProcessingReview={() => {
+                        requestProcessingReview(
+                          item.id,
+                          runtimeLock.active ? "runtime_stability" : providerDegraded ? "provider_instability" : "advisory_review"
+                        );
+                      }}
+                      onResumeProcessing={() => {
+                        resumeProcessing(item.id);
+                      }}
+                      onDenyProcessing={() => {
+                        denyProcessing(item.id, "Governance review concluded with denial.");
+                      }}
                       onRevokeProcessing={() => {
                         revokeProcessing(item.id, "Governance continuity revoked by human operator.");
                       }}
@@ -648,6 +663,30 @@ export function RuntimeCostView() {
           </div>
           <p className="mt-3 text-xs text-muted">
             processing_active is governance continuity only. No operational execution has been initiated.
+          </p>
+        </Card>
+
+        <Card title="Processing Governance Review">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Review required</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.reviewRequired}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Denied</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.denied}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Revoked</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.revoked}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Elevated risk</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{processingSummary.elevatedRisk}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            Processing governance review is recommendation-first and human resolved. No autonomous revocation is executed.
           </p>
         </Card>
 

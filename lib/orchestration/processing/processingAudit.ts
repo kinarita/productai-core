@@ -14,6 +14,16 @@ export function processingAuditMessage(action: ProcessingAuditAction, detail?: s
       return `Processing governance prepared${detail ? ` for ${detail}` : ""}.`;
     case "processing_governance_activated":
       return "Processing governance entered active continuity state. No operational execution has been initiated.";
+    case "processing_review_requested":
+      return `Processing governance review has been requested under operational continuity policy${detail ? ` for ${detail}` : ""}.`;
+    case "processing_review_resolved":
+      return `Governance review resolved under operational continuity policy${detail ? ` for ${detail}` : ""}.`;
+    case "processing_review_denied":
+      return `Processing governance was denied after review${detail ? ` for ${detail}` : ""}.`;
+    case "processing_review_revoked":
+      return `Processing governance was revoked after review${detail ? ` for ${detail}` : ""}.`;
+    case "processing_governance_reason_added":
+      return `Governance reason recorded for processing continuity${detail ? ` — ${detail}` : ""}.`;
     case "processing_paused":
       return `Processing governance paused${detail ? ` for ${detail}` : ""}.`;
     case "processing_revoked":

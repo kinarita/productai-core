@@ -105,6 +105,9 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const getExecutionSessionAudit = useExecutionSessionStore((s) => s.getAuditForQueueItem);
   const prepareProcessing = useProcessingStore((s) => s.prepareProcessing);
   const activateProcessing = useProcessingStore((s) => s.activateProcessing);
+  const requestProcessingReview = useProcessingStore((s) => s.requestProcessingReview);
+  const resumeProcessing = useProcessingStore((s) => s.resumeProcessing);
+  const denyProcessing = useProcessingStore((s) => s.denyProcessing);
   const pauseProcessing = useProcessingStore((s) => s.pauseProcessing);
   const revokeProcessing = useProcessingStore((s) => s.revokeProcessing);
   const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
@@ -507,9 +510,26 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                         pushQueueFeed("processing_paused");
                       }
                     }}
+                    onRequestProcessingReview={() => {
+                      if (
+                        requestProcessingReview(queueItem.id, runtimeLock.active ? "runtime_stability" : "advisory_review")
+                      ) {
+                        pushQueueFeed("processing_review_required");
+                      }
+                    }}
+                    onResumeProcessing={() => {
+                      if (resumeProcessing(queueItem.id)) {
+                        pushQueueFeed("processing_review_resolved");
+                      }
+                    }}
+                    onDenyProcessing={() => {
+                      if (denyProcessing(queueItem.id)) {
+                        pushQueueFeed("processing_review_denied");
+                      }
+                    }}
                     onRevokeProcessing={() => {
                       if (revokeProcessing(queueItem.id)) {
-                        pushQueueFeed("processing_revoked");
+                        pushQueueFeed("processing_review_revoked");
                       }
                     }}
                   />

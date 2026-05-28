@@ -32,6 +32,9 @@ export function createProcessingSession(input: {
     },
     governanceContinuity: processingSemanticsMessage(),
     advisoryState: input.advisoryState,
+    activeReasons: [],
+    latestReviewReason: undefined,
+    reviewRequired: false,
     createdAt: nowLabel(),
   };
 }

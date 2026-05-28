@@ -60,6 +60,9 @@ interface ExecutionQueueCardProps {
   processingAudit?: ProcessingAuditEntry[];
   onPrepareProcessing?: () => void;
   onActivateProcessing?: () => void;
+  onRequestProcessingReview?: () => void;
+  onResumeProcessing?: () => void;
+  onDenyProcessing?: () => void;
   onPauseProcessing?: () => void;
   onRevokeProcessing?: () => void;
 }
@@ -98,6 +101,9 @@ export function ExecutionQueueCard({
   processingAudit = [],
   onPrepareProcessing,
   onActivateProcessing,
+  onRequestProcessingReview,
+  onResumeProcessing,
+  onDenyProcessing,
   onPauseProcessing,
   onRevokeProcessing,
 }: ExecutionQueueCardProps) {
@@ -174,7 +180,8 @@ export function ExecutionQueueCard({
       ) : null}
       {(item.queueStatus === "execution_session_active" ||
         item.queueStatus === "processing_prepared" ||
-        item.queueStatus === "processing_active") ? (
+        item.queueStatus === "processing_active" ||
+        item.queueStatus === "processing_review_required") ? (
         <div className="mt-3">
           <ProcessingBoundaryReview
             item={item}
@@ -417,6 +424,38 @@ export function ExecutionQueueCard({
             Pause Processing
           </button>
         ) : null}
+        {item.queueStatus === "processing_active" && onRequestProcessingReview ? (
+          <button
+            type="button"
+            onClick={onRequestProcessingReview}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" />
+            Request Processing Review
+          </button>
+        ) : null}
+        {(item.queueStatus === "processing_review_required" || item.queueStatus === "processing_paused") &&
+        onResumeProcessing ? (
+          <button
+            type="button"
+            onClick={onResumeProcessing}
+            disabled={runtimeLockActive}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-60"
+          >
+            <PlayCircle className="h-3.5 w-3.5" />
+            Resume Processing Governance
+          </button>
+        ) : null}
+        {item.queueStatus === "processing_review_required" && onDenyProcessing ? (
+          <button
+            type="button"
+            onClick={onDenyProcessing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+          >
+            <Ban className="h-3.5 w-3.5" />
+            Deny Processing Governance
+          </button>
+        ) : null}
         {(item.queueStatus === "processing_active" || item.queueStatus === "processing_prepared") &&
         onRevokeProcessing ? (
           <button
@@ -425,7 +464,17 @@ export function ExecutionQueueCard({
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
           >
             <Ban className="h-3.5 w-3.5" />
-            Revoke Processing
+            Revoke Processing Governance
+          </button>
+        ) : null}
+        {item.queueStatus === "processing_review_required" && onRevokeProcessing ? (
+          <button
+            type="button"
+            onClick={onRevokeProcessing}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface"
+          >
+            <Ban className="h-3.5 w-3.5" />
+            Revoke Processing Governance
           </button>
         ) : null}
       </div>

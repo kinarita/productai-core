@@ -23,7 +23,11 @@ export function queueFeedMessage(
     | "processing_governance_activated"
     | "processing_paused"
     | "processing_revoked"
-    | "processing_review_required",
+    | "processing_review_required"
+    | "processing_review_resolved"
+    | "processing_review_denied"
+    | "processing_review_revoked"
+    | "processing_governance_reason_added",
   detail?: string
 ): string {
   switch (action) {
@@ -70,11 +74,19 @@ export function queueFeedMessage(
     case "processing_governance_activated":
       return "Processing governance entered active continuity state. No operational execution has been initiated.";
     case "processing_paused":
-      return `Runtime Observer recommended processing pause${detail ? ` for ${detail}` : ""}.`;
+      return `Processing governance was paused pending dependency review${detail ? ` for ${detail}` : ""}.`;
     case "processing_revoked":
       return `Processing governance was revoked under review${detail ? ` for ${detail}` : ""}.`;
     case "processing_review_required":
-      return "Processing review was requested pending runtime stabilization.";
+      return "Processing governance review has been requested under operational continuity policy.";
+    case "processing_review_resolved":
+      return `COO resumed processing governance continuity${detail ? ` for ${detail}` : ""}.`;
+    case "processing_review_denied":
+      return `Processing governance review concluded with denial${detail ? ` for ${detail}` : ""}.`;
+    case "processing_review_revoked":
+      return `Processing governance was revoked after review${detail ? ` for ${detail}` : ""}.`;
+    case "processing_governance_reason_added":
+      return `Runtime Observer requested processing governance review${detail ? ` — ${detail}` : ""}.`;
     default:
       return "Queue governance event recorded.";
   }

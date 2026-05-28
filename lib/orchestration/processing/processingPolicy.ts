@@ -45,7 +45,9 @@ export function canPauseProcessing(input: ProcessingGateInput): { allowed: boole
 
 export function canRevokeProcessing(input: ProcessingGateInput): { allowed: boolean; reason: string } {
   const revocable =
-    input.queueStatus === "processing_active" || input.queueStatus === "processing_prepared";
+    input.queueStatus === "processing_active" ||
+    input.queueStatus === "processing_prepared" ||
+    input.queueStatus === "processing_review_required";
   if (!revocable) {
     return { allowed: false, reason: "Processing must be prepared or active to revoke." };
   }

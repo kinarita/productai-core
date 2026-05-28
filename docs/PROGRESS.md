@@ -1,5 +1,27 @@
 # ProductAI Development Progress
 
+## 2026-05-28 — Phase 5-3 processing review governance taxonomy
+
+### Objective
+
+Add structured processing governance reasons and first-class `processing_review_required` continuity around `processing_active`.
+
+### Implemented in Phase 5-3
+
+- Processing reason taxonomy under `lib/orchestration/processing/reasonTaxonomy.ts`
+- Structured governance reason model on `ProcessingSession`
+- Review lifecycle actions in `processingStore`: request review, resume, deny, revoke
+- Review policy gates in `processingReviewPolicy.ts`
+- Processing reason UI components and severity/category badges
+- Processing audit extensions for review requested/resolved/denied/revoked + reason-added
+- Processing review governance feed events
+- Runtime & Cost processing review summary section
+- Documentation: `docs/PHASE5_PROCESSING_REVIEW_POLICY.md`
+
+### Scope boundaries (kept)
+
+- No actual execution, MCP/GitHub/Claude Code execution, deployment automation, or autonomous processing
+
 ## 2026-05-28 — Phase 5-2 controlled processing governance stub
 
 ### Objective
