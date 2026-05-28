@@ -34,6 +34,7 @@ import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGa
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
 import { ExecutionIntentReview } from "@/components/orchestration/ExecutionIntentReview";
+import { useExecuteStore } from "@/lib/store/executeStore";
 import type { TaskEvent, TaskStatus } from "@/types/productai";
 
 const taskStatusVariant: Record<TaskStatus, "info" | "warning" | "danger" | "success"> = {
@@ -87,6 +88,12 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
   const getRequestForQueueItem = useExecutionAuthorizationStore((s) => s.getRequestForQueueItem);
   const getAuditForQueueItem = useExecutionAuthorizationStore((s) => s.getAuditForQueueItem);
   const signatures = useExecutionAuthorizationStore((s) => s.signatures);
+  const requestExecuteReview = useExecuteStore((s) => s.requestExecuteReview);
+  const markExecuteReady = useExecuteStore((s) => s.markExecuteReady);
+  const denyExecuteReady = useExecuteStore((s) => s.denyExecuteReady);
+  const revokeExecuteReady = useExecuteStore((s) => s.revokeExecuteReady);
+  const getExecuteStub = useExecuteStore((s) => s.getStubForQueueItem);
+  const getExecuteAudit = useExecuteStore((s) => s.getAuditForQueueItem);
 
   const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
 
@@ -369,6 +376,8 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     authorizationRequest={getRequestForQueueItem(queueItem.id)}
                     authorizationSignature={signatures[queueItem.id]}
                     authorizationAudit={getAuditForQueueItem(queueItem.id)}
+                    executeStub={getExecuteStub(queueItem.id)}
+                    executeAudit={getExecuteAudit(queueItem.id)}
                     onReserve={() => {
                       refreshRuntimeLock(syncWarnings.length, alerts.length);
                       if (reserveSlot(queueItem.id, "COO")) pushQueueFeed("slot_reserved");
@@ -405,6 +414,26 @@ export function TaskDetailView({ taskId }: TaskDetailViewProps) {
                     onRevokeAuthorization={() => {
                       if (revokeAuthorization(queueItem.id)) {
                         pushQueueFeed("authorization_revoked");
+                      }
+                    }}
+                    onRequestExecuteReview={() => {
+                      if (requestExecuteReview(queueItem.id)) {
+                        pushQueueFeed("execute_review_requested");
+                      }
+                    }}
+                    onMarkExecuteReady={() => {
+                      if (markExecuteReady(queueItem.id)) {
+                        pushQueueFeed("execute_ready_validated");
+                      }
+                    }}
+                    onDenyExecuteReady={() => {
+                      if (denyExecuteReady(queueItem.id)) {
+                        pushQueueFeed("execute_ready_denied");
+                      }
+                    }}
+                    onRevokeExecuteReady={() => {
+                      if (revokeExecuteReady(queueItem.id)) {
+                        pushQueueFeed("execute_ready_revoked");
                       }
                     }}
                   />

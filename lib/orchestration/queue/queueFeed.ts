@@ -9,7 +9,11 @@ export function queueFeedMessage(
     | "authorization_requested"
     | "authorization_granted"
     | "authorization_denied"
-    | "authorization_revoked",
+    | "authorization_revoked"
+    | "execute_review_requested"
+    | "execute_ready_validated"
+    | "execute_ready_denied"
+    | "execute_ready_revoked",
   detail?: string
 ): string {
   switch (action) {
@@ -33,6 +37,14 @@ export function queueFeedMessage(
       return `Execution authorization was denied under governance review${detail ? ` for ${detail}` : ""}.`;
     case "authorization_revoked":
       return `Execution authorization was revoked under governance review${detail ? ` for ${detail}` : ""}.`;
+    case "execute_review_requested":
+      return `COO confirmed execution intent review${detail ? ` for ${detail}` : ""}.`;
+    case "execute_ready_validated":
+      return `Final governance validation completed for execution readiness${detail ? ` for ${detail}` : ""}.`;
+    case "execute_ready_denied":
+      return `Execute readiness was denied under governance review${detail ? ` for ${detail}` : ""}.`;
+    case "execute_ready_revoked":
+      return `Execute readiness was revoked pending runtime stabilization${detail ? ` for ${detail}` : ""}.`;
     default:
       return "Queue governance event recorded.";
   }

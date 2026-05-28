@@ -20,6 +20,7 @@ import { ExecutionQueueCard } from "@/components/orchestration/ExecutionQueueCar
 import { RuntimeLockBadge } from "@/components/orchestration/RuntimeLockBadge";
 import { validateExecutionBoundary } from "@/lib/orchestration/queue/executionGate";
 import { useExecutionAuthorizationStore } from "@/lib/store/executionAuthorizationStore";
+import { useExecuteStore } from "@/lib/store/executeStore";
 import { describeAllExecutionBoundaries } from "@/lib/orchestration/execution/executionAdapters";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
@@ -80,6 +81,13 @@ export function RuntimeCostView() {
   const getRequestForQueueItem = useExecutionAuthorizationStore((s) => s.getRequestForQueueItem);
   const getAuditForQueueItem = useExecutionAuthorizationStore((s) => s.getAuditForQueueItem);
   const signatures = useExecutionAuthorizationStore((s) => s.signatures);
+  const executeSummary = useExecuteStore((s) => s.getSummary());
+  const requestExecuteReview = useExecuteStore((s) => s.requestExecuteReview);
+  const markExecuteReady = useExecuteStore((s) => s.markExecuteReady);
+  const denyExecuteReady = useExecuteStore((s) => s.denyExecuteReady);
+  const revokeExecuteReady = useExecuteStore((s) => s.revokeExecuteReady);
+  const getExecuteStub = useExecuteStore((s) => s.getStubForQueueItem);
+  const getExecuteAudit = useExecuteStore((s) => s.getAuditForQueueItem);
 
   useEffect(() => {
     refreshRuntimeLock(syncWarnings.length, alerts.length);
@@ -366,6 +374,8 @@ export function RuntimeCostView() {
                       authorizationRequest={getRequestForQueueItem(item.id)}
                       authorizationSignature={signatures[item.id]}
                       authorizationAudit={getAuditForQueueItem(item.id)}
+                      executeStub={getExecuteStub(item.id)}
+                      executeAudit={getExecuteAudit(item.id)}
                       onReserve={() => {
                         useExecutionQueueStore.getState().reserveSlot(item.id, "COO");
                       }}
@@ -391,6 +401,18 @@ export function RuntimeCostView() {
                       }}
                       onRevokeAuthorization={() => {
                         revokeAuthorization(item.id);
+                      }}
+                      onRequestExecuteReview={() => {
+                        requestExecuteReview(item.id);
+                      }}
+                      onMarkExecuteReady={() => {
+                        markExecuteReady(item.id);
+                      }}
+                      onDenyExecuteReady={() => {
+                        denyExecuteReady(item.id);
+                      }}
+                      onRevokeExecuteReady={() => {
+                        revokeExecuteReady(item.id);
                       }}
                     />
                   </li>
@@ -494,6 +516,30 @@ export function RuntimeCostView() {
           </div>
           <p className="mt-3 text-xs text-muted">
             AI may request authorization after preparation. Only humans may authorize execution.
+          </p>
+        </Card>
+
+        <Card title="Execute Governance Readiness">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Review pending</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{executeSummary.reviewPending}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Execute ready</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{executeSummary.ready}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Denied</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{executeSummary.denied}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Revoked</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{executeSummary.revoked}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            execute_ready indicates validated readiness only. Execution is not initiated in this phase.
           </p>
         </Card>
 

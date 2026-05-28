@@ -11,6 +11,10 @@ export type QueueLifecycleStatus =
   | "execution_authorized"
   | "denied"
   | "revoked"
+  | "execute_review_pending"
+  | "execute_ready"
+  | "execute_denied"
+  | "execute_revoked"
   | "executing"
   | "completed";
 

@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 4-7 controlled execute-ready governance layer)
+
+- Controlled execute stub architecture in `lib/orchestration/execute/`.
+- Final governance validation policy for `execution_authorized` → `execute_ready`.
+- Revoke/deny-before-start flow for execute readiness.
+- Execute intent confirmation and execute audit continuity in task queue UI.
+- Runtime execute governance readiness summary.
+- Documentation: `docs/PHASE4_EXECUTE_READY.md`.
+
 ### Added (Phase 4-6 human execution authorization foundation)
 
 - Human execution authorization layer in `lib/orchestration/authorization/`.
