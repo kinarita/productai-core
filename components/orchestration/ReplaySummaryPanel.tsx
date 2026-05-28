@@ -14,6 +14,10 @@ export function ReplaySummaryPanel({
       <p className="text-xs text-muted">
         {summary.generatedAt} · {summary.replayWindow}
       </p>
+      <p className="text-xs text-muted">
+        Scope: {summary.activeScope.replaceAll("_", " ")} · Continuity focus: {summary.continuityFocus} · Severity:{" "}
+        {summary.filteredSeverity.replaceAll("_", " ")}
+      </p>
       <ul className="space-y-1 text-xs text-muted">
         {summary.keyContinuityDrivers.map((driver) => (
           <li key={driver}>- {driver}</li>

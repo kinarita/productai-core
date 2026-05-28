@@ -1,7 +1,17 @@
 import { OrganizationFeedView } from "@/components/organization-feed/OrganizationFeedView";
 
 interface OrganizationFeedPageProps {
-  searchParams: Promise<{ mission?: string; task?: string; type?: string; status?: string; gov?: string }>;
+  searchParams: Promise<{
+    mission?: string;
+    task?: string;
+    type?: string;
+    status?: string;
+    gov?: string;
+    severity?: string;
+    continuity?: string;
+    advisory?: string;
+    review?: string;
+  }>;
 }
 
 export default async function OrganizationFeedPage({

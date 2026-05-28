@@ -584,3 +584,13 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added continuity-enhanced governance memory phrasing based on recent replay events.
 - Extended explainability continuity with replay and continuity-shift narratives.
 
+## 2026-05-28 (Phase 5-8 unified replay query architecture)
+
+- Added shared replay query architecture under `lib/replay-query/`.
+- Unified replay query state via `ReplayQueryState` as a single filtering schema.
+- Added shared parse/build/merge helpers for Runtime/Feed/CEO/Mission continuity.
+- Added replay scope/window components and query context summary components.
+- Consolidated replay query-driven navigation continuity for executive drilldown.
+- Expanded feed query handling to align with replay schema and `gov` continuity.
+- Updated replay summary model with scope/window/continuity context fields.
+

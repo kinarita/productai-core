@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { missions } from "@/data/mockData";
 import { MissionDetailView } from "@/components/missions/MissionDetailView";
+import { parseReplayQuery } from "@/lib/replay-query/replayQueryParser";
 
 interface MissionDetailPageProps {
   params: Promise<{ missionId: string }>;
@@ -15,19 +16,13 @@ interface MissionDetailPageProps {
 /** Validates route exists in seed data; rendering is fully client + store driven. */
 export default async function MissionDetailPage({ params, searchParams }: MissionDetailPageProps) {
   const { missionId } = await params;
-  const { severity, governance, continuity, advisory } = await searchParams;
+  const replayQuery = parseReplayQuery(await searchParams);
 
   if (!missions.some((m) => m.id === missionId)) {
     notFound();
   }
 
   return (
-    <MissionDetailView
-      missionId={missionId}
-      severityFilter={severity}
-      governanceFilter={governance}
-      continuityFilter={continuity}
-      advisoryFilter={advisory}
-    />
+    <MissionDetailView missionId={missionId} replayQuery={replayQuery} />
   );
 }

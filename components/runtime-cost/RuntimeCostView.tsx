@@ -47,6 +47,13 @@ import { buildProcessingAnalytics } from "@/lib/orchestration/processing/process
 import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
 import { buildExecutiveReplaySummary } from "@/lib/orchestration/governance-history/replaySummary";
 import { useReplaySnapshotStore } from "@/lib/store/replaySnapshotStore";
+import { replayQueryDefaults } from "@/lib/replay-query/replayQueryDefaults";
+import { buildReplayQuery } from "@/lib/replay-query/replayQueryBuilder";
+import { mergeReplayQuery, parseReplayQuery } from "@/lib/replay-query/replayQueryParser";
+import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
+import { ReplayScopeSwitcher } from "@/components/orchestration/ReplayScopeSwitcher";
+import { ReplayWindowSelector } from "@/components/orchestration/ReplayWindowSelector";
+import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 
 export function RuntimeCostView() {
   const [runtimeInsight, setRuntimeInsight] = useState<string | null>(null);
@@ -139,6 +146,7 @@ export function RuntimeCostView() {
   const [timelineSeverityFilter, setTimelineSeverityFilter] = useState<string>("all");
   const [timelineSourceFilter, setTimelineSourceFilter] = useState<string>("all");
   const [timelineReasonFilter, setTimelineReasonFilter] = useState<string>("all");
+  const [replayQuery, setReplayQuery] = useState<ReplayQueryState>(replayQueryDefaults);
   const savedSnapshots = useReplaySnapshotStore((s) => s.snapshots);
   const recordSnapshot = useReplaySnapshotStore((s) => s.recordSnapshot);
 
@@ -147,26 +155,17 @@ export function RuntimeCostView() {
   }, [syncWarnings.length, alerts.length, refreshRuntimeLock]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const category = params.get("category");
-    const severity = params.get("severity");
-    const advisory = params.get("advisory");
-    const mission = params.get("mission");
-    const review = params.get("review");
-    const continuity = params.get("continuity");
-    const eventType = params.get("eventType");
-    const source = params.get("source");
-    const reasonCategory = params.get("reasonCategory");
-    if (category) setFilterCategory(category);
-    if (severity) setFilterSeverity(severity);
-    if (severity) setTimelineSeverityFilter(severity);
-    if (advisory) setFilterAdvisory(advisory);
-    if (mission) setFilterMission(mission);
-    if (review) setFilterReviewState(review);
-    if (continuity) setFilterContinuity(continuity);
-    if (eventType) setTimelineEventTypeFilter(eventType);
-    if (source) setTimelineSourceFilter(source);
-    if (reasonCategory) setTimelineReasonFilter(reasonCategory);
+    const parsed = parseReplayQuery(new URLSearchParams(window.location.search));
+    setReplayQuery(parsed);
+    setFilterMission(parsed.mission);
+    setFilterSeverity(parsed.severity);
+    setFilterAdvisory(parsed.advisory);
+    setFilterReviewState(parsed.review);
+    setFilterContinuity(parsed.continuity);
+    setTimelineEventTypeFilter(parsed.eventType);
+    setTimelineSeverityFilter(parsed.severity);
+    setTimelineSourceFilter(parsed.source);
+    setTimelineReasonFilter(parsed.reasonCategory);
   }, []);
 
   const apiHealth = getOverallApiHealth(providerHealth);
@@ -236,30 +235,7 @@ export function RuntimeCostView() {
     [missionNameMap, processingSessions]
   );
 
-  const filterQuery = useMemo(() => {
-    const params = new URLSearchParams();
-    if (filterCategory !== "all") params.set("category", filterCategory);
-    if (filterSeverity !== "all") params.set("severity", filterSeverity);
-    if (filterAdvisory !== "all") params.set("advisory", filterAdvisory);
-    if (filterMission !== "all") params.set("mission", filterMission);
-    if (filterReviewState !== "all") params.set("review", filterReviewState);
-    if (filterContinuity !== "all") params.set("continuity", filterContinuity);
-    if (timelineEventTypeFilter !== "all") params.set("eventType", timelineEventTypeFilter);
-    if (timelineSourceFilter !== "all") params.set("source", timelineSourceFilter);
-    if (timelineReasonFilter !== "all") params.set("reasonCategory", timelineReasonFilter);
-    const text = params.toString();
-    return text ? `?${text}` : "";
-  }, [
-    filterAdvisory,
-    filterCategory,
-    filterContinuity,
-    filterMission,
-    filterReviewState,
-    filterSeverity,
-    timelineEventTypeFilter,
-    timelineReasonFilter,
-    timelineSourceFilter,
-  ]);
+  const filterQuery = useMemo(() => buildReplayQuery(replayQuery), [replayQuery]);
 
   const handleFilterChange = (
     key: "category" | "severity" | "advisory" | "mission" | "review" | "continuity",
@@ -274,11 +250,17 @@ export function RuntimeCostView() {
     if (key === "mission") setFilterMission(value);
     if (key === "review") setFilterReviewState(value);
     if (key === "continuity") setFilterContinuity(value);
-    const params = new URLSearchParams(window.location.search);
-    if (value === "all") params.delete(key);
-    else params.set(key, value);
-    const query = params.toString();
-    window.history.replaceState({}, "", query ? `/runtime-cost?${query}` : "/runtime-cost");
+    const mapKey: Record<string, keyof ReplayQueryState> = {
+      mission: "mission",
+      severity: "severity",
+      advisory: "advisory",
+      review: "review",
+      continuity: "continuity",
+      category: "reasonCategory",
+    };
+    const next = mergeReplayQuery(replayQuery, { [mapKey[key] ?? "mission"]: value } as Partial<ReplayQueryState>);
+    setReplayQuery(next);
+    window.history.replaceState({}, "", `/runtime-cost${buildReplayQuery(next)}`);
   };
   const handleReplayFilterChange = (
     key: "eventType" | "severity" | "source" | "reasonCategory",
@@ -291,11 +273,14 @@ export function RuntimeCostView() {
     }
     if (key === "source") setTimelineSourceFilter(value);
     if (key === "reasonCategory") setTimelineReasonFilter(value);
-    const params = new URLSearchParams(window.location.search);
-    if (value === "all") params.delete(key);
-    else params.set(key, value);
-    const query = params.toString();
-    window.history.replaceState({}, "", query ? `/runtime-cost?${query}` : "/runtime-cost");
+    const next = mergeReplayQuery(replayQuery, {
+      eventType: key === "eventType" ? value : replayQuery.eventType,
+      severity: key === "severity" ? value : replayQuery.severity,
+      source: key === "source" ? value : replayQuery.source,
+      reasonCategory: key === "reasonCategory" ? value : replayQuery.reasonCategory,
+    });
+    setReplayQuery(next);
+    window.history.replaceState({}, "", `/runtime-cost${buildReplayQuery(next)}`);
   };
   const copyReplaySummary = () => {
     const text = [
@@ -362,8 +347,8 @@ export function RuntimeCostView() {
   }, [replayEvents]);
   const replayExplanation = useMemo(
     () =>
-      `Governance replay indicates sustained review concentration around runtime-sensitive operational continuity within ${replayEvents.length} filtered event(s).`,
-    [replayEvents.length]
+      `Current continuity explanation reflects ${replayQuery.scope.replaceAll("_", " ")} replay scope with ${replayEvents.length} filtered event(s).`,
+    [replayEvents.length, replayQuery.scope]
   );
   const continuityShiftExplanation = useMemo(() => {
     const snapshots = replay.snapshots.slice(0, 2);
@@ -395,6 +380,7 @@ export function RuntimeCostView() {
         processingSessions: filteredProcessingSessions,
         memoryItems: replay.memoryItems,
         continuityExplanation: filteredAnalytics.continuityExplanation,
+        query: replayQuery,
       }),
     [
       filteredAnalytics.continuityExplanation,
@@ -402,6 +388,7 @@ export function RuntimeCostView() {
       replay.memoryItems,
       replay.snapshots,
       replayEvents,
+      replayQuery,
     ]
   );
 
@@ -1014,6 +1001,31 @@ export function RuntimeCostView() {
         </Card>
 
         <Card title="Governance Timeline / Operational Replay">
+          <div className="mb-3 grid gap-2 lg:grid-cols-2">
+            <div>
+              <p className="mb-1 text-xs text-muted">Replay scope</p>
+              <ReplayScopeSwitcher
+                value={replayQuery.scope}
+                onChange={(value) => {
+                  const next = mergeReplayQuery(replayQuery, { scope: value });
+                  setReplayQuery(next);
+                  window.history.replaceState({}, "", `/runtime-cost${buildReplayQuery(next)}`);
+                }}
+              />
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-muted">Replay window</p>
+              <ReplayWindowSelector
+                value={replayQuery.replayWindow}
+                onChange={(value) => {
+                  const next = mergeReplayQuery(replayQuery, { replayWindow: value });
+                  setReplayQuery(next);
+                  window.history.replaceState({}, "", `/runtime-cost${buildReplayQuery(next)}`);
+                }}
+              />
+            </div>
+          </div>
+          <ReplayQuerySummary query={replayQuery} />
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-xs text-muted">
               Event type

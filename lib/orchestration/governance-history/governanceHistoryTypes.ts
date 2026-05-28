@@ -81,6 +81,9 @@ export interface GovernanceTrendPoint {
 export interface ExecutiveReplaySummary {
   generatedAt: string;
   replayWindow: string;
+  activeScope: string;
+  continuityFocus: string;
+  filteredSeverity: string;
   governanceHealthSummary: string;
   keyContinuityDrivers: string[];
   reviewPressureSummary: string;

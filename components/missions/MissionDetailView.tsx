@@ -54,6 +54,10 @@ import { buildProcessingAnalytics } from "@/lib/orchestration/processing/process
 import { GovernanceHealthBadge } from "@/components/orchestration/GovernanceHealthBadge";
 import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/governanceReplay";
 import { GovernanceHistoryPanel } from "@/components/orchestration/GovernanceHistoryPanel";
+import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
+import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
+import { ReplayNavigationContext } from "@/components/orchestration/ReplayNavigationContext";
+import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -85,18 +89,12 @@ const signalVariant = {
 
 interface MissionDetailViewProps {
   missionId: string;
-  severityFilter?: string;
-  governanceFilter?: string;
-  continuityFilter?: string;
-  advisoryFilter?: string;
+  replayQuery: ReplayQueryState;
 }
 
 export function MissionDetailView({
   missionId,
-  severityFilter,
-  governanceFilter,
-  continuityFilter,
-  advisoryFilter,
+  replayQuery,
 }: MissionDetailViewProps) {
   const hydrated = useStoreHydration();
   const setActiveMission = useUiStore((s) => s.setActiveMission);
@@ -143,25 +141,25 @@ export function MissionDetailView({
   const filteredMissionProcessingSessions = useMemo(
     () =>
       missionProcessingSessions.filter((session) => {
-        if (severityFilter && severityFilter !== "all") {
-          if (!session.activeReasons.some((reason) => reason.severity === severityFilter)) return false;
+        if (replayQuery.severity !== "all") {
+          if (!session.activeReasons.some((reason) => reason.severity === replayQuery.severity)) return false;
         }
-        if (continuityFilter === "degraded" && !session.reviewRequired) return false;
-        if (continuityFilter === "stable" && session.reviewRequired) return false;
-        if (advisoryFilter === "advisory" && !session.activeReasons.some((reason) => reason.advisoryOnly)) {
+        if (replayQuery.continuity === "degraded" && !session.reviewRequired) return false;
+        if (replayQuery.continuity === "stable" && session.reviewRequired) return false;
+        if (replayQuery.advisory === "advisory" && !session.activeReasons.some((reason) => reason.advisoryOnly)) {
           return false;
         }
-        if (advisoryFilter === "decision" && !session.activeReasons.some((reason) => !reason.advisoryOnly)) {
+        if (replayQuery.advisory === "decision" && !session.activeReasons.some((reason) => !reason.advisoryOnly)) {
           return false;
         }
-        if (governanceFilter === "runtime") {
+        if (replayQuery.governance === "runtime") {
           return session.activeReasons.some(
             (reason) => reason.category === "runtime_stability" || reason.category === "provider_instability"
           );
         }
         return true;
       }),
-    [advisoryFilter, continuityFilter, governanceFilter, missionProcessingSessions, severityFilter]
+    [missionProcessingSessions, replayQuery]
   );
   const missionProcessingAnalytics = useMemo(
     () => buildProcessingAnalytics(filteredMissionProcessingSessions),
@@ -344,6 +342,9 @@ export function MissionDetailView({
         <div className="w-full max-w-xs">
           <ProgressBar value={mission.progress} showLabel />
         </div>
+      </div>
+      <div className="mb-4">
+        <ReplayQuerySummary query={replayQuery} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -766,7 +767,11 @@ export function MissionDetailView({
             </p>
             <div className="mt-2 flex flex-wrap gap-3 text-xs">
               <Link
-                href={`/runtime-cost?mission=${missionId}&review=processing_review_required${severityFilter ? `&severity=${severityFilter}` : ""}${advisoryFilter ? `&advisory=${advisoryFilter}` : ""}${continuityFilter ? `&continuity=${continuityFilter}` : ""}`}
+                href={buildReplayHref("/runtime-cost", {
+                  ...replayQuery,
+                  mission: missionId,
+                  review: "processing_review_required",
+                })}
                 className="font-medium text-accent hover:underline"
               >
                 Open related processing review →
@@ -783,6 +788,12 @@ export function MissionDetailView({
               description="Mission-specific timeline and continuity context"
             />
             <GovernanceHistoryPanel replay={replay} missionId={missionId} missionNameMap={missionNameMap} />
+            <div className="mt-3">
+              <ReplayNavigationContext
+                runtimeHref={buildReplayHref("/runtime-cost", { ...replayQuery, mission: missionId })}
+                feedHref={buildReplayHref("/organization-feed", { ...replayQuery, mission: missionId })}
+              />
+            </div>
           </Card>
 
           <Card>

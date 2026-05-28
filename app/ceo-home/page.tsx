@@ -1,4 +1,5 @@
 import { CeoHomeView } from "@/components/ceo-home/CeoHomeView";
+import { parseReplayQuery } from "@/lib/replay-query/replayQueryParser";
 
 interface CeoHomePageProps {
   searchParams: Promise<{
@@ -11,14 +12,6 @@ interface CeoHomePageProps {
 }
 
 export default async function CeoHomePage({ searchParams }: CeoHomePageProps) {
-  const { severity, mission, governance, continuity, advisory } = await searchParams;
-  return (
-    <CeoHomeView
-      severityFilter={severity}
-      missionFilter={mission}
-      governanceFilter={governance}
-      continuityFilter={continuity}
-      advisoryFilter={advisory}
-    />
-  );
+  const replayQuery = parseReplayQuery(await searchParams);
+  return <CeoHomeView replayQuery={replayQuery} />;
 }

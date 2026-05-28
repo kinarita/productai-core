@@ -7,6 +7,7 @@ import type {
   GovernanceTimelineEvent,
 } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
 import type { ProcessingSession } from "@/lib/orchestration/processing/processingTypes";
+import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 
 export function buildExecutiveReplaySummary(input: {
   events: GovernanceTimelineEvent[];
@@ -14,6 +15,7 @@ export function buildExecutiveReplaySummary(input: {
   processingSessions: ProcessingSession[];
   memoryItems: GovernanceMemoryItem[];
   continuityExplanation: GovernanceContinuityExplanation;
+  query: ReplayQueryState;
 }): ExecutiveReplaySummary {
   const analytics = buildProcessingAnalytics(input.processingSessions);
   const replayWindow = `${Math.min(input.events.length, 20)} recent governance events`;
@@ -23,7 +25,10 @@ export function buildExecutiveReplaySummary(input: {
 
   return {
     generatedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-    replayWindow,
+    replayWindow: input.query.replayWindow === "latest" ? replayWindow : input.query.replayWindow,
+    activeScope: input.query.scope,
+    continuityFocus: input.query.continuity,
+    filteredSeverity: input.query.severity,
     governanceHealthSummary:
       analytics.summary.governanceHealthScore >= 70
         ? "Governance replay indicates stable continuity with manageable review pressure."

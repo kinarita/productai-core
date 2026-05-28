@@ -21,6 +21,10 @@ import { ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveMissionLabel } from "@/lib/orchestration/processing/missionLabel";
 import { ReplayFilterChips } from "@/components/orchestration/ReplayFilterChips";
+import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
+import { parseReplayQuery, mergeReplayQuery } from "@/lib/replay-query/replayQueryParser";
+import { buildReplayQuery } from "@/lib/replay-query/replayQueryBuilder";
+import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -129,18 +133,42 @@ export function OrganizationFeedView({
   const setFeedFilter = useUiStore((s) => s.setFeedFilter);
   const missions = useMissionStore((s) => s.missions);
   const missionNameMap = Object.fromEntries(missions.map((m) => [m.id, m.name]));
-  const [activeGovernanceFilter, setActiveGovernanceFilter] = useState<string>(governanceFilter ?? "all");
+  const [replayQuery, setReplayQuery] = useState<ReplayQueryState>(() =>
+    parseReplayQuery({
+      mission: missionFilter,
+      governance: governanceFilter,
+      severity: undefined,
+      continuity: undefined,
+      advisory: undefined,
+      review: undefined,
+      eventType: undefined,
+      source: undefined,
+      reasonCategory: undefined,
+      replayWindow: undefined,
+      scope: undefined,
+    })
+  );
+  const [activeGovernanceFilter, setActiveGovernanceFilter] = useState<string>(replayQuery.governance);
   const filterChipClass =
     "rounded-md border border-border bg-surface px-2 py-1 text-muted";
 
   useEffect(() => {
-    setActiveGovernanceFilter(governanceFilter ?? "all");
+    const parsed = parseReplayQuery(
+      new URLSearchParams(
+        typeof window !== "undefined" ? window.location.search : `?gov=${governanceFilter ?? "all"}`
+      )
+    );
+    setReplayQuery(parsed);
+    setActiveGovernanceFilter(parsed.governance);
   }, [governanceFilter]);
 
   let filtered = feedItems;
 
   if (missionFilter) {
     filtered = filtered.filter((f) => f.missionId === missionFilter);
+  }
+  if (replayQuery.mission !== "all") {
+    filtered = filtered.filter((f) => f.missionId === replayQuery.mission);
   }
   if (taskFilter) {
     filtered = filtered.filter((f) => f.taskId === taskFilter);
@@ -175,6 +203,18 @@ export function OrganizationFeedView({
       return true;
     });
   }
+  if (replayQuery.severity !== "all") {
+    filtered = filtered.filter((item) => item.message.toLowerCase().includes(replayQuery.severity));
+  }
+  if (replayQuery.continuity !== "all") {
+    filtered = filtered.filter((item) => item.message.toLowerCase().includes("continuity"));
+  }
+  if (replayQuery.advisory !== "all") {
+    filtered = filtered.filter((item) => item.message.toLowerCase().includes("advisory"));
+  }
+  if (replayQuery.review !== "all") {
+    filtered = filtered.filter((item) => item.message.toLowerCase().includes("review"));
+  }
   const govOptions = useMemo(
     () => [
       { id: "all", label: "all" },
@@ -190,11 +230,9 @@ export function OrganizationFeedView({
   );
   const onGovernanceFilterChange = (value: string) => {
     setActiveGovernanceFilter(value);
-    const params = new URLSearchParams(window.location.search);
-    if (value === "all") params.delete("gov");
-    else params.set("gov", value);
-    const query = params.toString();
-    window.history.replaceState({}, "", query ? `/organization-feed?${query}` : "/organization-feed");
+    const next = mergeReplayQuery(replayQuery, { governance: value });
+    setReplayQuery(next);
+    window.history.replaceState({}, "", `/organization-feed${buildReplayQuery(next)}`);
   };
 
 
@@ -303,6 +341,7 @@ export function OrganizationFeedView({
         <span className="text-muted">Governance:</span>
         <ReplayFilterChips value={activeGovernanceFilter} options={govOptions} onChange={onGovernanceFilterChange} />
       </div>
+      <ReplayQuerySummary query={replayQuery} />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted">Filter:</span>

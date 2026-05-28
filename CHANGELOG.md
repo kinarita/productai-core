@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 5-8 unified governance replay query architecture)
+
+- Shared replay query layer (`lib/replay-query`) with unified state and helpers.
+- Single replay schema across Runtime, Feed, CEO, and Mission view routing.
+- Replay scope/window switcher components and query summary/navigation context UI.
+- Executive replay summary extended with scope/window/continuity severity context.
+- Documentation: `docs/PHASE5_REPLAY_QUERY_SCHEMA.md`.
+
 ### Added (Phase 5-7 shareable executive governance replay views)
 
 - Full Runtime replay query sync for mission/eventType/severity/source/reasonCategory/continuity/advisory/review.
