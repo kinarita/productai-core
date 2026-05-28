@@ -66,6 +66,13 @@ import { DecisionWorkflowSummary } from "@/components/orchestration/DecisionWork
 import { fetchReplaySeedDiagnostics } from "@/lib/services/replaySeedRefresh";
 import type { ReplaySeedDiagnostics } from "@/lib/replay-query/replaySeedDiagnostics";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
+import { ExecutiveReplayWorkspace } from "@/components/orchestration/ExecutiveReplayWorkspace";
+import { getReplayInterpretationPreset } from "@/lib/orchestration/governance-history/replayInterpretationPresets";
+import {
+  buildReplayInterpretationExportContext,
+  formatReplayInterpretationExport,
+} from "@/lib/replay-query/replayExportContext";
+import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -177,8 +184,22 @@ export function RuntimeCostView() {
       .catch(() => setReplaySeedDiagnostics(null));
   }, []);
 
+  const applyPersonalizationToQuery = useReplayPersonalizationStore(
+    (s) => s.applyPersonalizationToQuery
+  );
+  const recordReplayView = useReplayPersonalizationStore((s) => s.recordReplayView);
+  const preferredInterpretationPreset = useReplayPersonalizationStore(
+    (s) => s.preferredInterpretationPreset
+  );
+  const readabilityMode = useReplayPersonalizationStore((s) => s.readabilityMode);
+
   useEffect(() => {
-    const parsed = parseReplayQuery(new URLSearchParams(window.location.search));
+    const params = new URLSearchParams(window.location.search);
+    const urlHasOverrides = params.toString().length > 0;
+    const parsed = applyPersonalizationToQuery(
+      parseReplayQuery(params),
+      urlHasOverrides
+    );
     setReplayQuery(parsed);
     setFilterMission(parsed.mission);
     setFilterSeverity(parsed.severity);
@@ -189,7 +210,14 @@ export function RuntimeCostView() {
     setTimelineSeverityFilter(parsed.severity);
     setTimelineSourceFilter(parsed.source);
     setTimelineReasonFilter(parsed.reasonCategory);
-  }, []);
+    if (!urlHasOverrides && params.toString().length === 0) {
+      window.history.replaceState({}, "", `/runtime-cost${buildReplayQuery(parsed)}`);
+    }
+  }, [applyPersonalizationToQuery]);
+
+  useEffect(() => {
+    recordReplayView(replayQuery);
+  }, [recordReplayView, replayQuery]);
 
   const apiHealth = getOverallApiHealth(providerHealth);
   const providerDegraded = providerHealth.some(
@@ -312,35 +340,6 @@ export function RuntimeCostView() {
     });
     setReplayQuery(next);
     window.history.replaceState({}, "", `/runtime-cost${buildReplayQuery(next)}`);
-  };
-  const copyReplaySummary = () => {
-    const text = [
-      replaySummary.governanceHealthSummary,
-      replaySummary.reviewPressureSummary,
-      replaySummary.runtimeGovernanceSummary,
-      ...replaySummary.keyContinuityDrivers,
-      ...replaySummary.recommendedExecutiveFocus,
-    ].join("\n");
-    void navigator.clipboard.writeText(text);
-    addFeedItem({
-      type: "coordination",
-      author: "COO",
-      authorName: "Nova",
-      missionId: "organization",
-      missionName: "Organization",
-      message: "COO prepared executive replay summary for sharing.",
-      status: "active",
-      requiresCeoApproval: false,
-      ...buildReplayMetadata({
-        governanceCategory: "governance_replay",
-        replayCategory: "replay_summary",
-        continuityCategory: "continuity_replay",
-        advisoryLevel: "advisory_low",
-        replayTags: ["replay", "summary", "export"],
-        replaySeverity: "low",
-        replaySource: "coo",
-      }),
-    });
   };
   const shareReplayView = () => {
     const href = `${window.location.origin}/runtime-cost${filterQuery}`;
@@ -499,6 +498,75 @@ export function RuntimeCostView() {
       replayQuery,
     ]
   );
+
+  const interpretationPresetTitle = preferredInterpretationPreset
+    ? getReplayInterpretationPreset(preferredInterpretationPreset)?.title
+    : undefined;
+
+  const exportReplayInterpretation = () => {
+    const preset = preferredInterpretationPreset
+      ? getReplayInterpretationPreset(preferredInterpretationPreset)
+      : null;
+    const context = buildReplayInterpretationExportContext({
+      replayQuery,
+      continuityExplanation: replay.diagnostics.continuityExplanation,
+      diagnostics: replayDiagnostics,
+      summary: replaySummary,
+      preset: preset ?? null,
+      baseUrl: typeof window !== "undefined" ? window.location.origin : undefined,
+    });
+    void navigator.clipboard.writeText(formatReplayInterpretationExport(context));
+    addFeedItem({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: "organization",
+      missionName: "Organization",
+      message:
+        "COO exported replay interpretation context for executive governance continuity (recommendation-only).",
+      status: "active",
+      requiresCeoApproval: false,
+      ...buildReplayMetadata({
+        governanceCategory: "governance_replay",
+        replayCategory: "replay_summary",
+        continuityCategory: "continuity_replay",
+        advisoryLevel: "advisory_low",
+        replayTags: ["replay", "export", "interpretation"],
+        replaySeverity: "low",
+        replaySource: "coo",
+      }),
+    });
+  };
+
+  const copyReplaySummary = () => {
+    const text = [
+      replaySummary.governanceHealthSummary,
+      replaySummary.reviewPressureSummary,
+      replaySummary.runtimeGovernanceSummary,
+      ...replaySummary.keyContinuityDrivers,
+      ...replaySummary.recommendedExecutiveFocus,
+    ].join("\n");
+    void navigator.clipboard.writeText(text);
+    addFeedItem({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: "organization",
+      missionName: "Organization",
+      message: "COO prepared executive replay summary for sharing.",
+      status: "active",
+      requiresCeoApproval: false,
+      ...buildReplayMetadata({
+        governanceCategory: "governance_replay",
+        replayCategory: "replay_summary",
+        continuityCategory: "continuity_replay",
+        advisoryLevel: "advisory_low",
+        replayTags: ["replay", "summary", "export"],
+        replaySeverity: "low",
+        replaySource: "coo",
+      }),
+    });
+  };
 
   useEffect(() => {
     if (!replay.latestSnapshot.id) return;
@@ -1100,6 +1168,9 @@ export function RuntimeCostView() {
             replayDiagnostics={replayDiagnostics}
             scope={replayQuery.scope}
             replayWindow={replayQuery.replayWindow}
+            readabilityMode={readabilityMode}
+            interpretationPresetTitle={interpretationPresetTitle}
+            bookmarkContinuityNote="Replay bookmarks help maintain continuity across governance interpretation sessions."
           />
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <Link href={`/organization-feed?gov=continuity_events`} className="font-medium text-accent hover:underline">
@@ -1205,10 +1276,21 @@ export function RuntimeCostView() {
           </div>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             <GovernanceTrendCard points={trendPoints} />
-            <ReplaySummaryPanel summary={replaySummary} onCopy={copyReplaySummary} />
+            <ReplaySummaryPanel
+              summary={replaySummary}
+              onCopy={copyReplaySummary}
+              onExportInterpretation={exportReplayInterpretation}
+              readabilityMode={readabilityMode}
+              interpretationPresetTitle={interpretationPresetTitle}
+              bookmarkContinuityNote="Replay bookmarks help maintain continuity across governance interpretation sessions."
+            />
           </div>
           <div className="mt-3">
-            <ReplayShareCard shareHref={`/runtime-cost${filterQuery}`} onShare={shareReplayView} />
+            <ReplayShareCard
+              shareHref={`/runtime-cost${filterQuery}`}
+              onShare={shareReplayView}
+              onExportInterpretation={exportReplayInterpretation}
+            />
           </div>
           <div className="mt-3">
             <DecisionWorkflowSummary items={decisionAttentionItems} />
@@ -1321,11 +1403,19 @@ export function RuntimeCostView() {
             </ul>
           </Card>
         ) : null}
+        <ExecutiveReplayWorkspace
+          replayQuery={replayQuery}
+          replayDiagnostics={replayDiagnostics}
+          replaySummary={replaySummary}
+          linkBasePath="/runtime-cost"
+        />
+
         <ExecutiveWalkthroughPanel
           replayQuery={replayQuery}
           replayDiagnostics={replayDiagnostics}
           attentionCount={decisionAttentionItems.length}
           linkBasePath="/runtime-cost"
+          compact
         />
 
         <Card title="Replay Diagnostics">

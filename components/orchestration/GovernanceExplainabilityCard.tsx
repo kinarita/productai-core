@@ -16,6 +16,9 @@ export function GovernanceExplainabilityCard({
   scope,
   replayWindow,
   compact,
+  readabilityMode,
+  interpretationPresetTitle,
+  bookmarkContinuityNote,
 }: {
   explanation: GovernanceContinuityExplanation;
   breakdown: {
@@ -35,13 +38,25 @@ export function GovernanceExplainabilityCard({
   scope?: string;
   replayWindow?: "latest" | "short" | "medium" | "extended";
   compact?: boolean;
+  readabilityMode?: "compact" | "expanded";
+  interpretationPresetTitle?: string;
+  bookmarkContinuityNote?: string;
 }) {
+  const expanded = readabilityMode === "expanded" || !compact;
   const diagnosticsContinuity = replayDiagnostics?.continuityExplanation ?? replayDiagnosticsExplanation;
   const diagnosticsVisibility = replayDiagnostics?.visibilityExplanation ?? replayVisibilityExplanation;
   const diagnosticsConfidence = replayDiagnostics?.confidenceExplanation ?? replayConfidenceExplanation;
   return (
     <div className="space-y-3 rounded-lg border border-border bg-surface p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-muted">Analytics explainability</p>
+      {interpretationPresetTitle ? (
+        <p className="text-xs text-muted">
+          Interpretation preset: <span className="text-foreground">{interpretationPresetTitle}</span>
+        </p>
+      ) : null}
+      {bookmarkContinuityNote ? (
+        <p className="text-xs text-muted">{bookmarkContinuityNote}</p>
+      ) : null}
       <p className="text-xs text-muted">
         Governance continuity score reflects elevated advisory density and review concentration.
       </p>
@@ -82,11 +97,11 @@ export function GovernanceExplainabilityCard({
         </p>
       ) : null}
       <ContinuityScoreBreakdown breakdown={breakdown} />
-      <div className={`grid gap-2 ${compact ? "sm:grid-cols-1" : "sm:grid-cols-3"}`}>
+      <div className={`grid gap-2 ${expanded ? "sm:grid-cols-3" : "sm:grid-cols-1"}`}>
         <div className="rounded-md border border-border bg-background p-2">
           <p className="text-xs font-medium text-muted">Stability factors</p>
           <ul className="mt-1 space-y-1 text-xs text-muted">
-            {explanation.stabilityFactors.slice(0, 3).map((item) => (
+            {explanation.stabilityFactors.slice(0, expanded ? 5 : 3).map((item) => (
               <li key={item}>- {item}</li>
             ))}
           </ul>
@@ -94,7 +109,7 @@ export function GovernanceExplainabilityCard({
         <div className="rounded-md border border-border bg-background p-2">
           <p className="text-xs font-medium text-muted">Degradation factors</p>
           <ul className="mt-1 space-y-1 text-xs text-muted">
-            {explanation.degradationFactors.slice(0, 3).map((item) => (
+            {explanation.degradationFactors.slice(0, expanded ? 5 : 3).map((item) => (
               <li key={item}>- {item}</li>
             ))}
           </ul>
@@ -102,7 +117,7 @@ export function GovernanceExplainabilityCard({
         <div className="rounded-md border border-border bg-background p-2">
           <p className="text-xs font-medium text-muted">Recommendations</p>
           <ul className="mt-1 space-y-1 text-xs text-muted">
-            {explanation.recommendations.slice(0, 3).map((item) => (
+            {explanation.recommendations.slice(0, expanded ? 5 : 3).map((item) => (
               <li key={item}>- {item}</li>
             ))}
           </ul>

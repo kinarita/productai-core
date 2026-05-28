@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-7 executive replay personalization and governance bookmarking)
+
+- Replay bookmarks (`replayBookmarkStore`, `ReplayBookmarkPanel`) for view continuity across sessions.
+- Interpretation presets and `replayPersonalizationStore` with continuity memory and readability mode.
+- `ExecutiveReplayWorkspace`, `ReplaySessionRecommendations`, and replay interpretation export context.
+- Compact/expanded readability for `ReplaySummaryPanel` and `GovernanceExplainabilityCard`.
+- Organization Feed personalization controls (bookmark, preset, continue review).
+- Documentation: `docs/PHASE7_EXECUTIVE_REPLAY_PERSONALIZATION.md`.
+
 ### Added (Phase 7-6 executive replay onboarding and walkthrough)
 
 - Governance replay walkthrough (`replayWalkthrough.ts`, `GovernanceReplayWalkthrough`) with four interpretive steps.

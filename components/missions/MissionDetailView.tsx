@@ -67,6 +67,7 @@ import { DecisionAttentionQueue } from "@/components/orchestration/DecisionAtten
 import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
+import { ReplayBookmarkPanel } from "@/components/orchestration/ReplayBookmarkPanel";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -892,6 +893,19 @@ export function MissionDetailView({
                 Dev normalization summary: alias normalized {validationMetrics.aliasNormalizationCount} times.
               </p>
             ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Replay bookmarks"
+              description="Mission-scoped replay view continuity"
+            />
+            <ReplayBookmarkPanel
+              currentReplayQuery={{ ...replayQuery, mission: missionId }}
+              linkBasePath="/runtime-cost"
+              focusCategory="governance_review"
+              compact
+            />
           </Card>
 
           <ExecutiveWalkthroughPanel

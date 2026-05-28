@@ -30,6 +30,10 @@ import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
 import { matchesGovernanceAttentionFilter } from "@/lib/orchestration/decision-attention/decisionAttention";
 import { countDecisionAttentionFeedItems } from "@/lib/services/feedMerge";
 import { buildDecisionAttentionSeedPayloads } from "@/lib/replay-query/replaySeedCatalog";
+import { ReplayBookmarkPanel } from "@/components/orchestration/ReplayBookmarkPanel";
+import { ReplaySessionRecommendations } from "@/components/orchestration/ReplaySessionRecommendations";
+import { replayInterpretationPresets } from "@/lib/orchestration/governance-history/replayInterpretationPresets";
+import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -306,6 +310,13 @@ export function OrganizationFeedView({
     setReplayQuery(next);
     window.history.replaceState({}, "", `/organization-feed${buildReplayQuery(next)}`);
   };
+  const recordReplayView = useReplayPersonalizationStore((s) => s.recordReplayView);
+  const lastReplayView = useReplayPersonalizationStore((s) => s.lastReplayView);
+
+  useEffect(() => {
+    recordReplayView(replayQuery);
+  }, [recordReplayView, replayQuery]);
+
   const onAttentionFilterChange = (value: string) => {
     setActiveAttentionFilter(value);
     const next = mergeReplayQuery(replayQuery, { governanceAttention: value });
@@ -478,6 +489,46 @@ export function OrganizationFeedView({
         </Link>
       </div>
       <ReplayQuerySummary query={replayQuery} />
+      <div className="mb-4 rounded-lg border border-border bg-surface p-3">
+        <p className="text-xs font-medium uppercase text-muted">Replay personalization</p>
+        <p className="mt-1 text-xs text-muted">
+          Save bookmarks and apply interpretation presets while preserving governance attention query
+          continuity.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {replayInterpretationPresets.slice(0, 4).map((preset) => (
+            <Link
+              key={preset.id}
+              href={buildReplayHref(
+                "/runtime-cost",
+                mergeReplayQuery(replayQuery, preset.recommendedReplayQuery)
+              )}
+              className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+            >
+              {preset.title}
+            </Link>
+          ))}
+          {lastReplayView ? (
+            <Link
+              href={buildReplayHref("/runtime-cost", lastReplayView)}
+              className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+            >
+              Continue replay review →
+            </Link>
+          ) : null}
+        </div>
+        <div className="mt-3">
+          <ReplayBookmarkPanel
+            currentReplayQuery={replayQuery}
+            linkBasePath="/organization-feed"
+            focusCategory="attention_interpretation"
+            compact
+          />
+        </div>
+        <div className="mt-3">
+          <ReplaySessionRecommendations baseReplayQuery={replayQuery} linkBasePath="/runtime-cost" />
+        </div>
+      </div>
       {process.env.NODE_ENV !== "production" ? (
         <p className="mb-2 text-[11px] text-muted">
           Hydrated decision attention events: {hydratedAttentionCount} · Decision attention continuity was
