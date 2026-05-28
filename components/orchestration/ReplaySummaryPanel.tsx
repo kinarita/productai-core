@@ -32,6 +32,7 @@ export function ReplaySummaryPanel({
       </ul>
       <p className="text-xs text-muted">{summary.reviewPressureSummary}</p>
       <p className="text-xs text-muted">{summary.runtimeGovernanceSummary}</p>
+      <p className="text-xs text-muted">{summary.diagnosticsSummary}</p>
       <ul className="space-y-1 text-xs text-muted">
         {summary.recommendedExecutiveFocus.slice(0, 3).map((item) => (
           <li key={item}>- {item}</li>

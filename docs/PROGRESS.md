@@ -640,3 +640,12 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added dev-only replay validation observability metrics and runtime visibility section.
 - Added Phase 6 taxonomy architecture documentation for SSOT and compatibility flow.
 
+## 2026-05-28 (Phase 6-4 replay diagnostics observability and explainability)
+
+- Added replay diagnostics derivation layer with visibility score, confidence, continuity diagnostics, and warnings.
+- Integrated diagnostics into governance replay bundle and executive replay summary output.
+- Added runtime replay diagnostics section for executive-readable observability.
+- Extended explainability card and replay panels with diagnostics explanations and condensed replay messaging.
+- Linked governance memory patterns into diagnostics warnings for continuity interpretation context.
+- Added Phase 6 replay diagnostics documentation.
+

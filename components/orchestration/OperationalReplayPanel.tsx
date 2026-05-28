@@ -19,6 +19,11 @@ export function OperationalReplayPanel({
         <p className="mb-2 text-xs text-muted">
           Replay visibility emphasizes governance continuity across advisory and review transitions.
         </p>
+        {replay.diagnostics.compressedEventCount ? (
+          <p className="mb-2 text-xs text-muted">
+            Replay view has been condensed for executive readability.
+          </p>
+        ) : null}
         <GovernanceTimeline events={replay.events} missionNameMap={missionNameMap} maxEvents={maxEvents} />
       </div>
     </div>

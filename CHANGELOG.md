@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 6-4 replay diagnostics and governance observability)
+
+- Replay diagnostics module with visibility score, confidence semantics, continuity diagnostics, and advisory warnings.
+- Governance replay bundle and executive summary integration for diagnostics outputs.
+- Runtime replay diagnostics UI block with score, confidence, completeness, density, and warning visibility.
+- Explainability and operational replay panel updates for diagnostics context and condensed replay semantics.
+- Documentation: `docs/PHASE6_REPLAY_DIAGNOSTICS.md`.
+
 ### Added (Phase 6-3 replay taxonomy SSOT and query vocabulary consistency)
 
 - Central taxonomy source module for replay/governance metadata vocabulary.

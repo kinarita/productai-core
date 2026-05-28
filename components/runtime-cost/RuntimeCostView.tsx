@@ -59,6 +59,7 @@ import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import { replaySeverityOptions } from "@/lib/replay-query/replayTokens";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
+import { buildReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -376,8 +377,9 @@ export function RuntimeCostView() {
         runtimeAlerts: alerts,
         syncWarnings,
         persistedSnapshots: savedSnapshots,
+        replayQuery,
       }),
-    [alerts, feedItems, filteredProcessingSessions, processingAuditTrail, savedSnapshots, syncWarnings]
+    [alerts, feedItems, filteredProcessingSessions, processingAuditTrail, replayQuery, savedSnapshots, syncWarnings]
   );
   const replayEvents = useMemo(
     () =>
@@ -399,6 +401,17 @@ export function RuntimeCostView() {
   const visibleReplayEvents = useMemo(
     () => replayEvents.slice(0, replayWindowEventLimit),
     [replayEvents, replayWindowEventLimit]
+  );
+  const replayDiagnostics = useMemo(
+    () =>
+      buildReplayDiagnostics({
+        events: visibleReplayEvents,
+        allEventCount: replayEvents.length,
+        feedItems,
+        replayQuery,
+        memoryItems: replay.memoryItems,
+      }),
+    [feedItems, replay.memoryItems, replayEvents.length, replayQuery, visibleReplayEvents]
   );
   const historicalContinuityExplanation = useMemo(() => {
     const recent = replayEvents.slice(0, 3);
@@ -445,12 +458,14 @@ export function RuntimeCostView() {
         memoryItems: replay.memoryItems,
         continuityExplanation: filteredAnalytics.continuityExplanation,
         query: replayQuery,
+        diagnostics: replayDiagnostics,
       }),
     [
       filteredAnalytics.continuityExplanation,
       filteredProcessingSessions,
       replay.memoryItems,
       replay.snapshots,
+      replayDiagnostics,
       visibleReplayEvents,
       replayQuery,
     ]
@@ -1053,6 +1068,9 @@ export function RuntimeCostView() {
             historicalExplanation={historicalContinuityExplanation}
             replayExplanation={replayExplanation}
             continuityShiftExplanation={continuityShiftExplanation}
+            replayDiagnosticsExplanation={replayDiagnostics.continuityExplanation}
+            replayVisibilityExplanation={replayDiagnostics.visibilityExplanation}
+            replayConfidenceExplanation={replayDiagnostics.confidenceExplanation}
           />
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <Link href={`/organization-feed?gov=continuity_events`} className="font-medium text-accent hover:underline">
@@ -1145,7 +1163,7 @@ export function RuntimeCostView() {
           </div>
           <div className="mt-4">
             <OperationalReplayPanel
-              replay={{ ...replay, events: visibleReplayEvents }}
+              replay={{ ...replay, events: visibleReplayEvents, diagnostics: replayDiagnostics }}
               missionNameMap={missionNameMap}
               maxEvents={replayWindowEventLimit}
             />
@@ -1219,6 +1237,44 @@ export function RuntimeCostView() {
             </ul>
           </Card>
         ) : null}
+        <Card title="Replay Diagnostics">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Replay visibility score</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{replayDiagnostics.replayVisibilityScore}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Replay confidence</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">{replayDiagnostics.replayConfidence}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Metadata completeness</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {Math.round(replayDiagnostics.metadataCompletenessRatio * 100)}%
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Replay density</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {Math.round((replayDiagnostics.advisoryDensity + replayDiagnostics.reviewDensity) * 100)}%
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted">{replayDiagnostics.visibilityExplanation}</p>
+          <p className="mt-1 text-xs text-muted">{replayDiagnostics.confidenceExplanation}</p>
+          {replayDiagnostics.compressedEventCount ? (
+            <p className="mt-1 text-xs text-muted">
+              Replay view has been condensed for executive readability ({replayDiagnostics.compressedEventCount} events condensed).
+            </p>
+          ) : null}
+          {replayDiagnostics.diagnosticsWarnings.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-xs text-muted">
+              {replayDiagnostics.diagnosticsWarnings.slice(0, 5).map((warning) => (
+                <li key={warning}>- {warning}</li>
+              ))}
+            </ul>
+          ) : null}
+        </Card>
       </div>
     </AppShell>
   );

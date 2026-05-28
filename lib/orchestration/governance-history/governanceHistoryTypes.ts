@@ -3,6 +3,7 @@ import type {
   GovernanceSeverity,
   ProcessingReasonCategory,
 } from "@/lib/orchestration/processing/processingTypes";
+import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 
 export type GovernanceTimelineEventType =
   | "review_requested"
@@ -68,6 +69,7 @@ export interface GovernanceReplayBundle {
   snapshots: ExecutiveGovernanceSnapshot[];
   continuityExplanation: GovernanceContinuityExplanation;
   memoryItems: GovernanceMemoryItem[];
+  diagnostics: ReplayDiagnostics;
 }
 
 export interface GovernanceTrendPoint {
@@ -95,4 +97,5 @@ export interface ExecutiveReplaySummary {
   reviewPressureSummary: string;
   runtimeGovernanceSummary: string;
   recommendedExecutiveFocus: string[];
+  diagnosticsSummary: string;
 }
