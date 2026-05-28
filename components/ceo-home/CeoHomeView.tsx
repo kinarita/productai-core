@@ -21,6 +21,7 @@ import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import { ReplayNavigationContext } from "@/components/orchestration/ReplayNavigationContext";
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
+import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import { getDependencyWarnings } from "@/lib/task/taskDependencies";
 import { getImportantTasks, getRecentlyCreatedTasks } from "@/lib/task/taskSelectors";
 import { getBlockerAge } from "@/lib/task/missionExecutionInsights";
@@ -60,8 +61,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     if (replayQuery.severity !== "all") {
       if (!session.activeReasons.some((reason) => reason.severity === replayQuery.severity)) return false;
     }
-    if (replayQuery.continuity === "degraded" && !session.reviewRequired) return false;
-    if (replayQuery.continuity === "stable" && session.reviewRequired) return false;
+    if (
+      (replayQuery.continuity === "degraded" ||
+        replayQuery.continuity === "continuity_advisory") &&
+      !session.reviewRequired
+    )
+      return false;
+    if (
+      (replayQuery.continuity === "stable" ||
+        replayQuery.continuity === "continuity_stable") &&
+      session.reviewRequired
+    )
+      return false;
     if (replayQuery.advisory === "advisory" && !session.activeReasons.some((reason) => reason.advisoryOnly))
       return false;
     if (replayQuery.advisory === "decision" && !session.activeReasons.some((reason) => !reason.advisoryOnly))
@@ -127,6 +138,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     >
       <div className="space-y-8">
         <ReplayQuerySummary query={replayQuery} />
+        <p className="text-xs text-muted">{replayWindowDescriptions[replayQuery.replayWindow]}</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Organization Health"

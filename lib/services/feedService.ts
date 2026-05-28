@@ -12,6 +12,14 @@ interface CreateFeedInput {
   title?: string;
   author?: string;
   authorName?: string;
+  governanceCategory?: string;
+  replayCategory?: string;
+  continuityCategory?: string;
+  advisoryLevel?: string;
+  replaySeverity?: string;
+  replaySource?: string;
+  replayTags?: string[];
+  metadata?: Record<string, unknown>;
 }
 
 export async function fetchFeed(params: {
@@ -19,12 +27,22 @@ export async function fetchFeed(params: {
   taskId?: string;
   type?: string;
   status?: string;
+  governanceCategory?: string;
+  replayCategory?: string;
+  continuityCategory?: string;
+  replaySeverity?: string;
+  replaySource?: string;
 } = {}): Promise<FeedItemRecord[]> {
   const query = new URLSearchParams();
   if (params.missionId) query.set("mission", params.missionId);
   if (params.taskId) query.set("task", params.taskId);
   if (params.type) query.set("type", params.type);
   if (params.status) query.set("status", params.status);
+  if (params.governanceCategory) query.set("governanceCategory", params.governanceCategory);
+  if (params.replayCategory) query.set("replayCategory", params.replayCategory);
+  if (params.continuityCategory) query.set("continuityCategory", params.continuityCategory);
+  if (params.replaySeverity) query.set("replaySeverity", params.replaySeverity);
+  if (params.replaySource) query.set("replaySource", params.replaySource);
   const data = await apiClient<{ feed: FeedItemRecord[] }>(
     `/api/feed${query.size ? `?${query.toString()}` : ""}`
   );

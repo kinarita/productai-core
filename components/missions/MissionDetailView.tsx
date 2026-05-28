@@ -58,6 +58,7 @@ import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import { ReplayNavigationContext } from "@/components/orchestration/ReplayNavigationContext";
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
+import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -144,8 +145,18 @@ export function MissionDetailView({
         if (replayQuery.severity !== "all") {
           if (!session.activeReasons.some((reason) => reason.severity === replayQuery.severity)) return false;
         }
-        if (replayQuery.continuity === "degraded" && !session.reviewRequired) return false;
-        if (replayQuery.continuity === "stable" && session.reviewRequired) return false;
+        if (
+          (replayQuery.continuity === "degraded" ||
+            replayQuery.continuity === "continuity_advisory") &&
+          !session.reviewRequired
+        )
+          return false;
+        if (
+          (replayQuery.continuity === "stable" ||
+            replayQuery.continuity === "continuity_stable") &&
+          session.reviewRequired
+        )
+          return false;
         if (replayQuery.advisory === "advisory" && !session.activeReasons.some((reason) => reason.advisoryOnly)) {
           return false;
         }
@@ -345,6 +356,7 @@ export function MissionDetailView({
       </div>
       <div className="mb-4">
         <ReplayQuerySummary query={replayQuery} />
+        <p className="mt-1 text-xs text-muted">{replayWindowDescriptions[replayQuery.replayWindow]}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

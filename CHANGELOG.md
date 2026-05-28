@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 6-1 backend schema alignment for replay metadata)
+
+- SQLite `feed_items` metadata columns and safe additive bootstrap migration.
+- Feed repository metadata persistence/reads and metadata filter support.
+- Feed API metadata payload compatibility (POST/GET) and round-trip alignment.
+- Replay continuity legacy query normalization in shared parser.
+- Documentation: `docs/PHASE6_BACKEND_METADATA_ALIGNMENT.md`.
+
 ### Added (Phase 5-10 governance replay metadata stabilization)
 
 - Replay metadata helper for normalized governance/replay feed metadata.

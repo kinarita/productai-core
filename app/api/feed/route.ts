@@ -14,8 +14,23 @@ export async function GET(request: NextRequest) {
     const taskId = searchParams.get("task") ?? undefined;
     const type = searchParams.get("type") ?? undefined;
     const status = searchParams.get("status") ?? undefined;
+    const governanceCategory = searchParams.get("governanceCategory") ?? undefined;
+    const replayCategory = searchParams.get("replayCategory") ?? undefined;
+    const continuityCategory = searchParams.get("continuityCategory") ?? undefined;
+    const replaySeverity = searchParams.get("replaySeverity") ?? undefined;
+    const replaySource = searchParams.get("replaySource") ?? undefined;
 
-    const feed = feedRepository.list({ missionId, taskId, type, status });
+    const feed = feedRepository.list({
+      missionId,
+      taskId,
+      type,
+      status,
+      governanceCategory,
+      replayCategory,
+      continuityCategory,
+      replaySeverity,
+      replaySource,
+    });
     return ok({ feed });
   } catch {
     return fail("Failed to load feed");
@@ -36,6 +51,14 @@ export async function POST(request: NextRequest) {
       title?: string;
       author?: string;
       authorName?: string;
+      governanceCategory?: string;
+      replayCategory?: string;
+      continuityCategory?: string;
+      advisoryLevel?: string;
+      replaySeverity?: string;
+      replaySource?: string;
+      replayTags?: string[];
+      metadata?: Record<string, unknown>;
     };
 
     if (!body.missionId || !body.type || !body.message) {
@@ -56,6 +79,14 @@ export async function POST(request: NextRequest) {
       author: body.author ?? "COO",
       authorName: body.authorName ?? "Nova",
       message: body.message,
+      governanceCategory: body.governanceCategory ?? null,
+      replayCategory: body.replayCategory ?? null,
+      continuityCategory: body.continuityCategory ?? null,
+      advisoryLevel: body.advisoryLevel ?? null,
+      replaySeverity: body.replaySeverity ?? null,
+      replaySource: body.replaySource ?? null,
+      replayTags: body.replayTags ?? [],
+      metadata: body.metadata ?? null,
       createdAt: "Just now",
     });
     return ok({ feedItem: created }, { status: 201 });

@@ -613,3 +613,12 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Unified replay wording for scope/window/continuity readability.
 - Added Phase 5 completion documentation for governance replay foundation boundaries.
 
+## 2026-05-28 (Phase 6-1 backend metadata alignment)
+
+- Aligned `feed_items` schema with governance replay metadata columns.
+- Added safe bootstrap migrations for existing DB compatibility.
+- Extended feed repository and API routes for metadata round-trip and metadata-based filters.
+- Hardened domain feed row parsing with defensive JSON handling for tags/metadata fields.
+- Added replay continuity query compatibility normalization (`stable/degraded` legacy mapping).
+- Applied replay window wording consistency helper to CEO and Mission views.
+

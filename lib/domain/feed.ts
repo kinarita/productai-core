@@ -10,6 +10,23 @@ export interface FeedItemRecord {
   authorName: string;
   message: string;
   createdAt: string;
+  governanceCategory?: string | null;
+  replayCategory?: string | null;
+  continuityCategory?: string | null;
+  advisoryLevel?: string | null;
+  replaySeverity?: string | null;
+  replaySource?: string | null;
+  replayTags?: string[] | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+function safeJsonParse<T>(value: string | null): T | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
 }
 
 export function mapFeedItemRow(row: {
@@ -24,7 +41,17 @@ export function mapFeedItemRow(row: {
   author_name: string;
   message: string;
   created_at: string;
+  governance_category?: string | null;
+  replay_category?: string | null;
+  continuity_category?: string | null;
+  advisory_level?: string | null;
+  replay_severity?: string | null;
+  replay_source?: string | null;
+  replay_tags_json?: string | null;
+  metadata_json?: string | null;
 }): FeedItemRecord {
+  const replayTags = safeJsonParse<string[]>(row.replay_tags_json ?? null);
+  const metadata = safeJsonParse<Record<string, unknown>>(row.metadata_json ?? null);
   return {
     id: row.id,
     missionId: row.mission_id,
@@ -37,5 +64,13 @@ export function mapFeedItemRow(row: {
     authorName: row.author_name,
     message: row.message,
     createdAt: row.created_at,
+    governanceCategory: row.governance_category ?? null,
+    replayCategory: row.replay_category ?? null,
+    continuityCategory: row.continuity_category ?? null,
+    advisoryLevel: row.advisory_level ?? null,
+    replaySeverity: row.replay_severity ?? null,
+    replaySource: row.replay_source ?? null,
+    replayTags,
+    metadata,
   };
 }

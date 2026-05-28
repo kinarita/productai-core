@@ -210,8 +210,16 @@ export function RuntimeCostView() {
       if (filterMission !== "all" && session.missionId !== filterMission) return false;
       if (filterReviewState !== "all" && session.processingStatus !== filterReviewState) return false;
       if (filterContinuity !== "all") {
-        if (filterContinuity === "stable" && session.reviewRequired) return false;
-        if (filterContinuity === "degraded" && !session.reviewRequired) return false;
+        if (
+          (filterContinuity === "stable" || filterContinuity === "continuity_stable") &&
+          session.reviewRequired
+        )
+          return false;
+        if (
+          (filterContinuity === "degraded" || filterContinuity === "continuity_advisory") &&
+          !session.reviewRequired
+        )
+          return false;
       }
       return true;
     });

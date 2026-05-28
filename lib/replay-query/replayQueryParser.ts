@@ -10,6 +10,16 @@ function getValue(input: QueryInput, key: string): string | undefined {
   return value;
 }
 
+function normalizeContinuityValue(value: string): string {
+  if (value === "stable") return "continuity_stable";
+  if (value === "degraded") return "continuity_advisory";
+  if (value === "review") return "continuity_review";
+  if (value === "runtime") return "continuity_runtime";
+  if (value === "governance") return "continuity_governance";
+  if (value === "replay") return "continuity_replay";
+  return value;
+}
+
 export function parseReplayQuery(input: QueryInput): ReplayQueryState {
   const state: ReplayQueryState = {
     mission: getValue(input, "mission") ?? replayQueryDefaults.mission,
@@ -17,7 +27,9 @@ export function parseReplayQuery(input: QueryInput): ReplayQueryState {
     eventType: getValue(input, "eventType") ?? replayQueryDefaults.eventType,
     source: getValue(input, "source") ?? replayQueryDefaults.source,
     reasonCategory: getValue(input, "reasonCategory") ?? replayQueryDefaults.reasonCategory,
-    continuity: getValue(input, "continuity") ?? replayQueryDefaults.continuity,
+    continuity: normalizeContinuityValue(
+      getValue(input, "continuity") ?? replayQueryDefaults.continuity
+    ),
     advisory: getValue(input, "advisory") ?? replayQueryDefaults.advisory,
     review: getValue(input, "review") ?? replayQueryDefaults.review,
     governance: getValue(input, "governance") ?? replayQueryDefaults.governance,

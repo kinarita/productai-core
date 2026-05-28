@@ -185,13 +185,13 @@ export function mapFeedRecordToFeedItem(
     updatedAt: record.createdAt,
     syncedAt: markSyncedAt(),
     ...normalizeReplayMetadata({
-      governanceCategory: base?.governanceCategory,
-      replayCategory: base?.replayCategory,
-      continuityCategory: base?.continuityCategory,
-      advisoryLevel: base?.advisoryLevel,
-      replayTags: base?.replayTags,
-      replaySeverity: base?.replaySeverity,
-      replaySource: base?.replaySource,
+      governanceCategory: (record.governanceCategory as OrganizationFeedItem["governanceCategory"]) ?? base?.governanceCategory,
+      replayCategory: (record.replayCategory as OrganizationFeedItem["replayCategory"]) ?? base?.replayCategory,
+      continuityCategory: (record.continuityCategory as OrganizationFeedItem["continuityCategory"]) ?? base?.continuityCategory,
+      advisoryLevel: (record.advisoryLevel as OrganizationFeedItem["advisoryLevel"]) ?? base?.advisoryLevel,
+      replayTags: record.replayTags ?? base?.replayTags,
+      replaySeverity: (record.replaySeverity as OrganizationFeedItem["replaySeverity"]) ?? base?.replaySeverity,
+      replaySource: (record.replaySource as OrganizationFeedItem["replaySource"]) ?? base?.replaySource,
     }),
   };
 }

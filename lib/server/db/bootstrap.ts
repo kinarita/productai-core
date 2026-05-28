@@ -17,6 +17,12 @@ function readSchemaSql() {
 
 function applySchema() {
   db.exec(readSchemaSql());
+  const ensureColumn = (table: string, column: string, definition: string) => {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+    if (!columns.some((c) => c.name === column)) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+  };
   const decisionColumns = db.prepare(`PRAGMA table_info(decisions)`).all() as Array<{ name: string }>;
   if (!decisionColumns.some((c) => c.name === "selected_option")) {
     db.exec(`ALTER TABLE decisions ADD COLUMN selected_option TEXT`);
@@ -25,6 +31,20 @@ function applySchema() {
   if (!taskColumns.some((c) => c.name === "assigned_agent_id")) {
     db.exec(`ALTER TABLE tasks ADD COLUMN assigned_agent_id TEXT`);
   }
+  ensureColumn("feed_items", "governance_category", "TEXT");
+  ensureColumn("feed_items", "replay_category", "TEXT");
+  ensureColumn("feed_items", "continuity_category", "TEXT");
+  ensureColumn("feed_items", "advisory_level", "TEXT");
+  ensureColumn("feed_items", "replay_severity", "TEXT");
+  ensureColumn("feed_items", "replay_source", "TEXT");
+  ensureColumn("feed_items", "replay_tags_json", "TEXT");
+  ensureColumn("feed_items", "metadata_json", "TEXT");
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_feed_replay_category ON feed_items (replay_category, created_at DESC)`
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_feed_continuity_category ON feed_items (continuity_category, created_at DESC)`
+  );
 }
 
 function seedMissions() {
@@ -120,9 +140,13 @@ function seedTasks() {
 function seedFeed() {
   const insert = db.prepare(`
     INSERT OR IGNORE INTO feed_items (
-      id, mission_id, mission_name, task_id, decision_id, type, status, author, author_name, message, created_at
+      id, mission_id, mission_name, task_id, decision_id, type, status, author, author_name, message,
+      governance_category, replay_category, continuity_category, advisory_level, replay_severity, replay_source,
+      replay_tags_json, metadata_json, created_at
     ) VALUES (
-      @id, @missionId, @missionName, @taskId, @decisionId, @type, @status, @author, @authorName, @message, @createdAt
+      @id, @missionId, @missionName, @taskId, @decisionId, @type, @status, @author, @authorName, @message,
+      @governanceCategory, @replayCategory, @continuityCategory, @advisoryLevel, @replaySeverity, @replaySource,
+      @replayTagsJson, @metadataJson, @createdAt
     )
   `);
 
@@ -139,6 +163,14 @@ function seedFeed() {
         author: item.author,
         authorName: item.authorName,
         message: item.message,
+        governanceCategory: item.governanceCategory ?? null,
+        replayCategory: item.replayCategory ?? null,
+        continuityCategory: item.continuityCategory ?? null,
+        advisoryLevel: item.advisoryLevel ?? null,
+        replaySeverity: item.replaySeverity ?? null,
+        replaySource: item.replaySource ?? null,
+        replayTagsJson: JSON.stringify(item.replayTags ?? []),
+        metadataJson: null,
         createdAt: item.timestamp,
       });
     }
