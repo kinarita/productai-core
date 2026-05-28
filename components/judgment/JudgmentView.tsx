@@ -38,6 +38,7 @@ import {
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
+import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 
 const statusVariant = {
   pending: "warning" as const,
@@ -236,6 +237,13 @@ export function JudgmentView({ missionFilter, replayQuery: replayQueryProp }: Ju
         </Card>
       ) : (
         <div className="space-y-6">
+          <ExecutiveWalkthroughPanel
+            replayQuery={replayQuery}
+            replayDiagnostics={replay.diagnostics}
+            attentionCount={decisionAttentionItems.length}
+            linkBasePath="/judgment"
+            compact
+          />
           <Card>
             <p className="text-xs font-medium uppercase tracking-wide text-muted">Decision Context Summary</p>
             {judgmentAttentionContext ? (

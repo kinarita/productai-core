@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-6 executive replay onboarding and walkthrough)
+
+- Added governance replay walkthrough steps and executive walkthrough panel for CEO, Runtime, Mission, and Judgment.
+- Added replay example library with portable drilldown links via buildReplayHref.
+- Added replay literacy helpers, onboarding summary, and local replay tutorial store.
+- Connected Organization Feed attention filters to replay walkthrough entry.
+- Added executive replay onboarding documentation.
+
 ## 2026-05-28 (Phase 7-5 decision attention seed refresh and development stability)
 
 - Added idempotent replay seed refresh service (`refreshDecisionAttentionSeeds`) with INSERT IF MISSING policy.

@@ -66,6 +66,7 @@ import { GovernanceExplainabilityCard } from "@/components/orchestration/Governa
 import { DecisionAttentionQueue } from "@/components/orchestration/DecisionAttentionQueue";
 import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
+import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -892,6 +893,14 @@ export function MissionDetailView({
               </p>
             ) : null}
           </Card>
+
+          <ExecutiveWalkthroughPanel
+            replayQuery={{ ...replayQuery, mission: missionId }}
+            replayDiagnostics={replayDiagnostics}
+            attentionCount={decisionAttentionItems.length}
+            linkBasePath="/runtime-cost"
+            compact
+          />
 
           <DecisionAttentionQueue
             items={decisionAttentionItems}

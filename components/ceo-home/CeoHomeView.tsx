@@ -36,6 +36,7 @@ import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnostic
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
+import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 
 const healthVariant = {
   stable: "success" as const,
@@ -422,6 +423,13 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
             </p>
           ) : null}
         </Card>
+
+        <ExecutiveWalkthroughPanel
+          replayQuery={replayQuery}
+          replayDiagnostics={diagnostics}
+          attentionCount={decisionAttentionItems.length}
+          linkBasePath="/ceo-home"
+        />
 
         <DecisionAttentionQueue
           items={decisionAttentionItems}

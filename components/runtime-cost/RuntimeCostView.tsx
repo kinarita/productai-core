@@ -65,6 +65,7 @@ import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attent
 import { DecisionWorkflowSummary } from "@/components/orchestration/DecisionWorkflowSummary";
 import { fetchReplaySeedDiagnostics } from "@/lib/services/replaySeedRefresh";
 import type { ReplaySeedDiagnostics } from "@/lib/replay-query/replaySeedDiagnostics";
+import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -1320,6 +1321,13 @@ export function RuntimeCostView() {
             </ul>
           </Card>
         ) : null}
+        <ExecutiveWalkthroughPanel
+          replayQuery={replayQuery}
+          replayDiagnostics={replayDiagnostics}
+          attentionCount={decisionAttentionItems.length}
+          linkBasePath="/runtime-cost"
+        />
+
         <Card title="Replay Diagnostics">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-border bg-surface px-3 py-3">

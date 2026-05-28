@@ -462,6 +462,20 @@ export function OrganizationFeedView({
           options={attentionOptions}
           onChange={onAttentionFilterChange}
         />
+        <Link
+          href={buildReplayHref("/runtime-cost", {
+            ...replayQuery,
+            governanceAttention:
+              activeAttentionFilter !== "all" ? activeAttentionFilter : "attention",
+            governance:
+              activeGovernanceFilter === "decision_attention"
+                ? "decision_attention"
+                : replayQuery.governance,
+          })}
+          className="ml-auto rounded-md border border-border bg-background px-2.5 py-1 font-medium text-accent transition-colors hover:bg-surface"
+        >
+          Open replay walkthrough →
+        </Link>
       </div>
       <ReplayQuerySummary query={replayQuery} />
       {process.env.NODE_ENV !== "production" ? (

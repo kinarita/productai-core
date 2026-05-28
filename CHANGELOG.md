@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-6 executive replay onboarding and walkthrough)
+
+- Governance replay walkthrough (`replayWalkthrough.ts`, `GovernanceReplayWalkthrough`) with four interpretive steps.
+- Replay example library and `ExecutiveWalkthroughPanel` with diagnostics reuse and scope quick links.
+- `ReplayOnboardingSummary`, `replayLiteracy.ts`, and `replayTutorialStore` (localStorage-only).
+- Cross-view onboarding on CEO Home, Runtime & Cost, Mission Detail, Judgment, and Organization Feed CTA.
+- Documentation: `docs/PHASE7_EXECUTIVE_REPLAY_ONBOARDING.md`.
+
 ### Added (Phase 7-5 decision attention seed refresh and development stability)
 
 - Idempotent decision attention seed refresh (`refreshDecisionAttentionSeeds`) with INSERT IF MISSING semantics.
