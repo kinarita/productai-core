@@ -62,6 +62,7 @@ import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import type { MissionHealth, MissionStatus, TaskStatus } from "@/types/productai";
 import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
+import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -862,6 +863,21 @@ export function MissionDetailView({
                 Dev normalization summary: alias normalized {validationMetrics.aliasNormalizationCount} times.
               </p>
             ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Governance Explainability"
+              description="Mission-level explainability aligned with cross-view replay diagnostics"
+            />
+            <GovernanceExplainabilityCard
+              explanation={missionProcessingAnalytics.continuityExplanation}
+              breakdown={missionProcessingAnalytics.scoreBreakdown}
+              replayDiagnostics={replayDiagnostics}
+              scope={replayQuery.scope}
+              replayWindow={replayQuery.replayWindow}
+              compact
+            />
           </Card>
 
           <Card>

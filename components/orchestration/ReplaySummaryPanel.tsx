@@ -1,4 +1,6 @@
 import type { ExecutiveReplaySummary } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
+import { getReplayDensityWording } from "@/lib/replay-query/replayDiagnosticsLabels";
+import { ReplayDiagnosticsDefinition } from "@/components/orchestration/ReplayDiagnosticsDefinition";
 
 export function ReplaySummaryPanel({
   summary,
@@ -21,9 +23,7 @@ export function ReplaySummaryPanel({
       </p>
       <p className="text-xs text-muted">
         Viewing {summary.activeReplayWindow} operational replay window · {summary.visibleEventCount} visible events ·{" "}
-        {summary.timelineDensity === "compact"
-          ? "condensed replay view for executive readability"
-          : "expanded replay context for continuity visibility"}
+        {getReplayDensityWording(summary.timelineDensity)}
       </p>
       <p className="text-xs text-muted">{summary.continuityContext}</p>
       <p className="text-xs text-muted">{summary.governanceFocusSummary}</p>
@@ -40,6 +40,7 @@ export function ReplaySummaryPanel({
           <li key={item}>- {item}</li>
         ))}
       </ul>
+      <ReplayDiagnosticsDefinition compact />
       <button
         type="button"
         onClick={onCopy}

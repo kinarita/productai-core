@@ -60,6 +60,7 @@ import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 import { replaySeverityOptions } from "@/lib/replay-query/replayTokens";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 import { buildReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
+import { ReplayDiagnosticsDefinition } from "@/components/orchestration/ReplayDiagnosticsDefinition";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -1069,6 +1070,8 @@ export function RuntimeCostView() {
             replayExplanation={replayExplanation}
             continuityShiftExplanation={continuityShiftExplanation}
             replayDiagnostics={replayDiagnostics}
+            scope={replayQuery.scope}
+            replayWindow={replayQuery.replayWindow}
           />
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <Link href={`/organization-feed?gov=continuity_events`} className="font-medium text-accent hover:underline">
@@ -1271,6 +1274,14 @@ export function RuntimeCostView() {
                 <li key={warning}>- {warning}</li>
               ))}
             </ul>
+          ) : null}
+          <div className="mt-3">
+            <ReplayDiagnosticsDefinition compact />
+          </div>
+          {process.env.NODE_ENV !== "production" ? (
+            <p className="mt-2 text-[11px] text-muted">
+              Replay diagnostics remain advisory and do not trigger automated governance actions.
+            </p>
           ) : null}
         </Card>
       </div>

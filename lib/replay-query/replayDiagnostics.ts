@@ -3,6 +3,12 @@ import type { GovernanceMemoryItem, GovernanceTimelineEvent } from "@/lib/orches
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { getReplayValidationMetrics } from "@/lib/replay-query/replayValidationMetrics";
 import { replayDiagnosticsConfig } from "@/lib/replay-query/replayDiagnosticsConfig";
+import { replayDiagnosticsWarnings } from "@/lib/replay-query/replayDiagnosticsLabels";
+import {
+  buildReplayConfidenceExplanation,
+  buildReplayContinuityExplanation,
+  buildReplayVisibilityExplanation,
+} from "@/lib/replay-query/replayDiagnosticsHelpers";
 
 export interface ReplayDiagnostics {
   generatedAt: string;
@@ -80,41 +86,28 @@ export function buildReplayDiagnostics(input: {
       : replayVisibilityScore >= replayDiagnosticsConfig.confidenceThresholds.moderateScore
         ? "moderate"
         : "limited";
-  const continuityExplanation =
-    continuityStability === "stable"
-      ? "Replay continuity appears stable across recent governance windows."
-      : continuityStability === "elevated_review"
-        ? "Replay continuity interpretation may reflect elevated review concentration in the selected window."
-        : "Continuity interpretation may be influenced by elevated advisory density in the selected replay scope.";
-  const visibilityExplanation = `This replay view emphasizes ${input.replayQuery.scope.replaceAll(
-    "_",
-    " "
-  )} continuity within the ${input.replayQuery.replayWindow} operational window.`;
-  const confidenceExplanation =
-    replayConfidence === "high"
-      ? "Replay confidence is high because metadata coverage and continuity consistency remain strong."
-      : replayConfidence === "moderate"
-        ? "Replay confidence is moderate because continuity interpretation includes concentrated review or advisory context."
-        : "Replay confidence is limited because metadata coverage or replay concentration reduces interpretability.";
+  const continuityExplanation = buildReplayContinuityExplanation(continuityStability);
+  const visibilityExplanation = buildReplayVisibilityExplanation(input.replayQuery);
+  const confidenceExplanation = buildReplayConfidenceExplanation(replayConfidence);
 
   const warnings: string[] = [];
   if (metadataCompletenessRatio < replayDiagnosticsConfig.completenessWarningThreshold) {
-    warnings.push("Metadata completeness is reduced in this replay view.");
+    warnings.push(replayDiagnosticsWarnings.metadataCompletenessReduced);
   }
   if (compressedEventCount && compressedEventCount > 0)
-    warnings.push("Replay view has been condensed for executive readability.");
+    warnings.push(replayDiagnosticsWarnings.replayCondensed);
   if (advisoryDensity >= replayDiagnosticsConfig.advisoryDensityThreshold) {
-    warnings.push("Advisory density is elevated in the selected replay window.");
+    warnings.push(replayDiagnosticsWarnings.advisoryDensityElevated);
   }
   if (reviewDensity >= replayDiagnosticsConfig.reviewDensityThreshold) {
-    warnings.push("Review concentration is elevated in the selected replay scope.");
+    warnings.push(replayDiagnosticsWarnings.continuityReviewConcentration);
   }
   if (input.memoryItems.some((item) => item.memoryType === "repeated_review_pattern")) {
-    warnings.push("Historical governance memory indicates recurring review concentration in this scope.");
+    warnings.push(replayDiagnosticsWarnings.historicalReviewConcentration);
   }
   const metrics = getReplayValidationMetrics();
   if (metrics.aliasNormalizationCount > 0) {
-    warnings.push("Legacy replay aliases were normalized to canonical taxonomy.");
+    warnings.push(replayDiagnosticsWarnings.legacyAliasNormalized);
   }
 
   return {

@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 6-6 replay diagnostics explainability completion and governance polish)
+
+- Shared replay diagnostics terminology labels and definitions for consistent cross-view wording.
+- Governance explainability portability completion for CEO and Mission views using aligned diagnostics semantics.
+- Replay summary and operational panel density wording stabilization via shared helper.
+- Replay diagnostics definition block for executive-readable observability guidance.
+- Documentation: `docs/PHASE6_COMPLETION_SUMMARY.md`.
+
 ### Added (Phase 6-5 cross-view replay diagnostics consistency)
 
 - Replay diagnostics configuration module for weights and thresholds.

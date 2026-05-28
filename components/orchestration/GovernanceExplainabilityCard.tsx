@@ -1,6 +1,7 @@
 import { ContinuityScoreBreakdown } from "@/components/orchestration/ContinuityScoreBreakdown";
 import type { GovernanceContinuityExplanation } from "@/lib/orchestration/processing/processingTypes";
 import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
+import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
 
 export function GovernanceExplainabilityCard({
   explanation,
@@ -12,6 +13,9 @@ export function GovernanceExplainabilityCard({
   replayVisibilityExplanation,
   replayConfidenceExplanation,
   replayDiagnostics,
+  scope,
+  replayWindow,
+  compact,
 }: {
   explanation: GovernanceContinuityExplanation;
   breakdown: {
@@ -28,6 +32,9 @@ export function GovernanceExplainabilityCard({
   replayVisibilityExplanation?: string;
   replayConfidenceExplanation?: string;
   replayDiagnostics?: ReplayDiagnostics;
+  scope?: string;
+  replayWindow?: "latest" | "short" | "medium" | "extended";
+  compact?: boolean;
 }) {
   const diagnosticsContinuity = replayDiagnostics?.continuityExplanation ?? replayDiagnosticsExplanation;
   const diagnosticsVisibility = replayDiagnostics?.visibilityExplanation ?? replayVisibilityExplanation;
@@ -68,8 +75,14 @@ export function GovernanceExplainabilityCard({
           {diagnosticsConfidence}
         </p>
       ) : null}
+      {scope || replayWindow ? (
+        <p className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
+          Explainability scope: {scope?.replaceAll("_", " ") ?? "organization"} ·{" "}
+          {replayWindow ? replayWindowDescriptions[replayWindow] : "Balanced governance replay"}
+        </p>
+      ) : null}
       <ContinuityScoreBreakdown breakdown={breakdown} />
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className={`grid gap-2 ${compact ? "sm:grid-cols-1" : "sm:grid-cols-3"}`}>
         <div className="rounded-md border border-border bg-background p-2">
           <p className="text-xs font-medium text-muted">Stability factors</p>
           <ul className="mt-1 space-y-1 text-xs text-muted">

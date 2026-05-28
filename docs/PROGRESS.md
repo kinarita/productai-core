@@ -658,3 +658,11 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Updated governance explainability component for portable replay diagnostics props.
 - Added Phase 6 cross-view diagnostics consistency documentation.
 
+## 2026-05-28 (Phase 6-6 replay diagnostics explainability and Phase completion polish)
+
+- Added diagnostics terminology labels and reusable definitions for replay observability readability.
+- Completed GovernanceExplainabilityCard portability by placing aligned explainability blocks in CEO and Mission views.
+- Unified replay density wording with shared helper semantics for summary and replay panels.
+- Added replay diagnostics configuration-driven and helper-driven wording consistency polish across views.
+- Added Phase 6 completion documentation covering backend integrity, taxonomy, diagnostics, explainability, and advisory boundaries.
+

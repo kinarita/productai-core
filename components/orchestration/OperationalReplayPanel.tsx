@@ -2,6 +2,7 @@ import { ExecutiveSnapshotCard } from "@/components/orchestration/ExecutiveSnaps
 import { GovernanceTimeline } from "@/components/orchestration/GovernanceTimeline";
 import type { GovernanceReplayBundle } from "@/lib/orchestration/governance-history/governanceHistoryTypes";
 import { getContinuityStabilityLabel } from "@/lib/replay-query/replayDiagnosticsHelpers";
+import { getReplayDensityWording } from "@/lib/replay-query/replayDiagnosticsLabels";
 
 export function OperationalReplayPanel({
   replay,
@@ -26,7 +27,7 @@ export function OperationalReplayPanel({
         </p>
         {replay.diagnostics.compressedEventCount ? (
           <p className="mb-2 text-xs text-muted">
-            Replay view has been condensed for executive readability.
+            {getReplayDensityWording("compact")}.
           </p>
         ) : null}
         <GovernanceTimeline events={replay.events} missionNameMap={missionNameMap} maxEvents={maxEvents} />

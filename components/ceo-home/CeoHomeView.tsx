@@ -23,6 +23,7 @@ import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import { ReplayNavigationContext } from "@/components/orchestration/ReplayNavigationContext";
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
+import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
 import { getDependencyWarnings } from "@/lib/task/taskDependencies";
 import { getImportantTasks, getRecentlyCreatedTasks } from "@/lib/task/taskSelectors";
 import { getBlockerAge } from "@/lib/task/missionExecutionInsights";
@@ -399,6 +400,17 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
               Dev normalization summary: alias normalized {validationMetrics.aliasNormalizationCount} times.
             </p>
           ) : null}
+        </Card>
+
+        <Card title="Governance Explainability" description="Cross-view explainability semantics aligned with runtime diagnostics">
+          <GovernanceExplainabilityCard
+            explanation={processingAnalytics.continuityExplanation}
+            breakdown={processingAnalytics.scoreBreakdown}
+            replayDiagnostics={diagnostics}
+            scope={replayQuery.scope}
+            replayWindow={replayQuery.replayWindow}
+            compact
+          />
         </Card>
 
         <Card title="Executive Governance Snapshot" description="Current governance context and focus">
