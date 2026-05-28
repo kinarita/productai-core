@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-3 decision attention persistence and query continuity)
+
+- Extended feed_items schema, repository, domain mapper, API, and service layers for decision attention metadata persistence.
+- Added idempotent SQLite migration and governanceAttention query filters across feed list endpoints.
+- Completed Organization Feed attention chip filters with URL-synced governanceAttention lifecycle filtering.
+- Propagated governanceAttention replay query context across CEO, Runtime, Mission, and Judgment views.
+- Added decision attention metadata verification script and persistence documentation.
+
 ## 2026-05-28 (Phase 7-2 decision attention feed traceability)
 
 - Extended feed metadata with decision attention identifiers, lifecycle, severity, and continuity context fields.

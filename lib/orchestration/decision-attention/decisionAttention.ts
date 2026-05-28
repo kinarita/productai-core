@@ -172,6 +172,34 @@ export function buildDecisionAttentionSummary(items: DecisionAttentionItem[]): s
   return `Current executive focus includes ${items.length} replay-informed decision attention item(s) across continuity and governance review context.`;
 }
 
+export function buildJudgmentAttentionContextMessage(replayQuery: ReplayQueryState): string | null {
+  if (replayQuery.governanceAttention === "all") return null;
+  const label = replayQuery.governanceAttention.replaceAll("_", " ");
+  return `Current judgment view is informed by executive attention context: ${label}. Decision attention context was preserved across replay and feed views.`;
+}
+
+export function matchesGovernanceAttentionFilter(
+  item: {
+    type: string;
+    decisionAttentionId?: string;
+    decisionAttentionLifecycle?: string;
+    decisionAttentionCategory?: string;
+  },
+  governanceAttention: string
+): boolean {
+  if (governanceAttention === "all") return true;
+  if (governanceAttention === "attention" || governanceAttention === "decision_attention") {
+    return Boolean(item.decisionAttentionId) || item.type.startsWith("decision_attention_");
+  }
+  if (["generated", "reviewed", "resolved", "deferred"].includes(governanceAttention)) {
+    return (
+      item.decisionAttentionLifecycle === governanceAttention ||
+      item.type === `decision_attention_${governanceAttention}`
+    );
+  }
+  return item.decisionAttentionCategory === governanceAttention;
+}
+
 export function buildDecisionAttentionTraceability(items: DecisionAttentionItem[]): string {
   if (items.length === 0) {
     return "Decision attention traceability remains stable with no active replay-linked review concentration.";

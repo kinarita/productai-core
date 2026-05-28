@@ -39,11 +39,25 @@ function applySchema() {
   ensureColumn("feed_items", "replay_source", "TEXT");
   ensureColumn("feed_items", "replay_tags_json", "TEXT");
   ensureColumn("feed_items", "metadata_json", "TEXT");
+  ensureColumn("feed_items", "decision_attention_id", "TEXT");
+  ensureColumn("feed_items", "decision_attention_severity", "TEXT");
+  ensureColumn("feed_items", "decision_attention_category", "TEXT");
+  ensureColumn("feed_items", "decision_attention_reason", "TEXT");
+  ensureColumn("feed_items", "decision_attention_source", "TEXT");
+  ensureColumn("feed_items", "decision_attention_replay_confidence", "TEXT");
+  ensureColumn("feed_items", "decision_attention_continuity_category", "TEXT");
+  ensureColumn("feed_items", "decision_attention_lifecycle", "TEXT");
   db.exec(
     `CREATE INDEX IF NOT EXISTS idx_feed_replay_category ON feed_items (replay_category, created_at DESC)`
   );
   db.exec(
     `CREATE INDEX IF NOT EXISTS idx_feed_continuity_category ON feed_items (continuity_category, created_at DESC)`
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_feed_decision_attention_lifecycle ON feed_items (decision_attention_lifecycle, created_at DESC)`
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_feed_decision_attention_id ON feed_items (decision_attention_id, created_at DESC)`
   );
 }
 

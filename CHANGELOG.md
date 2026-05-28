@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-3 decision attention persistence and query continuity)
+
+- Decision attention metadata columns on feed_items with safe idempotent migration.
+- Feed repository/API/mapper/service round-trip for decision attention fields and governanceAttention filters.
+- Organization Feed attention lifecycle chips with URL-synced governanceAttention query state.
+- Cross-view governanceAttention context propagation for CEO, Runtime, Mission, and Judgment.
+- Verification script: `scripts/verifyDecisionAttentionFeedMetadata.mjs`.
+- Documentation: `docs/PHASE7_DECISION_ATTENTION_PERSISTENCE.md`.
+
 ### Added (Phase 7-2 decision attention feed traceability)
 
 - Decision attention metadata fields on organization feed items for lifecycle and replay continuity context.

@@ -2,6 +2,12 @@ import { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/server/api/response";
 import { bootstrapDatabase } from "@/lib/server/db/bootstrap";
 import {
+  coerceDecisionAttentionLifecycle,
+  coerceDecisionAttentionSeverity,
+  coerceGovernanceAttentionFilter,
+  validateDecisionAttentionMetadata,
+} from "@/lib/replay-query/decisionAttentionValidation";
+import {
   coerceContinuityCategory,
   coerceReplayCategory,
   coerceReplaySeverity,
@@ -26,12 +32,27 @@ export async function GET(request: NextRequest) {
     const continuityCategoryRaw = searchParams.get("continuityCategory") ?? undefined;
     const replaySeverityRaw = searchParams.get("replaySeverity") ?? undefined;
     const replaySourceRaw = searchParams.get("replaySource") ?? undefined;
+    const governanceAttentionRaw =
+      searchParams.get("governanceAttention") ?? searchParams.get("attention") ?? undefined;
+    const decisionAttentionId = searchParams.get("decisionAttentionId") ?? undefined;
+    const decisionAttentionSeverityRaw = searchParams.get("decisionAttentionSeverity") ?? undefined;
+    const decisionAttentionLifecycleRaw = searchParams.get("decisionAttentionLifecycle") ?? undefined;
+
     const replayCategory = replayCategoryRaw ? coerceReplayCategory(replayCategoryRaw) : undefined;
     const continuityCategory = continuityCategoryRaw
       ? coerceContinuityCategory(continuityCategoryRaw)
       : undefined;
     const replaySeverity = replaySeverityRaw ? coerceReplaySeverity(replaySeverityRaw) : undefined;
     const replaySource = replaySourceRaw ? coerceReplaySource(replaySourceRaw) : undefined;
+    const governanceAttention = governanceAttentionRaw
+      ? coerceGovernanceAttentionFilter(governanceAttentionRaw)
+      : undefined;
+    const decisionAttentionSeverity = decisionAttentionSeverityRaw
+      ? coerceDecisionAttentionSeverity(decisionAttentionSeverityRaw)
+      : undefined;
+    const decisionAttentionLifecycle = decisionAttentionLifecycleRaw
+      ? coerceDecisionAttentionLifecycle(decisionAttentionLifecycleRaw)
+      : undefined;
 
     const feed = feedRepository.list({
       missionId,
@@ -43,6 +64,10 @@ export async function GET(request: NextRequest) {
       continuityCategory,
       replaySeverity,
       replaySource,
+      governanceAttention: governanceAttention === "all" ? undefined : governanceAttention,
+      decisionAttentionId,
+      decisionAttentionSeverity,
+      decisionAttentionLifecycle,
     });
     return ok({ feed });
   } catch {
@@ -72,6 +97,14 @@ export async function POST(request: NextRequest) {
       replaySource?: string;
       replayTags?: string[];
       metadata?: Record<string, unknown>;
+      decisionAttentionId?: string;
+      decisionAttentionSeverity?: string;
+      decisionAttentionCategory?: string;
+      decisionAttentionReason?: string;
+      decisionAttentionSource?: string;
+      decisionAttentionReplayConfidence?: string;
+      decisionAttentionContinuityCategory?: string;
+      decisionAttentionLifecycle?: string;
     };
 
     const metadata = validateReplayMetadata({
@@ -82,6 +115,16 @@ export async function POST(request: NextRequest) {
       replaySeverity: body.replaySeverity,
       replaySource: body.replaySource,
       replayTags: body.replayTags,
+    });
+    const attention = validateDecisionAttentionMetadata({
+      decisionAttentionId: body.decisionAttentionId,
+      decisionAttentionSeverity: body.decisionAttentionSeverity,
+      decisionAttentionCategory: body.decisionAttentionCategory,
+      decisionAttentionReason: body.decisionAttentionReason,
+      decisionAttentionSource: body.decisionAttentionSource,
+      decisionAttentionReplayConfidence: body.decisionAttentionReplayConfidence,
+      decisionAttentionContinuityCategory: body.decisionAttentionContinuityCategory,
+      decisionAttentionLifecycle: body.decisionAttentionLifecycle,
     });
     const rawMetadata = body.metadata;
     const safeMetadata =
@@ -115,6 +158,14 @@ export async function POST(request: NextRequest) {
       replaySource: metadata.replaySource,
       replayTags: metadata.replayTags,
       metadata: safeMetadata,
+      decisionAttentionId: attention.decisionAttentionId ?? null,
+      decisionAttentionSeverity: attention.decisionAttentionSeverity ?? null,
+      decisionAttentionCategory: attention.decisionAttentionCategory ?? null,
+      decisionAttentionReason: attention.decisionAttentionReason ?? null,
+      decisionAttentionSource: attention.decisionAttentionSource ?? null,
+      decisionAttentionReplayConfidence: attention.decisionAttentionReplayConfidence ?? null,
+      decisionAttentionContinuityCategory: attention.decisionAttentionContinuityCategory ?? null,
+      decisionAttentionLifecycle: attention.decisionAttentionLifecycle ?? null,
       createdAt: "Just now",
     });
     return ok({ feedItem: created }, { status: 201 });

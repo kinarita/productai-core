@@ -27,6 +27,7 @@ import { buildReplayQuery } from "@/lib/replay-query/replayQueryBuilder";
 import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayMetadata } from "@/lib/replay-query/replayMetadata";
+import { matchesGovernanceAttentionFilter } from "@/lib/orchestration/decision-attention/decisionAttention";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -108,6 +109,7 @@ interface OrganizationFeedViewProps {
   typeFilter?: string;
   statusFilter?: string;
   governanceFilter?: string;
+  initialReplayQuery?: ReplayQueryState;
 }
 
 function matchesStatus(item: OrganizationFeedItem, status?: string) {
@@ -135,6 +137,7 @@ export function OrganizationFeedView({
   typeFilter,
   statusFilter,
   governanceFilter,
+  initialReplayQuery,
 }: OrganizationFeedViewProps) {
   useMissionFilterFromUrl(missionFilter);
   useLiveOrganizationFeed(true);
@@ -145,23 +148,16 @@ export function OrganizationFeedView({
   const setFeedFilter = useUiStore((s) => s.setFeedFilter);
   const missions = useMissionStore((s) => s.missions);
   const missionNameMap = Object.fromEntries(missions.map((m) => [m.id, m.name]));
-  const [replayQuery, setReplayQuery] = useState<ReplayQueryState>(() =>
-    parseReplayQuery({
-      mission: missionFilter,
-      governance: governanceFilter,
-      severity: undefined,
-      continuity: undefined,
-      advisory: undefined,
-      review: undefined,
-      eventType: undefined,
-      source: undefined,
-      reasonCategory: undefined,
-      governanceAttention: undefined,
-      replayWindow: undefined,
-      scope: undefined,
-    })
+  const [replayQuery, setReplayQuery] = useState<ReplayQueryState>(
+    () =>
+      initialReplayQuery ??
+      parseReplayQuery({
+        mission: missionFilter,
+        governance: governanceFilter,
+      })
   );
   const [activeGovernanceFilter, setActiveGovernanceFilter] = useState<string>(replayQuery.governance);
+  const [activeAttentionFilter, setActiveAttentionFilter] = useState<string>(replayQuery.governanceAttention);
   const filterChipClass =
     "rounded-md border border-border bg-surface px-2 py-1 text-muted";
 
@@ -173,7 +169,8 @@ export function OrganizationFeedView({
     );
     setReplayQuery(parsed);
     setActiveGovernanceFilter(parsed.governance);
-  }, [governanceFilter]);
+    setActiveAttentionFilter(parsed.governanceAttention);
+  }, [governanceFilter, initialReplayQuery]);
 
   let filtered = feedItems;
 
@@ -231,6 +228,9 @@ export function OrganizationFeedView({
           item.replayCategory === "replay_timeline" || item.replayCategory === "replay_memory"
         );
       }
+      if (activeGovernanceFilter === "decision_attention") {
+        return matchesGovernanceAttentionFilter(item, "decision_attention");
+      }
       return true;
     });
   }
@@ -251,11 +251,8 @@ export function OrganizationFeedView({
     filtered = filtered.filter((item) => item.governanceCategory === "governance_review");
   }
   if (replayQuery.governanceAttention !== "all") {
-    filtered = filtered.filter(
-      (item) =>
-        item.type.startsWith("decision_attention_") ||
-        item.decisionAttentionCategory === replayQuery.governanceAttention ||
-        item.decisionAttentionId !== undefined
+    filtered = filtered.filter((item) =>
+      matchesGovernanceAttentionFilter(item, replayQuery.governanceAttention)
     );
   }
   const govOptions = useMemo(
@@ -272,12 +269,29 @@ export function OrganizationFeedView({
     ],
     []
   );
+  const attentionOptions = useMemo(
+    () => [
+      { id: "all", label: "all" },
+      { id: "attention", label: "attention" },
+      { id: "generated", label: "generated" },
+      { id: "reviewed", label: "reviewed" },
+      { id: "resolved", label: "resolved" },
+      { id: "deferred", label: "deferred" },
+    ],
+    []
+  );
   const onGovernanceFilterChange = (value: string) => {
     setActiveGovernanceFilter(value);
     const next = mergeReplayQuery(replayQuery, {
       governance: value,
-      governanceAttention: value === "decision_attention" ? "decision_attention" : "all",
+      governanceAttention: value === "decision_attention" ? "decision_attention" : replayQuery.governanceAttention,
     });
+    setReplayQuery(next);
+    window.history.replaceState({}, "", `/organization-feed${buildReplayQuery(next)}`);
+  };
+  const onAttentionFilterChange = (value: string) => {
+    setActiveAttentionFilter(value);
+    const next = mergeReplayQuery(replayQuery, { governanceAttention: value });
     setReplayQuery(next);
     window.history.replaceState({}, "", `/organization-feed${buildReplayQuery(next)}`);
   };
@@ -423,6 +437,14 @@ export function OrganizationFeedView({
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
         <span className="text-muted">Governance:</span>
         <ReplayFilterChips value={activeGovernanceFilter} options={govOptions} onChange={onGovernanceFilterChange} />
+      </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted">Attention:</span>
+        <ReplayFilterChips
+          value={activeAttentionFilter}
+          options={attentionOptions}
+          onChange={onAttentionFilterChange}
+        />
       </div>
       <ReplayQuerySummary query={replayQuery} />
 

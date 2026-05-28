@@ -38,6 +38,10 @@ export function parseReplayQuery(input: QueryInput): ReplayQueryState {
   if (legacyGov && state.governance === "all") state.governance = legacyGov;
   const legacyCategory = getValue(input, "category");
   if (legacyCategory && state.reasonCategory === "all") state.reasonCategory = legacyCategory;
+  const legacyAttention = getValue(input, "attention");
+  if (legacyAttention && state.governanceAttention === "all") {
+    state.governanceAttention = legacyAttention;
+  }
   return state;
 }
 

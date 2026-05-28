@@ -31,7 +31,12 @@ import { parseReplayQuery } from "@/lib/replay-query/replayQueryParser";
 import { GovernanceExplainabilityCard } from "@/components/orchestration/GovernanceExplainabilityCard";
 import { buildProcessingAnalytics } from "@/lib/orchestration/processing/processingAnalytics";
 import { DecisionWorkflowSummary } from "@/components/orchestration/DecisionWorkflowSummary";
-import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attention/decisionAttention";
+import {
+  buildDecisionAttentionQueue,
+  buildJudgmentAttentionContextMessage,
+} from "@/lib/orchestration/decision-attention/decisionAttention";
+import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
+import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 
 const statusVariant = {
@@ -42,9 +47,10 @@ const statusVariant = {
 
 interface JudgmentViewProps {
   missionFilter?: string;
+  replayQuery?: ReplayQueryState;
 }
 
-export function JudgmentView({ missionFilter }: JudgmentViewProps) {
+export function JudgmentView({ missionFilter, replayQuery: replayQueryProp }: JudgmentViewProps) {
   useMissionFilterFromUrl(missionFilter);
 
   const decisions = useOrganizationStore((s) => s.decisions);
@@ -63,13 +69,15 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
   const processingSessions = useProcessingStore((s) => s.getSessions());
   const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
-  const replayQuery = useMemo(
-    () =>
-      parseReplayQuery(
-        typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search)
-      ),
-    []
-  );
+  const replayQuery = useMemo(() => {
+    if (replayQueryProp) {
+      return missionFilter ? { ...replayQueryProp, mission: missionFilter } : replayQueryProp;
+    }
+    return parseReplayQuery(
+      typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search)
+    );
+  }, [missionFilter, replayQueryProp]);
+  const judgmentAttentionContext = buildJudgmentAttentionContextMessage(replayQuery);
   const filteredProcessingSessions = useMemo(
     () =>
       processingSessions.filter((session) =>
@@ -230,6 +238,9 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
         <div className="space-y-6">
           <Card>
             <p className="text-xs font-medium uppercase tracking-wide text-muted">Decision Context Summary</p>
+            {judgmentAttentionContext ? (
+              <p className="mt-2 text-xs text-muted">{judgmentAttentionContext}</p>
+            ) : null}
             <p className="mt-2 text-xs text-muted">{replay.diagnostics.visibilityExplanation}</p>
             <p className="mt-1 text-xs text-muted">{replay.diagnostics.confidenceExplanation}</p>
             <GovernanceExplainabilityCard
@@ -253,6 +264,20 @@ export function JudgmentView({ missionFilter }: JudgmentViewProps) {
                 ))}
               </ul>
             ) : null}
+            <div className="mt-3 flex flex-wrap gap-3 text-xs">
+              <Link
+                href={buildReplayHref("/organization-feed", {
+                  ...replayQuery,
+                  governanceAttention: replayQuery.governanceAttention === "all" ? "attention" : replayQuery.governanceAttention,
+                })}
+                className="font-medium text-accent hover:underline"
+              >
+                Open attention feed trace →
+              </Link>
+              <Link href={buildReplayHref("/runtime-cost", replayQuery)} className="font-medium text-accent hover:underline">
+                Open replay context →
+              </Link>
+            </div>
           </Card>
           {filtered.map((decision) => {
             const isResolved = decision.status !== "pending";

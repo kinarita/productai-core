@@ -173,6 +173,12 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
       <div className="space-y-8">
         <ReplayQuerySummary query={replayQuery} />
         <p className="text-xs text-muted">{replayWindowDescriptions[replayQuery.replayWindow]}</p>
+        {replayQuery.governanceAttention !== "all" ? (
+          <p className="text-xs text-muted">
+            Executive attention context is active ({replayQuery.governanceAttention.replaceAll("_", " ")}) and
+            preserved across replay navigation.
+          </p>
+        ) : null}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Organization Health"

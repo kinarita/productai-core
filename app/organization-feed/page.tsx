@@ -1,23 +1,21 @@
 import { OrganizationFeedView } from "@/components/organization-feed/OrganizationFeedView";
+import { parseReplayQuery } from "@/lib/replay-query/replayQueryParser";
 
 interface OrganizationFeedPageProps {
-  searchParams: Promise<{
-    mission?: string;
-    task?: string;
-    type?: string;
-    status?: string;
-    gov?: string;
-    severity?: string;
-    continuity?: string;
-    advisory?: string;
-    review?: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function OrganizationFeedPage({
   searchParams,
 }: OrganizationFeedPageProps) {
-  const { mission, task, type, status, gov } = await searchParams;
+  const params = await searchParams;
+  const replayQuery = parseReplayQuery(params);
+  const mission = typeof params.mission === "string" ? params.mission : undefined;
+  const task = typeof params.task === "string" ? params.task : undefined;
+  const type = typeof params.type === "string" ? params.type : undefined;
+  const status = typeof params.status === "string" ? params.status : undefined;
+  const gov = typeof params.gov === "string" ? params.gov : undefined;
+
   return (
     <OrganizationFeedView
       missionFilter={mission}
@@ -25,6 +23,7 @@ export default async function OrganizationFeedPage({
       typeFilter={type}
       statusFilter={status}
       governanceFilter={gov}
+      initialReplayQuery={replayQuery}
     />
   );
 }

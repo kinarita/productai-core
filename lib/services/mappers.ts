@@ -61,6 +61,14 @@ export function mapFeedItemToCreatePayload(item: Omit<OrganizationFeedItem, "id"
     replayTags: metadata.replayTags,
     replaySeverity: metadata.replaySeverity,
     replaySource: metadata.replaySource,
+    decisionAttentionId: item.decisionAttentionId,
+    decisionAttentionSeverity: item.decisionAttentionSeverity,
+    decisionAttentionCategory: item.decisionAttentionCategory,
+    decisionAttentionReason: item.decisionAttentionReason,
+    decisionAttentionSource: item.decisionAttentionSource,
+    decisionAttentionReplayConfidence: item.decisionAttentionReplayConfidence,
+    decisionAttentionContinuityCategory: item.decisionAttentionContinuityCategory,
+    decisionAttentionLifecycle: item.decisionAttentionLifecycle,
   };
 }
 
@@ -194,6 +202,22 @@ export function mapFeedRecordToFeedItem(
       replaySeverity: (record.replaySeverity as OrganizationFeedItem["replaySeverity"]) ?? base?.replaySeverity,
       replaySource: (record.replaySource as OrganizationFeedItem["replaySource"]) ?? base?.replaySource,
     }),
+    decisionAttentionId: record.decisionAttentionId ?? base?.decisionAttentionId,
+    decisionAttentionSeverity:
+      (record.decisionAttentionSeverity as OrganizationFeedItem["decisionAttentionSeverity"]) ??
+      base?.decisionAttentionSeverity,
+    decisionAttentionCategory: record.decisionAttentionCategory ?? base?.decisionAttentionCategory,
+    decisionAttentionReason: record.decisionAttentionReason ?? base?.decisionAttentionReason,
+    decisionAttentionSource: record.decisionAttentionSource ?? base?.decisionAttentionSource,
+    decisionAttentionReplayConfidence:
+      (record.decisionAttentionReplayConfidence as OrganizationFeedItem["decisionAttentionReplayConfidence"]) ??
+      base?.decisionAttentionReplayConfidence,
+    decisionAttentionContinuityCategory:
+      (record.decisionAttentionContinuityCategory as OrganizationFeedItem["decisionAttentionContinuityCategory"]) ??
+      base?.decisionAttentionContinuityCategory,
+    decisionAttentionLifecycle:
+      (record.decisionAttentionLifecycle as OrganizationFeedItem["decisionAttentionLifecycle"]) ??
+      base?.decisionAttentionLifecycle,
   };
 }
 

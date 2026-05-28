@@ -1124,6 +1124,12 @@ export function RuntimeCostView() {
             </div>
           </div>
           <ReplayQuerySummary query={replayQuery} />
+          {replayQuery.governanceAttention !== "all" ? (
+            <p className="text-xs text-muted">
+              Executive attention context is active ({replayQuery.governanceAttention.replaceAll("_", " ")}) and
+              preserved across replay navigation.
+            </p>
+          ) : null}
           <div className="grid gap-3 lg:grid-cols-2">
             <div>
               <p className="mb-1 text-xs text-muted">Event type</p>

@@ -1,4 +1,13 @@
-import { mapFeedItemRow, type FeedItemRecord } from "@/lib/domain/feed";
+import {
+  FEED_ITEM_SELECT_COLUMNS,
+  mapFeedItemRow,
+  type FeedItemDbRow,
+  type FeedItemRecord,
+} from "@/lib/domain/feed";
+import {
+  coerceGovernanceAttentionFilter,
+  validateDecisionAttentionMetadata,
+} from "@/lib/replay-query/decisionAttentionValidation";
 import { validateReplayMetadata } from "@/lib/replay-query/replayValidation";
 import { db } from "@/lib/server/db/client";
 
@@ -12,6 +21,10 @@ interface ListFeedFilters {
   continuityCategory?: string;
   replaySeverity?: string;
   replaySource?: string;
+  governanceAttention?: string;
+  decisionAttentionId?: string;
+  decisionAttentionSeverity?: string;
+  decisionAttentionLifecycle?: string;
 }
 
 interface CreateFeedInput {
@@ -34,6 +47,14 @@ interface CreateFeedInput {
   replaySource?: string | null;
   replayTags?: string[] | null;
   metadata?: Record<string, unknown> | null;
+  decisionAttentionId?: string | null;
+  decisionAttentionSeverity?: string | null;
+  decisionAttentionCategory?: string | null;
+  decisionAttentionReason?: string | null;
+  decisionAttentionSource?: string | null;
+  decisionAttentionReplayConfidence?: string | null;
+  decisionAttentionContinuityCategory?: string | null;
+  decisionAttentionLifecycle?: string | null;
 }
 
 export class FeedRepository {
@@ -52,6 +73,33 @@ export class FeedRepository {
     ensure("replay_source", "TEXT");
     ensure("replay_tags_json", "TEXT");
     ensure("metadata_json", "TEXT");
+    ensure("decision_attention_id", "TEXT");
+    ensure("decision_attention_severity", "TEXT");
+    ensure("decision_attention_category", "TEXT");
+    ensure("decision_attention_reason", "TEXT");
+    ensure("decision_attention_source", "TEXT");
+    ensure("decision_attention_replay_confidence", "TEXT");
+    ensure("decision_attention_continuity_category", "TEXT");
+    ensure("decision_attention_lifecycle", "TEXT");
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_feed_decision_attention_lifecycle ON feed_items (decision_attention_lifecycle, created_at DESC)`
+    );
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_feed_decision_attention_id ON feed_items (decision_attention_id, created_at DESC)`
+    );
+  }
+
+  private applyGovernanceAttentionFilter(clauses: string[], params: string[], governanceAttention?: string) {
+    const attention = coerceGovernanceAttentionFilter(governanceAttention);
+    if (attention === "all") return;
+    if (attention === "attention" || attention === "decision_attention") {
+      clauses.push("(decision_attention_id IS NOT NULL OR type LIKE 'decision_attention_%')");
+      return;
+    }
+    if (["generated", "reviewed", "resolved", "deferred"].includes(attention)) {
+      clauses.push("(decision_attention_lifecycle = ? OR type = ?)");
+      params.push(attention, `decision_attention_${attention}`);
+    }
   }
 
   list(filters: ListFeedFilters = {}): FeedItemRecord[] {
@@ -95,38 +143,29 @@ export class FeedRepository {
       clauses.push("replay_source = ?");
       params.push(filters.replaySource);
     }
+    if (filters.decisionAttentionId) {
+      clauses.push("decision_attention_id = ?");
+      params.push(filters.decisionAttentionId);
+    }
+    if (filters.decisionAttentionSeverity) {
+      clauses.push("decision_attention_severity = ?");
+      params.push(filters.decisionAttentionSeverity);
+    }
+    if (filters.decisionAttentionLifecycle) {
+      clauses.push("decision_attention_lifecycle = ?");
+      params.push(filters.decisionAttentionLifecycle);
+    }
+    this.applyGovernanceAttentionFilter(clauses, params, filters.governanceAttention);
 
     const whereSql = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
     const rows = db
       .prepare(
-        `SELECT id, mission_id, mission_name, task_id, decision_id, type, status, author, author_name, message,
-                governance_category, replay_category, continuity_category, advisory_level, replay_severity, replay_source,
-                replay_tags_json, metadata_json, created_at
+        `SELECT ${FEED_ITEM_SELECT_COLUMNS}
          FROM feed_items
          ${whereSql}
          ORDER BY created_at DESC, id DESC`
       )
-      .all(...params) as Array<{
-      id: string;
-      mission_id: string;
-      mission_name: string;
-      task_id: string | null;
-      decision_id: string | null;
-      type: string;
-      status: string | null;
-      author: string;
-      author_name: string;
-      message: string;
-      governance_category: string | null;
-      replay_category: string | null;
-      continuity_category: string | null;
-      advisory_level: string | null;
-      replay_severity: string | null;
-      replay_source: string | null;
-      replay_tags_json: string | null;
-      metadata_json: string | null;
-      created_at: string;
-    }>;
+      .all(...params) as FeedItemDbRow[];
 
     return rows.map(mapFeedItemRow);
   }
@@ -135,35 +174,11 @@ export class FeedRepository {
     this.ensureFeedMetadataColumns();
     const row = db
       .prepare(
-        `SELECT id, mission_id, mission_name, task_id, decision_id, type, status, author, author_name, message,
-                governance_category, replay_category, continuity_category, advisory_level, replay_severity, replay_source,
-                replay_tags_json, metadata_json, created_at
+        `SELECT ${FEED_ITEM_SELECT_COLUMNS}
          FROM feed_items
          WHERE id = ?`
       )
-      .get(feedId) as
-      | {
-          id: string;
-          mission_id: string;
-          mission_name: string;
-          task_id: string | null;
-          decision_id: string | null;
-          type: string;
-          status: string | null;
-          author: string;
-          author_name: string;
-          message: string;
-          governance_category: string | null;
-          replay_category: string | null;
-          continuity_category: string | null;
-          advisory_level: string | null;
-          replay_severity: string | null;
-          replay_source: string | null;
-          replay_tags_json: string | null;
-          metadata_json: string | null;
-          created_at: string;
-        }
-      | undefined;
+      .get(feedId) as FeedItemDbRow | undefined;
     return row ? mapFeedItemRow(row) : null;
   }
 
@@ -178,15 +193,33 @@ export class FeedRepository {
       replaySource: input.replaySource ?? undefined,
       replayTags: input.replayTags ?? undefined,
     });
+    const attention = validateDecisionAttentionMetadata({
+      decisionAttentionId: input.decisionAttentionId ?? undefined,
+      decisionAttentionSeverity: input.decisionAttentionSeverity ?? undefined,
+      decisionAttentionCategory: input.decisionAttentionCategory ?? undefined,
+      decisionAttentionReason: input.decisionAttentionReason ?? undefined,
+      decisionAttentionSource: input.decisionAttentionSource ?? undefined,
+      decisionAttentionReplayConfidence: input.decisionAttentionReplayConfidence ?? undefined,
+      decisionAttentionContinuityCategory: input.decisionAttentionContinuityCategory ?? undefined,
+      decisionAttentionLifecycle: input.decisionAttentionLifecycle ?? undefined,
+    });
     db.prepare(
       `INSERT INTO feed_items (
          id, mission_id, mission_name, task_id, decision_id, type, status, author, author_name, message,
          governance_category, replay_category, continuity_category, advisory_level, replay_severity, replay_source,
-         replay_tags_json, metadata_json, created_at
+         replay_tags_json, metadata_json,
+         decision_attention_id, decision_attention_severity, decision_attention_category, decision_attention_reason,
+         decision_attention_source, decision_attention_replay_confidence, decision_attention_continuity_category,
+         decision_attention_lifecycle,
+         created_at
        ) VALUES (
          @id, @missionId, @missionName, @taskId, @decisionId, @type, @status, @author, @authorName, @message,
          @governanceCategory, @replayCategory, @continuityCategory, @advisoryLevel, @replaySeverity, @replaySource,
-         @replayTagsJson, @metadataJson, @createdAt
+         @replayTagsJson, @metadataJson,
+         @decisionAttentionId, @decisionAttentionSeverity, @decisionAttentionCategory, @decisionAttentionReason,
+         @decisionAttentionSource, @decisionAttentionReplayConfidence, @decisionAttentionContinuityCategory,
+         @decisionAttentionLifecycle,
+         @createdAt
        )`
     ).run({
       id: input.id,
@@ -207,6 +240,14 @@ export class FeedRepository {
       replaySource: metadata.replaySource,
       replayTagsJson: JSON.stringify(metadata.replayTags),
       metadataJson: input.metadata ? JSON.stringify(input.metadata) : null,
+      decisionAttentionId: attention.decisionAttentionId ?? null,
+      decisionAttentionSeverity: attention.decisionAttentionSeverity ?? null,
+      decisionAttentionCategory: attention.decisionAttentionCategory ?? null,
+      decisionAttentionReason: attention.decisionAttentionReason ?? null,
+      decisionAttentionSource: attention.decisionAttentionSource ?? null,
+      decisionAttentionReplayConfidence: attention.decisionAttentionReplayConfidence ?? null,
+      decisionAttentionContinuityCategory: attention.decisionAttentionContinuityCategory ?? null,
+      decisionAttentionLifecycle: attention.decisionAttentionLifecycle ?? null,
       createdAt: input.createdAt,
     });
 

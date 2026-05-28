@@ -20,6 +20,14 @@ interface CreateFeedInput {
   replaySource?: string;
   replayTags?: string[];
   metadata?: Record<string, unknown>;
+  decisionAttentionId?: string;
+  decisionAttentionSeverity?: string;
+  decisionAttentionCategory?: string;
+  decisionAttentionReason?: string;
+  decisionAttentionSource?: string;
+  decisionAttentionReplayConfidence?: string;
+  decisionAttentionContinuityCategory?: string;
+  decisionAttentionLifecycle?: string;
 }
 
 export async function fetchFeed(params: {
@@ -32,6 +40,10 @@ export async function fetchFeed(params: {
   continuityCategory?: string;
   replaySeverity?: string;
   replaySource?: string;
+  governanceAttention?: string;
+  decisionAttentionId?: string;
+  decisionAttentionSeverity?: string;
+  decisionAttentionLifecycle?: string;
 } = {}): Promise<FeedItemRecord[]> {
   const query = new URLSearchParams();
   if (params.missionId) query.set("mission", params.missionId);
@@ -43,6 +55,16 @@ export async function fetchFeed(params: {
   if (params.continuityCategory) query.set("continuityCategory", params.continuityCategory);
   if (params.replaySeverity) query.set("replaySeverity", params.replaySeverity);
   if (params.replaySource) query.set("replaySource", params.replaySource);
+  if (params.governanceAttention && params.governanceAttention !== "all") {
+    query.set("governanceAttention", params.governanceAttention);
+  }
+  if (params.decisionAttentionId) query.set("decisionAttentionId", params.decisionAttentionId);
+  if (params.decisionAttentionSeverity) {
+    query.set("decisionAttentionSeverity", params.decisionAttentionSeverity);
+  }
+  if (params.decisionAttentionLifecycle) {
+    query.set("decisionAttentionLifecycle", params.decisionAttentionLifecycle);
+  }
   const data = await apiClient<{ feed: FeedItemRecord[] }>(
     `/api/feed${query.size ? `?${query.toString()}` : ""}`
   );

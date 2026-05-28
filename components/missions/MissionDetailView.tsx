@@ -393,6 +393,12 @@ export function MissionDetailView({
       <div className="mb-4">
         <ReplayQuerySummary query={replayQuery} />
         <p className="mt-1 text-xs text-muted">{replayWindowDescriptions[replayQuery.replayWindow]}</p>
+        {replayQuery.governanceAttention !== "all" ? (
+          <p className="mt-1 text-xs text-muted">
+            Executive attention context is active ({replayQuery.governanceAttention.replaceAll("_", " ")}) for this
+            mission replay view.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
