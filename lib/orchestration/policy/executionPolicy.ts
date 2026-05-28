@@ -3,7 +3,8 @@ export type ExecutionCapability =
   | "propose"
   | "analyze"
   | "recommend"
-  | "generate_execution_plan";
+  | "generate_execution_plan"
+  | "prepare_execution_handoff";
 
 export type ForbiddenExecutionAction =
   | "deploy"
@@ -26,6 +27,7 @@ const ALLOWED: ExecutionCapability[] = [
   "analyze",
   "recommend",
   "generate_execution_plan",
+  "prepare_execution_handoff",
 ];
 
 const FORBIDDEN: ForbiddenExecutionAction[] = [
@@ -43,7 +45,7 @@ export function getExecutionPolicy(): ExecutionPolicyResult {
     allowed: ALLOWED,
     forbidden: FORBIDDEN,
     boundaryMessage:
-      "AI agents may analyze and propose within policy boundaries. Autonomous execution remains disabled.",
+      "AI agents may analyze, propose, and prepare execution handoffs within policy boundaries. Only human approval may authorize handoff; autonomous execution remains disabled.",
   };
 }
 

@@ -47,3 +47,5 @@ export function requiresCEOApproval(
     reason: "Informational proposal; no executive gate required.",
   };
 }
+
+export { requiresExecutionHandoffApproval } from "@/lib/orchestration/execution/executionPolicy";

@@ -9,6 +9,9 @@ import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { getProductAIOrchestrator } from "@/lib/orchestration/orchestrator";
 import { getExecutionPolicy } from "@/lib/orchestration/policy/executionPolicy";
+import { getHandoffBoundaryMessage } from "@/lib/orchestration/execution/executionPolicy";
+import { useExecutionStore } from "@/lib/store/executionStore";
+import { describeAllExecutionBoundaries } from "@/lib/orchestration/execution/executionAdapters";
 import { getOverallApiHealth, useRuntimeStore } from "@/lib/store/runtimeStore";
 import { useSyncStore } from "@/lib/store/syncStore";
 import {
@@ -34,6 +37,8 @@ export function RuntimeCostView() {
   const readFailures = useSyncStore((s) => s.readFailures);
   const writeFailures = useSyncStore((s) => s.writeFailures);
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
+  const governanceStats = useExecutionStore((s) => s.getGovernanceStats());
+  const missionTickets = useExecutionStore((s) => s.tickets);
 
   const apiHealth = getOverallApiHealth(providerHealth);
   const budgetUsed = Math.round((totalCostUsd / budgetUsd) * 100);
@@ -254,6 +259,67 @@ export function RuntimeCostView() {
               ))}
             </ul>
           )}
+        </Card>
+
+        <Card title="Execution Governance">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Pending handoffs</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {governanceStats.pendingHandoffs}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Approved requests</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {governanceStats.approvedHandoffs}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-3">
+              <p className="text-xs font-medium uppercase text-muted">Governance queue</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {governanceStats.queueSize}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <GovernanceNote>{getHandoffBoundaryMessage()}</GovernanceNote>
+          </div>
+          {missionTickets.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {missionTickets.slice(0, 5).map((ticket) => (
+                <li
+                  key={ticket.id}
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-xs"
+                >
+                  <span className="font-medium text-foreground">{ticket.executionIntent}</span>
+                  <span className="ml-2 capitalize text-muted">{ticket.status.replaceAll("_", " ")}</span>
+                  <span className="ml-2 text-muted">· {ticket.executionTarget}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-xs text-muted">
+              No execution handoff tickets yet. Create tickets from Executive Sync after plan approval.
+            </p>
+          )}
+          {syncWarnings.length > 0 ? (
+            <p className="mt-3 text-xs text-muted">
+              Runtime Observer flagged elevated execution risk — review handoffs before boundary authorization.
+            </p>
+          ) : null}
+          <details className="mt-4">
+            <summary className="cursor-pointer text-xs font-medium text-muted">
+              Execution target boundaries (advisory)
+            </summary>
+            <ul className="mt-2 space-y-1">
+              {describeAllExecutionBoundaries().map((b) => (
+                <li key={b.target} className="text-xs text-muted">
+                  <span className="font-medium text-foreground">{b.target}</span> — {b.description}
+                </li>
+              ))}
+            </ul>
+          </details>
         </Card>
 
         <Card title="Runtime Observer Insight">

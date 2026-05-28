@@ -8,7 +8,10 @@ export function governanceFeedMessage(
     | "revision_requested"
     | "rejected"
     | "execution_planned"
-    | "runtime_recommendation",
+    | "runtime_recommendation"
+    | "handoff_prepared"
+    | "handoff_approved"
+    | "handoff_rejected",
   proposal?: Pick<AIProposal, "summary" | "sourceAgent" | "proposalType">
 ): string {
   switch (action) {
@@ -26,6 +29,12 @@ export function governanceFeedMessage(
       return `Execution plan drafted for ${proposal?.summary ?? "approved proposal"} (advisory only; tasks are not created automatically).`;
     case "runtime_recommendation":
       return "Runtime Observer recommended retry stabilization — executive review required before any recovery action.";
+    case "handoff_prepared":
+      return `COO prepared execution handoff for ${proposal?.summary ?? "approved plan"} — executive approval is pending.`;
+    case "handoff_approved":
+      return `CEO approved execution boundary for ${proposal?.summary ?? "handoff request"}. No autonomous execution was initiated.`;
+    case "handoff_rejected":
+      return `CEO rejected execution handoff for ${proposal?.summary ?? "handoff request"}.`;
     default:
       return "Governance event recorded.";
   }

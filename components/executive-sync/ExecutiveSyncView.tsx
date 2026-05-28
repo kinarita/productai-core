@@ -6,7 +6,9 @@ import { Card } from "@/components/Card";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { MissionLink } from "@/components/MissionLink";
 import { ProposalCard } from "@/components/orchestration/ProposalCard";
+import { ExecutionTicketCard } from "@/components/orchestration/ExecutionTicketCard";
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
+import { getHandoffBoundaryMessage } from "@/lib/orchestration/execution/executionPolicy";
 import { useLiveExecutiveSync } from "@/lib/hooks/useLiveExecutiveSync";
 import { buildOrchestrationContext } from "@/lib/orchestration/contextBuilder";
 import { governanceFeedMessage, feedTypeForProposalStatus } from "@/lib/orchestration/governanceFeed";
@@ -15,6 +17,7 @@ import { getExecutionPolicy } from "@/lib/orchestration/policy/executionPolicy";
 import type { AIProposal } from "@/lib/orchestration/policy/policyTypes";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useProposalStore } from "@/lib/store/proposalStore";
+import { useExecutionStore } from "@/lib/store/executionStore";
 import { Gavel } from "lucide-react";
 
 export function ExecutiveSyncView() {
@@ -29,6 +32,12 @@ export function ExecutiveSyncView() {
   const updateProposalStatus = useProposalStore((s) => s.updateProposalStatus);
   const addExecutionPlan = useProposalStore((s) => s.addExecutionPlan);
   const getProposal = useProposalStore((s) => s.getProposal);
+  const missionTickets = useExecutionStore((s) => s.getTicketsForMission(ctx.missionId));
+  const createTicketFromProposal = useExecutionStore((s) => s.createTicketFromProposal);
+  const getTicketForProposal = useExecutionStore((s) => s.getTicketForProposal);
+  const approveTicketHandoff = useExecutionStore((s) => s.approveTicketHandoff);
+  const rejectTicketHandoff = useExecutionStore((s) => s.rejectTicketHandoff);
+  const getAuditForTicket = useExecutionStore((s) => s.getAuditForTicket);
 
   const [operationalSummary, setOperationalSummary] = useState<string | null>(null);
   const [planLoadingId, setPlanLoadingId] = useState<string | null>(null);
@@ -170,6 +179,46 @@ export function ExecutiveSyncView() {
     }
   };
 
+  const handleCreateTicket = (proposalId: string) => {
+    const proposal = getProposal(proposalId);
+    const plan = executionPlans.find((p) => p.proposalId === proposalId);
+    if (!proposal || !plan) return;
+    const ticket = createTicketFromProposal(proposal, plan);
+    if (ticket) {
+      pushGovernanceFeed("handoff_prepared", {
+        summary: proposal.summary,
+        sourceAgent: proposal.sourceAgent,
+        proposalType: proposal.proposalType,
+      });
+    }
+  };
+
+  const handleApproveHandoff = (ticketId: string) => {
+    const ticket = useExecutionStore.getState().getTicket(ticketId);
+    approveTicketHandoff(ticketId);
+    const proposal = ticket ? getProposal(ticket.proposalId) : undefined;
+    if (proposal) {
+      pushGovernanceFeed("handoff_approved", {
+        summary: proposal.summary,
+        sourceAgent: proposal.sourceAgent,
+        proposalType: proposal.proposalType,
+      });
+    }
+  };
+
+  const handleRejectHandoff = (ticketId: string) => {
+    const ticket = useExecutionStore.getState().getTicket(ticketId);
+    rejectTicketHandoff(ticketId);
+    const proposal = ticket ? getProposal(ticket.proposalId) : undefined;
+    if (proposal) {
+      pushGovernanceFeed("handoff_rejected", {
+        summary: proposal.summary,
+        sourceAgent: proposal.sourceAgent,
+        proposalType: proposal.proposalType,
+      });
+    }
+  };
+
   return (
     <AppShell
       title="Executive Sync"
@@ -273,6 +322,7 @@ export function ExecutiveSyncView() {
               ) : null}
 
               <GovernanceNote>{executionPolicy.boundaryMessage}</GovernanceNote>
+              <GovernanceNote>{getHandoffBoundaryMessage()}</GovernanceNote>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -308,6 +358,7 @@ export function ExecutiveSyncView() {
                       key={proposal.id}
                       proposal={proposal}
                       executionPlan={executionPlans.find((p) => p.proposalId === proposal.id)}
+                      executionTicket={getTicketForProposal(proposal.id)}
                       onApprove={() => handleApprove(proposal.id)}
                       onRevision={() => handleRevision(proposal.id)}
                       onReject={() => handleReject(proposal.id)}
@@ -316,7 +367,29 @@ export function ExecutiveSyncView() {
                           ? () => void handleGeneratePlan(proposal.id)
                           : undefined
                       }
+                      onCreateExecutionTicket={
+                        proposal.status === "execution_planned"
+                          ? () => handleCreateTicket(proposal.id)
+                          : undefined
+                      }
                       planLoading={planLoadingId === proposal.id}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {missionTickets.length > 0 ? (
+                <div className="space-y-4 border-t border-border pt-6">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                    Execution Handoff
+                  </p>
+                  {missionTickets.map((ticket) => (
+                    <ExecutionTicketCard
+                      key={ticket.id}
+                      ticket={ticket}
+                      auditEntries={getAuditForTicket(ticket.id)}
+                      onApproveHandoff={() => handleApproveHandoff(ticket.id)}
+                      onRejectHandoff={() => handleRejectHandoff(ticket.id)}
                     />
                   ))}
                 </div>

@@ -4,6 +4,20 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 4-3 controlled execution handoff foundation)
+
+- Controlled execution handoff layer in `lib/orchestration/execution/`.
+- ExecutionTicket model with approval signatures and local audit trail.
+- Mock execution adapters for MCP, GitHub, ClaudeCode, InternalAgent, RuntimeOperation (boundary only).
+- Executive Sync handoff flow: create ticket, approve/reject handoff.
+- Runtime & Cost execution governance visibility section.
+- Orchestration UI: `ExecutionTicketCard`, `ApprovalSignatureView`, `HandoffStatusBadge`.
+- Documentation: `docs/PHASE4_EXECUTION_HANDOFF.md`.
+
+### Changed (Phase 4-3)
+
+- Execution policy now includes `prepare_execution_handoff` and explicit human-only handoff authorization messaging.
+
 ### Added (Phase 4-2 orchestration governance & approval flow)
 
 - Orchestration policy layer in `lib/orchestration/policy/` (approval, execution, lifecycle types).

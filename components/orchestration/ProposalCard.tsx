@@ -4,15 +4,19 @@ import { ApprovalBadge } from "@/components/orchestration/ApprovalBadge";
 import { GovernanceNote } from "@/components/orchestration/GovernanceNote";
 import { RiskIndicator } from "@/components/orchestration/RiskIndicator";
 import type { AIProposal, ExecutionPlan } from "@/lib/orchestration/policy/policyTypes";
-import { Check, FileText, RotateCcw, X } from "lucide-react";
+import type { ExecutionTicket } from "@/lib/orchestration/execution/executionTypes";
+import { canCreateExecutionTicket } from "@/lib/orchestration/execution/executionHandoff";
+import { Check, FileText, Package, RotateCcw, X } from "lucide-react";
 
 interface ProposalCardProps {
   proposal: AIProposal;
   executionPlan?: ExecutionPlan;
+  executionTicket?: ExecutionTicket;
   onApprove: () => void;
   onRevision: () => void;
   onReject: () => void;
   onGeneratePlan?: () => void;
+  onCreateExecutionTicket?: () => void;
   planLoading?: boolean;
 }
 
@@ -27,8 +31,11 @@ export function ProposalCard({
   onRevision,
   onReject,
   onGeneratePlan,
+  onCreateExecutionTicket,
   planLoading,
+  executionTicket,
 }: ProposalCardProps) {
+  const handoffEligibility = canCreateExecutionTicket(proposal, executionPlan);
   const resolved =
     proposal.status === "approved" ||
     proposal.status === "rejected" ||
@@ -118,6 +125,31 @@ export function ProposalCard({
           </ul>
           <GovernanceNote>{executionPlan.governanceNote}</GovernanceNote>
         </div>
+      ) : null}
+
+      {proposal.status === "execution_planned" && executionPlan && !executionTicket && onCreateExecutionTicket ? (
+        <div className="mt-4 border-t border-border pt-4">
+          <button
+            type="button"
+            disabled={!handoffEligibility.allowed}
+            onClick={onCreateExecutionTicket}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-indigo-50/50 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Package className="h-3.5 w-3.5" />
+            Create Execution Ticket
+          </button>
+          <p className="mt-2 text-xs text-muted">{handoffEligibility.reason}</p>
+        </div>
+      ) : null}
+
+      {executionTicket ? (
+        <p className="mt-3 text-xs text-muted">
+          {executionTicket.status === "handoff_approved"
+            ? "Execution handoff authorized. No autonomous execution was initiated."
+            : executionTicket.status === "cancelled"
+              ? "Execution handoff was rejected."
+              : "Execution handoff is pending executive approval."}
+        </p>
       ) : null}
     </article>
   );

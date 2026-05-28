@@ -1,5 +1,27 @@
 # ProductAI Development Progress
 
+## 2026-05-28 — Phase 4-3 controlled execution handoff foundation
+
+### Objective
+
+Introduce execution handoff, execution tickets, approval signatures, and audit trail so humans can explicitly authorize execution boundaries — without running real execution.
+
+### Implemented in Phase 4-3
+
+- Execution handoff layer under `lib/orchestration/execution/`:
+  - types, policy, handoff helpers, audit, adapter boundaries (mock)
+- `executionStore` for tickets and audit log (in-memory)
+- Executive Sync: Create Execution Ticket, Approve/Reject Handoff, linked execution plans
+- UI: `ExecutionTicketCard`, `ApprovalSignatureView`, `HandoffStatusBadge`
+- Runtime & Cost: Execution Governance visibility (pending/approved/queue)
+- Policy extensions: `prepare_execution_handoff`, `requiresExecutionHandoffApproval`
+- Feed: handoff_prepared / handoff_approved / handoff_rejected governance events
+- Documentation: `docs/PHASE4_EXECUTION_HANDOFF.md`
+
+### Scope boundaries (kept)
+
+- No autonomous execution, workers, MCP/GitHub/Claude Code runs, deploy, or auto PR/merge
+
 ## 2026-05-28 — Phase 4-2 orchestration governance & approval flow
 
 ### Objective
