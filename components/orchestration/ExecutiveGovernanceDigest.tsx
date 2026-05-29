@@ -63,6 +63,20 @@ export function ExecutiveGovernanceDigestPanel({
         </ul>
       ) : null}
 
+      <div className="rounded-lg border border-border bg-background px-3 py-2">
+        <p className="text-xs font-medium uppercase text-muted">Digest sequence context</p>
+        <p className="mt-1 text-xs text-muted">{digest.digestSequenceContext}</p>
+        <p className="mt-2 text-xs text-muted">{digest.previousInterpretationContinuity}</p>
+        {digest.unresolvedContinuityThemes.length > 0 ? (
+          <ul className="mt-2 space-y-1 text-xs text-muted">
+            {digest.unresolvedContinuityThemes.slice(0, compact ? 2 : 4).map((theme) => (
+              <li key={theme}>- {theme}</li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="mt-2 text-xs text-foreground">{digest.suggestedReviewContinuation}</p>
+      </div>
+
       {onExportDigest ? (
         <button
           type="button"

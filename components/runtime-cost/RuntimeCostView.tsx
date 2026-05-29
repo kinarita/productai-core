@@ -67,7 +67,7 @@ import { fetchReplaySeedDiagnostics } from "@/lib/services/replaySeedRefresh";
 import type { ReplaySeedDiagnostics } from "@/lib/replay-query/replaySeedDiagnostics";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 import { ExecutiveReplayWorkspace } from "@/components/orchestration/ExecutiveReplayWorkspace";
-import { ExecutiveReviewSession } from "@/components/orchestration/ExecutiveReviewSession";
+import { ExecutiveGovernanceWorkspace } from "@/components/orchestration/ExecutiveGovernanceWorkspace";
 import {
   buildExecutiveGovernanceDigest,
   formatExecutiveGovernanceDigest,
@@ -1450,7 +1450,7 @@ export function RuntimeCostView() {
           linkBasePath="/runtime-cost"
         />
 
-        <ExecutiveReviewSession
+        <ExecutiveGovernanceWorkspace
           replayQuery={replayQuery}
           replayDiagnostics={replayDiagnostics}
           interpretationPreset={preferredInterpretationPreset}

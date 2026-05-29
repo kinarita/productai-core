@@ -56,6 +56,7 @@ import { buildGovernanceReplay } from "@/lib/orchestration/governance-history/go
 import { GovernanceHistoryPanel } from "@/components/orchestration/GovernanceHistoryPanel";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 import { buildReplayHref } from "@/lib/replay-query/replayQueryNavigation";
+import { mergeReplayQuery } from "@/lib/replay-query/replayQueryParser";
 import { ReplayNavigationContext } from "@/components/orchestration/ReplayNavigationContext";
 import { ReplayQuerySummary } from "@/components/orchestration/ReplayQuerySummary";
 import { replayWindowDescriptions } from "@/lib/replay-query/replayLabels";
@@ -70,6 +71,9 @@ import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveW
 import { ReplayBookmarkPanel } from "@/components/orchestration/ReplayBookmarkPanel";
 import { GovernanceJournalPanel } from "@/components/orchestration/GovernanceJournalPanel";
 import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/ReplayInterpretationHistoryPanel";
+import { GovernanceReadingModeSwitcher } from "@/components/orchestration/GovernanceReadingModeSwitcher";
+import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history/readingModes";
+import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -141,6 +145,7 @@ export function MissionDetailView({
   const queueGovernance = useExecutionQueueStore((s) => s.getGovernanceSummary());
   const processingSessions = useProcessingStore((s) => s.getSessions());
   const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
+  const activeReadingMode = useGovernanceWorkspaceStore((s) => s.activeReadingMode);
 
   const missionDecisions = useMemo(
     () => allDecisions.filter((d) => d.relatedMissionId === missionId),
@@ -927,6 +932,21 @@ export function MissionDetailView({
                 linkBasePath="/runtime-cost"
                 compact
               />
+            </div>
+            <div className="mt-3">
+              <GovernanceReadingModeSwitcher compact />
+              <Link
+                href={buildReplayHref(
+                  "/runtime-cost",
+                  mergeReplayQuery(getGovernanceReadingMode(activeReadingMode).recommendedReplayQuery, {
+                    ...replayQuery,
+                    mission: missionId,
+                  })
+                )}
+                className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
+              >
+                Open governance workspace →
+              </Link>
             </div>
           </Card>
 

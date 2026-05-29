@@ -38,7 +38,7 @@ import { buildDecisionAttentionQueue } from "@/lib/orchestration/decision-attent
 import { buildDecisionAttentionFeedEvent } from "@/lib/orchestration/queue/queueFeed";
 import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveWalkthroughPanel";
 import { ExecutiveReplayWorkspace } from "@/components/orchestration/ExecutiveReplayWorkspace";
-import { ExecutiveReviewSession } from "@/components/orchestration/ExecutiveReviewSession";
+import { ExecutiveGovernanceWorkspace } from "@/components/orchestration/ExecutiveGovernanceWorkspace";
 import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
 
 const healthVariant = {
@@ -436,7 +436,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           linkBasePath="/ceo-home"
         />
 
-        <ExecutiveReviewSession
+        <ExecutiveGovernanceWorkspace
           replayQuery={replayQuery}
           replayDiagnostics={diagnostics}
           interpretationPreset={preferredInterpretationPreset}

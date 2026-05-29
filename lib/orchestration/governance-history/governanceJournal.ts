@@ -12,6 +12,9 @@ export interface GovernanceJournalEntry {
   reviewContext: string;
   humanInterpretation: string;
   recommendedFollowup?: string;
+  continuityFocusTags?: string[];
+  digestContext?: string;
+  comparisonNote?: string;
 }
 
 export function createGovernanceJournalEntry(input: {
@@ -24,6 +27,9 @@ export function createGovernanceJournalEntry(input: {
   relatedMissionId?: string;
   relatedAttentionId?: string;
   recommendedFollowup?: string;
+  continuityFocusTags?: string[];
+  digestContext?: string;
+  comparisonNote?: string;
 }): GovernanceJournalEntry {
   return {
     id: `journal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -39,5 +45,8 @@ export function createGovernanceJournalEntry(input: {
       "Executive governance review context recorded by a human reviewer.",
     humanInterpretation: input.humanInterpretation,
     recommendedFollowup: input.recommendedFollowup,
+    continuityFocusTags: input.continuityFocusTags,
+    digestContext: input.digestContext,
+    comparisonNote: input.comparisonNote,
   };
 }

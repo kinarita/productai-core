@@ -37,6 +37,9 @@ import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalization
 import { GovernanceJournalPanel } from "@/components/orchestration/GovernanceJournalPanel";
 import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/ReplayInterpretationHistoryPanel";
 import { ExecutiveGovernanceDigestPanel } from "@/components/orchestration/ExecutiveGovernanceDigest";
+import { GovernanceReadingModeSwitcher } from "@/components/orchestration/GovernanceReadingModeSwitcher";
+import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history/readingModes";
+import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -315,6 +318,8 @@ export function OrganizationFeedView({
   };
   const recordReplayView = useReplayPersonalizationStore((s) => s.recordReplayView);
   const lastReplayView = useReplayPersonalizationStore((s) => s.lastReplayView);
+  const activeReadingMode = useGovernanceWorkspaceStore((s) => s.activeReadingMode);
+  const createWorkspace = useGovernanceWorkspaceStore((s) => s.createWorkspace);
 
   useEffect(() => {
     recordReplayView(replayQuery);
@@ -530,6 +535,50 @@ export function OrganizationFeedView({
         </div>
         <div className="mt-3">
           <ReplaySessionRecommendations baseReplayQuery={replayQuery} linkBasePath="/runtime-cost" />
+        </div>
+      </div>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-3">
+        <p className="text-xs font-medium uppercase text-muted">Executive governance workspace</p>
+        <p className="mt-1 text-xs text-muted">
+          Open governance workspace, continue longitudinal review, and preserve attention query
+          continuity across reading modes.
+        </p>
+        <div className="mt-2">
+          <GovernanceReadingModeSwitcher compact />
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, getGovernanceReadingMode(activeReadingMode).recommendedReplayQuery)
+            )}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Open in governance workspace →
+          </Link>
+          <Link
+            href={buildReplayHref("/runtime-cost", {
+              ...replayQuery,
+              governanceAttention:
+                activeAttentionFilter !== "all" ? activeAttentionFilter : replayQuery.governanceAttention,
+            })}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Continue longitudinal review →
+          </Link>
+          <button
+            type="button"
+            onClick={() =>
+              createWorkspace({
+                title: `Feed workspace · ${activeAttentionFilter !== "all" ? activeAttentionFilter : "attention"}`,
+                savedReplayQuery: replayQuery,
+                activeReadingMode,
+              })
+            }
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Pin to executive workspace
+          </button>
         </div>
       </div>
       <div className="mb-4 rounded-lg border border-border bg-surface p-3">

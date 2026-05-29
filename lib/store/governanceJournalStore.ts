@@ -20,6 +20,9 @@ interface GovernanceJournalState {
     relatedMissionId?: string;
     relatedAttentionId?: string;
     recommendedFollowup?: string;
+    continuityFocusTags?: string[];
+    digestContext?: string;
+    comparisonNote?: string;
   }) => GovernanceJournalEntry;
   removeEntry: (id: string) => void;
   clearEntries: () => void;

@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-9 executive governance workspace and longitudinal replay review)
+
+- Executive governance workspace model, store, and `ExecutiveGovernanceWorkspace` component.
+- Governance reading modes with `GovernanceReadingModeSwitcher` and mode-aware `GovernanceWorkspacePanels`.
+- Replay review sequencing, longitudinal governance review, and replay reading continuity.
+- Journal refinements: pin to workspace, continuity focus tags, digest/comparison context.
+- Digest sequencing fields and cross-view workspace links on Organization Feed, Mission, and Judgment.
+- Documentation: `docs/PHASE7_EXECUTIVE_GOVERNANCE_WORKSPACE.md`.
+
 ### Added (Phase 7-8 replay interpretation history and governance journaling)
 
 - Replay interpretation history store and panel with explicit human-triggered recording.

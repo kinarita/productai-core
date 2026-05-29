@@ -42,6 +42,9 @@ import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveW
 import { ReplayBookmarkPanel } from "@/components/orchestration/ReplayBookmarkPanel";
 import { GovernanceJournalPanel } from "@/components/orchestration/GovernanceJournalPanel";
 import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/ReplayInterpretationHistoryPanel";
+import { GovernanceReadingModeSwitcher } from "@/components/orchestration/GovernanceReadingModeSwitcher";
+import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history/readingModes";
+import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
 
 const statusVariant = {
   pending: "warning" as const,
@@ -69,6 +72,7 @@ export function JudgmentView({ missionFilter, replayQuery: replayQueryProp }: Ju
   const [createFormFor, setCreateFormFor] = useState<string | null>(null);
   const [followUpFormFor, setFollowUpFormFor] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<Record<string, JudgmentRecommendation>>({});
+  const activeReadingMode = useGovernanceWorkspaceStore((s) => s.activeReadingMode);
   const runtimeAlerts = useRuntimeStore((s) => s.alerts);
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
   const processingSessions = useProcessingStore((s) => s.getSessions());
@@ -257,6 +261,18 @@ export function JudgmentView({ missionFilter, replayQuery: replayQueryProp }: Ju
             linkBasePath="/judgment"
             compact
           />
+          <div className="mt-3">
+            <GovernanceReadingModeSwitcher compact />
+            <Link
+              href={buildReplayHref("/runtime-cost", {
+                ...replayQuery,
+                ...getGovernanceReadingMode(activeReadingMode).recommendedReplayQuery,
+              })}
+              className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
+            >
+              Open governance workspace →
+            </Link>
+          </div>
           <ExecutiveWalkthroughPanel
             replayQuery={replayQuery}
             replayDiagnostics={replay.diagnostics}

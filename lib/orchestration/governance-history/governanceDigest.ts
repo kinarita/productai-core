@@ -4,6 +4,7 @@ import {
   deriveReplayReflectionObservations,
   type ReplayReflectionObservation,
 } from "@/lib/orchestration/governance-history/replayReflectionMemory";
+import { digestContextFromRecords } from "@/lib/orchestration/governance-history/replayReadingContinuity";
 
 export interface ExecutiveGovernanceDigest {
   generatedAt: string;
@@ -14,6 +15,10 @@ export interface ExecutiveGovernanceDigest {
   runtimeAdvisoryContinuity: string;
   unresolvedAttentionThemes: string[];
   executiveReadingNote: string;
+  digestSequenceContext: string;
+  previousInterpretationContinuity: string;
+  unresolvedContinuityThemes: string[];
+  suggestedReviewContinuation: string;
 }
 
 export function buildExecutiveGovernanceDigest(input: {
@@ -56,6 +61,27 @@ export function buildExecutiveGovernanceDigest(input: {
     .slice(0, 5)
     .map((j) => `${j.title}: ${j.humanInterpretation.slice(0, 120)}`);
 
+  const digestSequenceContext = digestContextFromRecords({
+    interpretations: recent,
+    journals: input.journals,
+  });
+
+  const previousInterpretationContinuity =
+    recent.length >= 2
+      ? `Prior reading: ${recent[1].summary.slice(0, 100)}`
+      : "No prior interpretation continuity recorded in this digest window.";
+
+  const unresolvedContinuityThemes = continuityShifts.length
+    ? continuityShifts
+    : recurringPatterns
+        .filter((p) => p.theme.includes("Continuity") || p.theme.includes("Review"))
+        .map((p) => p.observation);
+
+  const suggestedReviewContinuation =
+    recent.length > 0
+      ? `Suggested continuation (advisory): reopen ${recent[0].scope.replaceAll("_", " ")} replay and review ${recent[0].reviewFocus.slice(0, 80)}…`
+      : "Record an interpretation to enable digest sequencing suggestions.";
+
   return {
     generatedAt: new Date().toISOString(),
     recentInterpretations: recent,
@@ -66,6 +92,10 @@ export function buildExecutiveGovernanceDigest(input: {
     unresolvedAttentionThemes,
     executiveReadingNote:
       "This digest is recommendation-oriented executive reading support—not executive decision automation.",
+    digestSequenceContext,
+    previousInterpretationContinuity,
+    unresolvedContinuityThemes,
+    suggestedReviewContinuation,
   };
 }
 
@@ -95,6 +125,15 @@ export function formatExecutiveGovernanceDigest(digest: ExecutiveGovernanceDiges
     ...(digest.unresolvedAttentionThemes.length > 0
       ? digest.unresolvedAttentionThemes.map((t) => `- ${t}`)
       : ["- None recorded in governance journals."]),
+    "",
+    "Digest sequence context:",
+    digest.digestSequenceContext,
+    "",
+    "Previous interpretation continuity:",
+    digest.previousInterpretationContinuity,
+    "",
+    "Suggested review continuation:",
+    digest.suggestedReviewContinuation,
     "",
     "Excludes execution state, authorization state, operator state, and execution targets.",
   ];
