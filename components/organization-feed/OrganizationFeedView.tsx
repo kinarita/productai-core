@@ -100,6 +100,9 @@ const typeLabels: Record<string, string> = {
   outcome_review_recorded: "Outcome Review Recorded",
   outcome_followup_added: "Outcome Follow-up Added",
   outcome_snapshot: "Outcome Snapshot",
+  lifecycle_stage_changed: "Lifecycle Stage Changed",
+  lifecycle_snapshot: "Lifecycle Snapshot",
+  lifecycle_context_updated: "Lifecycle Context Updated",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -156,6 +159,9 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   outcome_review_recorded: "info",
   outcome_followup_added: "warning",
   outcome_snapshot: "default",
+  lifecycle_stage_changed: "info",
+  lifecycle_snapshot: "default",
+  lifecycle_context_updated: "accent",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

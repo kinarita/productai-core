@@ -88,6 +88,7 @@ import { CooContextPanel } from "@/components/coo/CooWorkspace";
 import { MissionDeliveryContextPanel } from "@/components/delivery/MissionDeliveryWorkspace";
 import { MissionReleaseContextPanel } from "@/components/release/ReleaseReadinessWorkspace";
 import { MissionOutcomeContextPanel } from "@/components/outcome/CodeReleaseWorkspace";
+import { MissionLifecycleContextPanel } from "@/components/lifecycle/LifecycleContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1032,6 +1033,32 @@ export function MissionDetailView({
                 feedItems={allFeed}
                 releases={releases}
                 pullRequests={pullRequests}
+              />
+            ) : null}
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <SectionHeader
+                title="Lifecycle Context"
+                description="Current stage, journey path, and integrated workspace context"
+                className="mb-0"
+              />
+              <Link
+                href={`/product-lifecycle?mission=${missionId}`}
+                className="shrink-0 text-xs text-accent hover:underline"
+              >
+                Open Product Lifecycle
+              </Link>
+            </div>
+            {mission ? (
+              <MissionLifecycleContextPanel
+                mission={mission}
+                tasks={missionTasks}
+                pullRequests={pullRequests}
+                releases={releases}
+                memories={memories}
+                feedItems={allFeed}
               />
             ) : null}
           </Card>

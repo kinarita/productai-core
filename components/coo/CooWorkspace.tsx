@@ -168,6 +168,9 @@ export function CooWorkspace({
           <Link href="/code-release-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Release → Outcome
           </Link>
+          <Link href="/product-lifecycle" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Product Lifecycle
+          </Link>
           <Link href="/runtime-cost" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Runtime — knowledge graph & traceability context
           </Link>

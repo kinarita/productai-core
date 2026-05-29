@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 8-6 Product Lifecycle Workspace
+
+### Objective
+
+One-screen product journey visibility from Idea through Outcome by integrating existing Phase 8 workspace data—no new execution or automatic stage advancement.
+
+### Implemented in Phase 8-6
+
+- Lifecycle library: stages, analysis, timeline, summary, feed, store
+- `ProductLifecycleWorkspace` with timeline, stage board, mission view, journey, summary
+- CEO Home Product Lifecycle Overview; COO and Mission Detail lifecycle context
+- Feed lifecycle events; `/product-lifecycle` route
+- Documentation: `docs/PHASE8_PRODUCT_LIFECYCLE_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No GitHub API, deploy, MCP, agent autonomy, auto planning, or automatic lifecycle optimization
+
 ## 2026-05-29 — Phase 8-5 Code & Release Workspace
 
 ### Objective

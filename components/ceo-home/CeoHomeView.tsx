@@ -58,6 +58,8 @@ import { ReleaseOverviewCard } from "@/components/release/ReleaseSummaryCard";
 import { useReleaseWorkspace } from "@/lib/hooks/useReleaseWorkspace";
 import { OutcomeOverviewCard } from "@/components/outcome/OutcomeSummaryCard";
 import { useOutcomeWorkspace } from "@/lib/hooks/useOutcomeWorkspace";
+import { LifecycleSummaryCard } from "@/components/lifecycle/LifecycleSummaryCard";
+import { useLifecycleWorkspace } from "@/lib/hooks/useLifecycleWorkspace";
 
 const healthVariant = {
   stable: "success" as const,
@@ -202,6 +204,14 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     feedItems,
     releases,
     pullRequests,
+  });
+  const { overview: lifecycleOverview } = useLifecycleWorkspace({
+    missions,
+    tasks,
+    pullRequests,
+    releases,
+    memories,
+    feedItems,
   });
 
   const operationalAlerts = [
@@ -584,6 +594,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <OutcomeOverviewCard overview={outcomeOverview} compact />
+        </Card>
+
+        <Card
+          title="Product Lifecycle Overview"
+          description="Ideas through planning, development, QA, release, and outcome—one product journey view"
+          action={
+            <Link href="/product-lifecycle" className="text-xs text-accent hover:underline">
+              Open Product Lifecycle
+            </Link>
+          }
+        >
+          <LifecycleSummaryCard summary={lifecycleOverview} compact ceoOverview />
         </Card>
 
         <ExecutiveWalkthroughPanel

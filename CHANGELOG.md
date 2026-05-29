@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 8-6 Product Lifecycle Workspace)
+
+- Product Lifecycle workspace integrating Idea through Outcome across existing Phase 8 workspaces.
+- Lifecycle stages, timeline, stage board, mission view, journey, and organization summary.
+- CEO Home overview; COO and Mission Detail lifecycle context; Feed lifecycle events.
+- localStorage persistence (`productai-lifecycle-workspace`).
+- Documentation: `docs/PHASE8_PRODUCT_LIFECYCLE_WORKSPACE.md`.
+
 ### Added (Phase 8-5 Code & Release Workspace)
 
 - Code & Release workspace for Mission → Outcome post-release visibility.

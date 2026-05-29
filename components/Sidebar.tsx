@@ -18,6 +18,7 @@ import {
   GitPullRequest,
   Rocket,
   CircleDot,
+  Route,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/repository-workspace", label: "Repository Workspace", icon: GitPullRequest },
   { href: "/release-workspace", label: "Release Readiness", icon: Rocket },
   { href: "/code-release-workspace", label: "Code & Release", icon: CircleDot },
+  { href: "/product-lifecycle", label: "Product Lifecycle", icon: Route },
   { href: "/missions", label: "Products / Missions", icon: Target },
   { href: "/organization-feed", label: "Organization Feed", icon: MessageSquare },
   { href: "/executive-sync", label: "Executive Sync", icon: Users },

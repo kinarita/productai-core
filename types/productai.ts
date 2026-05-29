@@ -249,6 +249,11 @@ export type OutcomeFeedEventType =
   | "outcome_followup_added"
   | "outcome_snapshot";
 
+export type LifecycleFeedEventType =
+  | "lifecycle_stage_changed"
+  | "lifecycle_snapshot"
+  | "lifecycle_context_updated";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -272,7 +277,8 @@ export interface OrganizationFeedItem {
     | DeliveryFeedEventType
     | RepositoryFeedEventType
     | ReleaseFeedEventType
-    | OutcomeFeedEventType;
+    | OutcomeFeedEventType
+    | LifecycleFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

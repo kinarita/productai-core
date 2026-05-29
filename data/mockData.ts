@@ -838,6 +838,48 @@ export const organizationFeedItems: OrganizationFeedItem[] = [
     governanceCategory: "governance_summary",
     replayTags: ["code-release-workspace", "snapshot"],
   },
+  {
+    id: "f-lifecycle-stage",
+    type: "lifecycle_stage_changed",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-1",
+    missionName: "Customer Portal v2",
+    message:
+      "Lifecycle stage context updated for Customer Portal v2—development stage visible in product lifecycle view.",
+    timestamp: "1:25 PM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["product-lifecycle", "stage-changed"],
+  },
+  {
+    id: "f-lifecycle-snapshot",
+    type: "lifecycle_snapshot",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-2",
+    missionName: "Analytics Pipeline",
+    message:
+      "Lifecycle snapshot: missions across idea through outcome stages. Visualization only—no automatic advancement.",
+    timestamp: "1:30 PM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["product-lifecycle", "snapshot"],
+  },
+  {
+    id: "f-lifecycle-context",
+    type: "lifecycle_context_updated",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-3",
+    missionName: "Mobile Onboarding",
+    message:
+      "Lifecycle context updated from delivery, repository, and release workspaces for continuity reading.",
+    timestamp: "1:35 PM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["product-lifecycle", "context-updated"],
+  },
 ];
 
 export const executiveSyncContext = {
