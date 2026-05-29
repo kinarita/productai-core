@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-12 executive decision memory atlas)
+
+- Decision memory atlas above knowledge graph with decision themes and executive memory summary.
+- Theme explorer, memory inspector, atlas summary, and theme timeline (interpretation support only).
+- CEO Home atlas summary; Runtime decision context; Mission decision context view; Feed atlas CTAs.
+- Narrative and journal `relatedDecisionThemes` with atlas navigation links.
+- Documentation: `docs/PHASE7_EXECUTIVE_DECISION_MEMORY_ATLAS.md`.
+
 ### Added (Phase 7-11 executive governance knowledge graph)
 
 - Governance knowledge graph model, builder, relationship analysis, and localStorage store.

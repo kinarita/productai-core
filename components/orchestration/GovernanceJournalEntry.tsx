@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { GovernanceJournalEntry as JournalEntry } from "@/lib/orchestration/governance-history/governanceJournal";
+import { decisionThemeTitles } from "@/lib/orchestration/governance-history/decisionThemeCatalog";
 
 interface GovernanceJournalEntryProps {
   entry: JournalEntry;
@@ -47,6 +49,11 @@ export function GovernanceJournalEntryCard({
           {entry.recommendedFollowup}
         </p>
       ) : null}
+      {entry.relatedDecisionThemes && entry.relatedDecisionThemes.length > 0 ? (
+        <p className="mt-1 text-[11px] text-muted">
+          Theme continuity: {decisionThemeTitles(entry.relatedDecisionThemes).join(", ")}
+        </p>
+      ) : null}
       {relatedContinuityTheme ? (
         <p className="mt-1 text-[11px] text-muted">Related continuity theme: {relatedContinuityTheme}</p>
       ) : null}
@@ -63,6 +70,12 @@ export function GovernanceJournalEntryCard({
             Open governance narrative
           </button>
         ) : null}
+        <Link
+          href="/runtime-cost#decision-memory-atlas"
+          className="text-[11px] font-medium text-accent hover:underline"
+        >
+          Open decision atlas
+        </Link>
         {onPin ? (
           <button
             type="button"

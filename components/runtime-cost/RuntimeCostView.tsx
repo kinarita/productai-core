@@ -84,6 +84,7 @@ import {
 } from "@/lib/replay-query/replayExportContext";
 import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
 import { GovernanceKnowledgeGraph } from "@/components/orchestration/GovernanceKnowledgeGraph";
+import { ExecutiveDecisionMemoryAtlas } from "@/components/orchestration/ExecutiveDecisionMemoryAtlas";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -1525,6 +1526,22 @@ export function RuntimeCostView() {
             showInspector={false}
           />
         </Card>
+
+        <div id="decision-memory-atlas">
+          <Card
+            title="Decision Context"
+            description="Executive decision memory atlas—what to re-read, not what the system decided"
+          >
+            <ExecutiveDecisionMemoryAtlas
+              decisionAttention={decisionAttentionItems}
+              compact
+              showSummary
+              showThemes
+              showTimeline={false}
+              showInspector={false}
+            />
+          </Card>
+        </div>
 
         <Card title="Replay Diagnostics">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

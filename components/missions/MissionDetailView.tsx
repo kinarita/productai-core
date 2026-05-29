@@ -76,6 +76,8 @@ import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history
 import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
 import { useGovernanceKnowledgeGraph } from "@/lib/hooks/useGovernanceKnowledgeGraph";
 import { MissionRelationshipView } from "@/components/orchestration/RelationshipInspector";
+import { useDecisionMemoryAtlas } from "@/lib/hooks/useDecisionMemoryAtlas";
+import { MissionDecisionContextView } from "@/components/orchestration/DecisionMemoryInspector";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -244,6 +246,7 @@ export function MissionDetailView({
     ]
   );
   const { graph: missionKnowledgeGraph } = useGovernanceKnowledgeGraph(decisionAttentionItems);
+  const { atlas: missionDecisionAtlas } = useDecisionMemoryAtlas(decisionAttentionItems);
 
   useEffect(() => {
     setActiveMission(missionId);
@@ -942,6 +945,13 @@ export function MissionDetailView({
                 description="Narratives, journals, attention, and interpretations connected to this mission"
               />
               <MissionRelationshipView missionId={missionId} graph={missionKnowledgeGraph} />
+            </div>
+            <div className="mt-3">
+              <SectionHeader
+                title="Decision context view"
+                description="Themes, narratives, attention, and review journeys for this mission"
+              />
+              <MissionDecisionContextView missionId={missionId} atlas={missionDecisionAtlas} />
             </div>
             <div className="mt-3">
               <GovernanceReadingModeSwitcher compact />

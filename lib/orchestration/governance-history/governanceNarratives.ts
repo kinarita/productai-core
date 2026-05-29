@@ -1,6 +1,10 @@
 import { buildNarrativeSummary, type NarrativeSummary } from "@/lib/orchestration/governance-history/narrativeBuilder";
 import type { ReplayInterpretationRecord } from "@/lib/orchestration/governance-history/replayInterpretationHistory";
 import type { GovernanceJournalEntry } from "@/lib/orchestration/governance-history/governanceJournal";
+import {
+  inferDecisionThemes,
+  type DecisionThemeId,
+} from "@/lib/orchestration/governance-history/decisionThemeCatalog";
 
 export interface ExecutiveGovernanceNarrative {
   id: string;
@@ -15,6 +19,7 @@ export interface ExecutiveGovernanceNarrative {
   relatedInterpretations: string[];
   relatedJournals: string[];
   relatedDigests: string[];
+  relatedDecisionThemes: DecisionThemeId[];
 }
 
 export function createGovernanceNarrative(input: {
@@ -55,6 +60,9 @@ export function createGovernanceNarrative(input: {
     relatedInterpretations: input.interpretations.map((r) => r.id).slice(0, 12),
     relatedJournals: input.journals.map((j) => j.id).slice(0, 12),
     relatedDigests: input.digestGeneratedAt ? [input.digestGeneratedAt] : [],
+    relatedDecisionThemes: inferDecisionThemes(
+      `${input.narrativeSummary.title} ${input.narrativeSummary.summary} ${input.narrativeSummary.continuityTheme}`
+    ),
   };
 }
 

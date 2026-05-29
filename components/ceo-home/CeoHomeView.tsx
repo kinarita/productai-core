@@ -42,6 +42,8 @@ import { ExecutiveGovernanceWorkspace } from "@/components/orchestration/Executi
 import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
 import { KnowledgeGraphSummaryPanel } from "@/components/orchestration/KnowledgeGraphSummary";
 import { useGovernanceKnowledgeGraph } from "@/lib/hooks/useGovernanceKnowledgeGraph";
+import { useDecisionMemoryAtlas } from "@/lib/hooks/useDecisionMemoryAtlas";
+import { DecisionAtlasSummaryPanel } from "@/components/orchestration/DecisionAtlasSummary";
 
 const healthVariant = {
   stable: "success" as const,
@@ -152,6 +154,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     [diagnostics, filteredProcessingSessions, replay.memoryItems, replayQuery, runtimeAlerts]
   );
   const { summary: knowledgeGraphSummary } = useGovernanceKnowledgeGraph(decisionAttentionItems);
+  const { summary: decisionAtlasSummary } = useDecisionMemoryAtlas(decisionAttentionItems);
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -452,6 +455,13 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           description="Connected themes, review areas, and executive participation for CEO understanding"
         >
           <KnowledgeGraphSummaryPanel summary={knowledgeGraphSummary} compact />
+        </Card>
+
+        <Card
+          title="Executive Decision Atlas Summary"
+          description="Decision themes, review continuity, and executive participation across governance memory"
+        >
+          <DecisionAtlasSummaryPanel summary={decisionAtlasSummary} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

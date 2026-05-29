@@ -1,4 +1,8 @@
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
+import {
+  inferDecisionThemes,
+  type DecisionThemeId,
+} from "@/lib/orchestration/governance-history/decisionThemeCatalog";
 
 export interface GovernanceJournalEntry {
   id: string;
@@ -15,6 +19,7 @@ export interface GovernanceJournalEntry {
   continuityFocusTags?: string[];
   digestContext?: string;
   comparisonNote?: string;
+  relatedDecisionThemes?: DecisionThemeId[];
 }
 
 export function createGovernanceJournalEntry(input: {
@@ -30,7 +35,9 @@ export function createGovernanceJournalEntry(input: {
   continuityFocusTags?: string[];
   digestContext?: string;
   comparisonNote?: string;
+  relatedDecisionThemes?: DecisionThemeId[];
 }): GovernanceJournalEntry {
+  const themeText = `${input.title} ${input.humanInterpretation} ${input.continuityCategory ?? ""}`;
   return {
     id: `journal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt: new Date().toISOString(),
@@ -48,5 +55,7 @@ export function createGovernanceJournalEntry(input: {
     continuityFocusTags: input.continuityFocusTags,
     digestContext: input.digestContext,
     comparisonNote: input.comparisonNote,
+    relatedDecisionThemes:
+      input.relatedDecisionThemes ?? inferDecisionThemes(themeText),
   };
 }

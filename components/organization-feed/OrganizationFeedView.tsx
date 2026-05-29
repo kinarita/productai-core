@@ -43,6 +43,7 @@ import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStor
 import { GovernanceStoryModeSwitcher } from "@/components/orchestration/GovernanceStoryModeSwitcher";
 import { getGovernanceStoryMode } from "@/lib/orchestration/governance-history/storyModes";
 import { useGovernanceNarrativeStore } from "@/lib/store/governanceNarrativeStore";
+import { useDecisionMemoryAtlasStore } from "@/lib/store/decisionMemoryAtlasStore";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -663,6 +664,48 @@ export function OrganizationFeedView({
             className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
           >
             Open knowledge context →
+          </Link>
+        </div>
+      </div>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-3">
+        <p className="text-xs font-medium uppercase text-muted">Decision memory atlas</p>
+        <p className="mt-1 text-xs text-muted">
+          Open decision context, explore themes, and view the executive memory atlas while preserving
+          attention query continuity.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, {
+                scope: "governance_review",
+                governanceAttention:
+                  activeAttentionFilter !== "all"
+                    ? activeAttentionFilter
+                    : replayQuery.governanceAttention,
+              })
+            ).concat("#decision-memory-atlas")}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Open decision context →
+          </Link>
+          <Link
+            href={buildReplayHref("/runtime-cost", replayQuery).concat("#decision-memory-atlas")}
+            onClick={() => {
+              useDecisionMemoryAtlasStore.getState().setActiveAtlasView("themes");
+            }}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Open theme explorer →
+          </Link>
+          <Link
+            href={buildReplayHref("/runtime-cost", replayQuery).concat("#decision-memory-atlas")}
+            onClick={() => {
+              useDecisionMemoryAtlasStore.getState().setActiveAtlasView("summary");
+            }}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Open atlas view →
           </Link>
         </div>
       </div>

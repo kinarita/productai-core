@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-12 executive decision memory atlas)
+
+- Added decision memory atlas layered on the governance knowledge graph (rule-based themes, no LLM).
+- Added decision theme catalog, atlas builder, memory analysis, and localStorage atlas store.
+- Added theme explorer, memory inspector, atlas summary, and decision theme timeline components.
+- Integrated decision context on CEO Home, Runtime, Mission Detail, Feed, narratives, and journals.
+- Documentation: `docs/PHASE7_EXECUTIVE_DECISION_MEMORY_ATLAS.md`.
+
 ## 2026-05-28 (Phase 7-11 executive governance knowledge graph)
 
 - Added governance knowledge graph model, rule-based builder, and relationship analysis (no LLM, no autonomous decisions).

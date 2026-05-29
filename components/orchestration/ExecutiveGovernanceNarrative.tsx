@@ -1,7 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 import { buildNarrativeSummary } from "@/lib/orchestration/governance-history/narrativeBuilder";
+import {
+  decisionThemeTitles,
+  inferDecisionThemes,
+} from "@/lib/orchestration/governance-history/decisionThemeCatalog";
 import { useReplayInterpretationStore } from "@/lib/store/replayInterpretationStore";
 import { useGovernanceJournalStore } from "@/lib/store/governanceJournalStore";
 import { useGovernanceNarrativeStore } from "@/lib/store/governanceNarrativeStore";
@@ -35,6 +40,22 @@ export function ExecutiveGovernanceNarrativePanel({
         <p className="text-sm font-medium text-foreground">{liveSummary.title}</p>
         <p className="mt-1 text-xs text-muted">{liveSummary.summary}</p>
         <p className="mt-2 text-[11px] text-muted">{liveSummary.continuityTheme}</p>
+        {liveSummary.summary ? (
+          <p className="mt-1 text-[11px] text-muted">
+            Themes:{" "}
+            {decisionThemeTitles(
+              inferDecisionThemes(
+                `${liveSummary.title} ${liveSummary.summary} ${liveSummary.continuityTheme}`
+              )
+            ).join(", ")}
+          </p>
+        ) : null}
+        <Link
+          href="/runtime-cost#decision-memory-atlas"
+          className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
+        >
+          Open decision memory atlas →
+        </Link>
       </div>
       <button
         type="button"
@@ -50,6 +71,11 @@ export function ExecutiveGovernanceNarrativePanel({
               <p className="font-medium text-foreground">{n.title}</p>
               <p className="text-muted">{n.timeWindow} · {n.visibilityTrend}</p>
               <p className="mt-1 text-muted">{n.summary.slice(0, 160)}…</p>
+              {n.relatedDecisionThemes?.length ? (
+                <p className="mt-1 text-[11px] text-muted">
+                  Decision themes: {decisionThemeTitles(n.relatedDecisionThemes).join(", ")}
+                </p>
+              ) : null}
               <button
                 type="button"
                 onClick={() => removeNarrative(n.id)}
