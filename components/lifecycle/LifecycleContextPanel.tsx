@@ -17,6 +17,7 @@ import { buildOutcomeSignals } from "@/lib/outcome/outcomeSignals";
 import { buildMissionHandoffContext } from "@/lib/handoff/handoffAnalysis";
 import { getLifecycleReviewSummaryForMission } from "@/lib/review/reviewAnalysis";
 import { getIdeaLifecycleConnection, buildProductIdeas } from "@/lib/idea/ideaAnalysis";
+import { buildLifecycleBriefTransition, buildProductBriefRecords } from "@/lib/brief/productBriefAnalysis";
 import { useMemo } from "react";
 
 export function MissionLifecycleContextPanel({
@@ -73,6 +74,11 @@ export function MissionLifecycleContextPanel({
     [mission]
   );
 
+  const briefLifecycle = useMemo(
+    () => buildLifecycleBriefTransition(buildProductBriefRecords([mission])),
+    [mission]
+  );
+
   const { view } = context;
 
   return (
@@ -118,7 +124,17 @@ export function MissionLifecycleContextPanel({
       </div>
       <p className="text-xs text-muted">{view.progressNote}</p>
       <LifecycleJourneyPanel journey={journey} compact />
+      <div className="mt-3 rounded-lg border border-border/60 px-3 py-2 text-xs text-muted">
+        <p className="font-medium text-foreground">Idea → Planning (Product Brief)</p>
+        <p className="mt-1">{briefLifecycle.transitionNote}</p>
+      </div>
       <LifecycleTimeline steps={context.timeline} compact />
+      <Link
+        href={`/product-brief?mission=${mission.id}`}
+        className="mr-4 inline-block text-xs text-accent hover:underline"
+      >
+        Open Product Brief
+      </Link>
       <Link
         href={`/idea-workspace?idea=idea-${mission.id}`}
         className="mr-4 inline-block text-xs text-accent hover:underline"

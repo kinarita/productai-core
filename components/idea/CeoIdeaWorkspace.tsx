@@ -210,6 +210,9 @@ export function CeoIdeaWorkspace({
           <Link href="/artifact-review" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Artifact Review Workspace
           </Link>
+          <Link href="/product-brief" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Product Brief Workspace
+          </Link>
           <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             AI Team Handoff Workflow
           </Link>

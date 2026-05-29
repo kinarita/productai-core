@@ -22,6 +22,7 @@ import {
   ArrowRightLeft,
   Lightbulb,
   ClipboardCheck,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ import { cn } from "@/lib/utils";
 const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/ceo-home", label: "CEO Home", icon: Home },
   { href: "/idea-workspace", label: "CEO Idea Workspace", icon: Lightbulb },
+  { href: "/product-brief", label: "Product Brief", icon: FileText },
   { href: "/coo-workspace", label: "AI COO Workspace", icon: Briefcase },
   { href: "/delivery-workspace", label: "Delivery Workspace", icon: Package },
   { href: "/repository-workspace", label: "Repository Workspace", icon: GitPullRequest },

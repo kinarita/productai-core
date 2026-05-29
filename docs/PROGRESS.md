@@ -1,5 +1,24 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 9-4 Product Brief Workspace
+
+### Objective
+
+Formal Product Brief approval layer from Planner through CEO review and approval to Director handoff readiness.
+
+### Implemented in Phase 9-4
+
+- Product Brief library: states, review, approval, analysis, feed, store
+- `ProductBriefWorkspace` with board, review/approval panels, history, Director view
+- CEO Home overview; Mission Team Planner and Director integration
+- Idea, Artifact Review, Team Handoff, Lifecycle links
+- Feed events; `/product-brief` route
+- Documentation: `docs/PHASE9_PRODUCT_BRIEF_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No auto approval, mission generation, or automatic Director handoff
+
 ## 2026-05-29 — Phase 9-3 CEO Idea Workspace
 
 ### Objective

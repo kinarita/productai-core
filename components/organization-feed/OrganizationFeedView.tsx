@@ -118,6 +118,11 @@ const typeLabels: Record<string, string> = {
   product_brief_review_requested: "Product Brief Review Requested",
   product_brief_approved: "Product Brief Approved",
   idea_snapshot: "Idea Snapshot",
+  product_brief_created: "Product Brief Created",
+  product_brief_reviewed: "Product Brief Reviewed",
+  product_brief_changes_requested: "Product Brief Changes Requested",
+  director_handoff_ready: "Director Handoff Ready",
+  product_brief_snapshot: "Product Brief Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -192,6 +197,11 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   product_brief_review_requested: "warning",
   product_brief_approved: "accent",
   idea_snapshot: "default",
+  product_brief_created: "info",
+  product_brief_reviewed: "accent",
+  product_brief_changes_requested: "warning",
+  director_handoff_ready: "default",
+  product_brief_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

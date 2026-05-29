@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-4 Product Brief Workspace)
+
+- Product Brief Workspace for Planner → CEO Review → Approval → Director Handoff Ready flow.
+- Review and approval panels, brief board, history, CEO actions (visualization only).
+- CEO Home, Planner, Director, Idea, Artifact Review, Team Handoff, and Lifecycle integration.
+- Feed product brief events; localStorage persistence (`productai-product-brief`).
+- Documentation: `docs/PHASE9_PRODUCT_BRIEF_WORKSPACE.md`.
+
 ### Added (Phase 9-3 CEO Idea Workspace)
 
 - CEO Idea Workspace from idea capture through Product Brief preview and review connection.

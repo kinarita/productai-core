@@ -23,9 +23,17 @@ export function ProductBriefPreview({
           <p className="text-[10px] uppercase text-muted">{brief.statusLabel}</p>
         </div>
         {idea.relatedMissionId ? (
-          <Link href={reviewHref} className="text-xs text-accent hover:underline">
-            Open Review →
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href={reviewHref} className="text-xs text-accent hover:underline">
+              Open Review →
+            </Link>
+            <Link
+              href={`/product-brief?brief=brief-${idea.relatedMissionId}`}
+              className="text-xs text-accent hover:underline"
+            >
+              Product Brief Workspace →
+            </Link>
+          </div>
         ) : null}
       </div>
 

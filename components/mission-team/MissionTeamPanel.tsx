@@ -10,6 +10,8 @@ import { roleResponsibilityDetails } from "@/lib/mission-team/roleResponsibiliti
 import { cooCoordinationNote, missionTeamRoles } from "@/lib/mission-team/missionRoles";
 import { buildPlannerIdeaView, buildProductIdeas } from "@/lib/idea/ideaAnalysis";
 import { PlannerIdeaPanel } from "@/components/idea/PlannerIdeaPanel";
+import { PlannerBriefPanel } from "@/components/brief/PlannerBriefPanel";
+import { buildPlannerBriefView, buildProductBriefRecords } from "@/lib/brief/productBriefAnalysis";
 import { RoleResponsibilityCard } from "@/components/mission-team/RoleResponsibilityCard";
 import { MissionWorkflowView } from "@/components/mission-team/MissionWorkflowView";
 import { ProductPlanningStage } from "@/components/mission-team/ProductPlanningStage";
@@ -26,6 +28,7 @@ export function MissionTeamOverviewPanel({
 }) {
   const buckets = buildMissionTeamOverview(missions);
   const plannerView = buildPlannerIdeaView(buildProductIdeas(missions));
+  const plannerBriefView = buildPlannerBriefView(buildProductBriefRecords(missions));
 
   return (
     <div className={compact ? "space-y-2" : "space-y-3"}>
@@ -38,6 +41,10 @@ export function MissionTeamOverviewPanel({
           <p className="text-xs font-medium text-foreground">Product Planner — Idea Organization</p>
           <div className="mt-2">
             <PlannerIdeaPanel view={plannerView} />
+          </div>
+          <div className="mt-3 border-t border-border pt-3">
+            <p className="mb-2 text-xs font-medium text-foreground">Product Brief — Planner</p>
+            <PlannerBriefPanel view={plannerBriefView} />
           </div>
         </div>
       ) : null}
@@ -127,7 +134,7 @@ export function MissionTeamPanel({
       ) : null}
 
       {(activeView === "direction" || compact) && mission ? (
-        <DirectorCoordinationStage mission={mission} />
+        <DirectorCoordinationStage mission={mission} missions={missions} />
       ) : null}
 
       {activeView === "roles" || compact ? (

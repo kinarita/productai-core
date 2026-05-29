@@ -10,6 +10,7 @@ import { HandoffArtifactPanel } from "@/components/handoff/HandoffArtifactPanel"
 import { HandoffTimeline } from "@/components/handoff/HandoffTimeline";
 import { HandoffSummaryCard } from "@/components/handoff/HandoffSummaryCard";
 import { useHandoffWorkspace } from "@/lib/hooks/useHandoffWorkspace";
+import { buildHandoffCandidates, buildProductBriefRecords } from "@/lib/brief/productBriefAnalysis";
 import { handoffWorkspaceAdvisoryNote } from "@/lib/handoff/handoffWorkflow";
 import type { HandoffRoleId } from "@/lib/handoff/handoffWorkflow";
 import { handoffFlowSteps } from "@/lib/handoff/handoffWorkflow";
@@ -40,6 +41,8 @@ export function TeamHandoffWorkspace({
     missionId: filterMissionId,
     roleFilter: selectedRole,
   });
+
+  const briefHandoffCandidates = buildHandoffCandidates(buildProductBriefRecords(missions));
 
   useEffect(() => {
     if (initialMissionId) setSelectedMission(initialMissionId);
@@ -188,6 +191,27 @@ export function TeamHandoffWorkspace({
               <p className="text-sm">{missionContext.nextHandoffRoleLabel ?? "—"}</p>
             </div>
           </div>
+        </Card>
+      ) : null}
+
+      {briefHandoffCandidates.length > 0 ? (
+        <Card title="Director Handoff Candidates" description="Approved Product Briefs—no automatic handoff">
+          <ul className="space-y-2">
+            {briefHandoffCandidates.map((c) => (
+              <li key={c.briefId} className="rounded-lg border border-border px-3 py-2 text-xs">
+                <p className="font-medium text-foreground">{c.title}</p>
+                <p className="text-muted">{c.note}</p>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <Link href={c.teamHandoffHref} className="text-accent hover:underline">
+                    Team Handoff
+                  </Link>
+                  <Link href={`/product-brief?brief=${c.briefId}`} className="text-accent hover:underline">
+                    Product Brief
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
         </Card>
       ) : null}
 

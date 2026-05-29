@@ -49,6 +49,8 @@ import { TraceabilitySummaryPanel } from "@/components/orchestration/Traceabilit
 import { MissionTeamOverviewPanel } from "@/components/mission-team/MissionTeamPanel";
 import { useIdeaWorkspace } from "@/lib/hooks/useIdeaWorkspace";
 import { IdeaSummaryCard } from "@/components/idea/IdeaSummaryCard";
+import { ProductBriefSummary } from "@/components/brief/ProductBriefSummary";
+import { useProductBriefWorkspace } from "@/lib/hooks/useProductBriefWorkspace";
 import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPanel";
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
@@ -228,6 +230,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     tasks,
   });
   const { overview: ideaOverview } = useIdeaWorkspace({ missions });
+  const { overview: productBriefOverview } = useProductBriefWorkspace({ missions });
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -561,6 +564,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <IdeaSummaryCard summary={ideaOverview} compact />
+        </Card>
+
+        <Card
+          title="Product Brief Overview"
+          description="Draft briefs, under review, approved, and Director-ready planning artifacts"
+          action={
+            <Link href="/product-brief" className="text-xs text-accent hover:underline">
+              Open Product Brief Workspace
+            </Link>
+          }
+        >
+          <ProductBriefSummary summary={productBriefOverview} compact />
         </Card>
 
         <Card
