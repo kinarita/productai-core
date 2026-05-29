@@ -227,6 +227,15 @@ export type DeliveryFeedEventType =
   | "release_readiness_updated"
   | "delivery_snapshot";
 
+export type RepositoryFeedEventType =
+  | "repository_created"
+  | "branch_created"
+  | "pull_request_opened"
+  | "review_requested"
+  | "review_completed"
+  | "release_candidate_created"
+  | "repository_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -247,7 +256,8 @@ export interface OrganizationFeedItem {
     | "decision_attention_deferred"
     | MissionTeamFeedEventType
     | CooFeedEventType
-    | DeliveryFeedEventType;
+    | DeliveryFeedEventType
+    | RepositoryFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

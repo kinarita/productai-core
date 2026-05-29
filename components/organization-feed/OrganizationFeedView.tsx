@@ -84,6 +84,13 @@ const typeLabels: Record<string, string> = {
   repository_ready: "Repository Ready",
   release_readiness_updated: "Release Readiness Updated",
   delivery_snapshot: "Delivery Snapshot",
+  repository_created: "Repository Created",
+  branch_created: "Branch Created",
+  pull_request_opened: "Pull Request Opened",
+  review_requested: "Review Requested",
+  review_completed: "Review Completed",
+  release_candidate_created: "Release Candidate Created",
+  repository_snapshot: "Repository Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -124,6 +131,13 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   repository_ready: "accent",
   release_readiness_updated: "info",
   delivery_snapshot: "default",
+  repository_created: "info",
+  branch_created: "info",
+  pull_request_opened: "accent",
+  review_requested: "warning",
+  review_completed: "accent",
+  release_candidate_created: "info",
+  repository_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

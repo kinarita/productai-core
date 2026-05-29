@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 8-3 Repository Coordination Workspace
+
+### Objective
+
+Provide repository coordination visibility across missions, tasks, branches, pull requests, reviews, and releases without GitHub operations.
+
+### Implemented in Phase 8-3
+
+- Repository library: analysis, PR context, review/release coordination, feed helpers
+- `RepositoryWorkspace` UI with board, branch overview, PR panel, review/release coordination, summary
+- CEO Home Repository Overview; COO and Delivery workspace links; Feed repository events
+- `/repository-workspace` page; localStorage `productai-repository-workspace`
+- Documentation: `docs/PHASE8_REPOSITORY_COORDINATION_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No GitHub API, PR creation, merge, branch/repository creation, or MCP execution
+
 ## 2026-05-29 — Phase 8-2 Mission Delivery Workspace
 
 ### Objective

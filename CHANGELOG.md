@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 8-3 Repository Coordination Workspace)
+
+- Repository coordination workspace for mission-linked branches, pull requests, review, and release context.
+- Rule-based repository bottlenecks and PR context states (no GitHub execution or merge).
+- CEO Home repository overview; COO and Delivery integration links; Organization Feed repository events.
+- localStorage persistence (`productai-repository-workspace`).
+- Documentation: `docs/PHASE8_REPOSITORY_COORDINATION_WORKSPACE.md`.
+
 ### Added (Phase 8-2 Mission Delivery Workspace)
 
 - Mission delivery workspace for task pipeline, ownership, review, repository, and release readiness visibility.

@@ -15,6 +15,7 @@ import {
   Settings,
   Briefcase,
   Package,
+  GitPullRequest,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/ceo-home", label: "CEO Home", icon: Home },
   { href: "/coo-workspace", label: "AI COO Workspace", icon: Briefcase },
   { href: "/delivery-workspace", label: "Delivery Workspace", icon: Package },
+  { href: "/repository-workspace", label: "Repository Workspace", icon: GitPullRequest },
   { href: "/missions", label: "Products / Missions", icon: Target },
   { href: "/organization-feed", label: "Organization Feed", icon: MessageSquare },
   { href: "/executive-sync", label: "Executive Sync", icon: Users },

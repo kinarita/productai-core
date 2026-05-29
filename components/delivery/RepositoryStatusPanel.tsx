@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { RepositoryStatusSummary } from "@/lib/delivery/repositoryStatus";
 
 export function RepositoryStatusPanel({
@@ -41,10 +42,19 @@ export function RepositoryStatusPanel({
         </div>
       ) : null}
       {!compact ? (
-        <p className="text-xs text-muted">
-          Repository connection is not performed here—visualization only.
-        </p>
-      ) : null}
+        <>
+          <p className="text-xs text-muted">
+            Repository connection is not performed here—visualization only.
+          </p>
+          <Link href="/repository-workspace" className="mt-2 inline-block text-xs text-accent hover:underline">
+            Open Repository Coordination Workspace
+          </Link>
+        </>
+      ) : (
+        <Link href="/repository-workspace" className="mt-2 inline-block text-xs text-accent hover:underline">
+          Repository Context
+        </Link>
+      )}
     </div>
   );
 }

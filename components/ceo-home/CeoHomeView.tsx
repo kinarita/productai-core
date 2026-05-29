@@ -51,7 +51,9 @@ import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPan
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
 import { useDeliveryWorkspace } from "@/lib/hooks/useDeliveryWorkspace";
-import { pullRequests, releases } from "@/data/mockData";
+import { branches, commits, pullRequests, releases } from "@/data/mockData";
+import { RepositoryOverviewCard } from "@/components/repository/RepositorySummaryCard";
+import { useRepositoryWorkspace } from "@/lib/hooks/useRepositoryWorkspace";
 
 const healthVariant = {
   stable: "success" as const,
@@ -174,6 +176,14 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     tasks,
     pullRequests,
     releases,
+  });
+  const { overview: repositoryOverview } = useRepositoryWorkspace({
+    missions,
+    tasks,
+    branches,
+    pullRequests,
+    releases,
+    commits,
   });
 
   const operationalAlerts = [
@@ -520,6 +530,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <DeliveryOverviewCard overview={deliveryOverview} compact />
+        </Card>
+
+        <Card
+          title="Repository Overview"
+          description="Repositories, pull requests, reviews, release candidates, and coordination areas"
+          action={
+            <Link href="/repository-workspace" className="text-xs text-accent hover:underline">
+              Open Repository Workspace
+            </Link>
+          }
+        >
+          <RepositoryOverviewCard overview={repositoryOverview} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel
