@@ -2,6 +2,16 @@
 
 All notable changes to ProductAI are documented here.
 
+## 2026-05-29
+
+### Added (Phase 8-1 AI COO Workspace)
+
+- AI COO operational workspace with mission pipeline, board, workflow overview, bottlenecks, and advisory recommendations.
+- Rule-based bottleneck observations and coordination recommendations (no automatic prioritization or execution).
+- CEO Home COO summary card; Mission Detail COO context; Organization Feed COO events; `/coo-workspace` page.
+- localStorage persistence for COO workspace UI selections (`productai-coo-workspace`).
+- Documentation: `docs/PHASE8_COO_WORKSPACE.md`.
+
 ## 2026-05-28
 
 ### Added (Phase 7-14 mission team role realignment)

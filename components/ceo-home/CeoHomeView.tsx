@@ -47,6 +47,8 @@ import { DecisionAtlasSummaryPanel } from "@/components/orchestration/DecisionAt
 import { useDecisionTraceability } from "@/lib/hooks/useDecisionTraceability";
 import { TraceabilitySummaryPanel } from "@/components/orchestration/TraceabilitySummary";
 import { MissionTeamOverviewPanel } from "@/components/mission-team/MissionTeamPanel";
+import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPanel";
+import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 
 const healthVariant = {
   stable: "success" as const,
@@ -159,6 +161,11 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
   const { summary: knowledgeGraphSummary } = useGovernanceKnowledgeGraph(decisionAttentionItems);
   const { summary: decisionAtlasSummary } = useDecisionMemoryAtlas(decisionAttentionItems);
   const { summary: traceabilitySummary } = useDecisionTraceability(decisionAttentionItems);
+  const { summary: cooWorkspaceSummary } = useCooWorkspace({
+    missions,
+    tasks,
+    decisionAttention: decisionAttentionItems,
+  });
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -480,6 +487,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           description="Product planning, mission direction, architecture, development, and QA across active missions"
         >
           <MissionTeamOverviewPanel missions={missions} compact />
+        </Card>
+
+        <Card
+          title="AI COO Workspace Summary"
+          description="Active missions, potential bottlenecks, review concentrations, and mission distribution"
+          action={
+            <Link href="/coo-workspace" className="text-xs text-accent hover:underline">
+              Open COO Workspace
+            </Link>
+          }
+        >
+          <CooWorkspaceSummaryPanel summary={cooWorkspaceSummary} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

@@ -479,6 +479,62 @@ export const organizationFeedItems: OrganizationFeedItem[] = [
     timestamp: "11:00 AM",
     status: "active",
   },
+  {
+    id: "f-coo-review",
+    type: "coo_review_generated",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-2",
+    missionName: "Analytics Pipeline",
+    message:
+      "COO review generated for Analytics Pipeline. Architecture stage coordination reading suggested for executive continuity.",
+    timestamp: "11:15 AM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["coo-workspace", "review"],
+  },
+  {
+    id: "f-coo-bottleneck",
+    type: "coo_bottleneck_observed",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-3",
+    missionName: "Mobile Onboarding",
+    message:
+      "Potential bottleneck observed in QA stage for Mobile Onboarding. Review suggested—no automatic prioritization.",
+    timestamp: "11:20 AM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["coo-workspace", "bottleneck"],
+  },
+  {
+    id: "f-coo-coord",
+    type: "coo_coordination_note",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-4",
+    missionName: "Internal Admin Tools",
+    message:
+      "Coordination note: Internal Admin Tools may benefit from additional planning alignment across Mission Team roles.",
+    timestamp: "11:25 AM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["coo-workspace", "coordination"],
+  },
+  {
+    id: "f-coo-snapshot",
+    type: "coo_workflow_snapshot",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-1",
+    missionName: "Customer Portal v2",
+    message:
+      "COO workflow snapshot: active missions distributed across development and QA stages. Visibility only.",
+    timestamp: "11:30 AM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["coo-workspace", "snapshot"],
+  },
 ];
 
 export const executiveSyncContext = {

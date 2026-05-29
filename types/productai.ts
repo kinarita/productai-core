@@ -213,6 +213,12 @@ export type MissionTeamFeedEventType =
   | "qa_started"
   | "qa_completed";
 
+export type CooFeedEventType =
+  | "coo_review_generated"
+  | "coo_bottleneck_observed"
+  | "coo_coordination_note"
+  | "coo_workflow_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -231,7 +237,8 @@ export interface OrganizationFeedItem {
     | "decision_attention_reviewed"
     | "decision_attention_resolved"
     | "decision_attention_deferred"
-    | MissionTeamFeedEventType;
+    | MissionTeamFeedEventType
+    | CooFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

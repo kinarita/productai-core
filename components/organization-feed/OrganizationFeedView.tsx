@@ -74,6 +74,10 @@ const typeLabels: Record<string, string> = {
   development_completed: "Development Completed",
   qa_started: "QA Started",
   qa_completed: "QA Completed",
+  coo_review_generated: "COO Review Generated",
+  coo_bottleneck_observed: "COO Bottleneck Observed",
+  coo_coordination_note: "COO Coordination Note",
+  coo_workflow_snapshot: "COO Workflow Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -104,6 +108,10 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   development_completed: "default",
   qa_started: "warning",
   qa_completed: "default",
+  coo_review_generated: "info",
+  coo_bottleneck_observed: "warning",
+  coo_coordination_note: "default",
+  coo_workflow_snapshot: "info",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

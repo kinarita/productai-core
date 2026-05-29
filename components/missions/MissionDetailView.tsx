@@ -84,6 +84,7 @@ import {
   MissionTeamResponsibilityPanel,
   MissionTeamPanel,
 } from "@/components/mission-team/MissionTeamPanel";
+import { CooContextPanel } from "@/components/coo/CooWorkspace";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -940,6 +941,20 @@ export function MissionDetailView({
                   <MissionTeamPanel mission={mission} compact />
                 </div>
               </>
+            ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="COO Context"
+              description="Current stage, dependencies, related attention, and recommended coordination areas"
+            />
+            {mission ? (
+              <CooContextPanel
+                mission={mission}
+                tasks={missionTasks}
+                decisionAttention={decisionAttentionItems}
+              />
             ) : null}
           </Card>
 
