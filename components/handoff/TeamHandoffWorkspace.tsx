@@ -208,6 +208,9 @@ export function TeamHandoffWorkspace({
           <Link href="/artifact-review" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Artifact Review Workspace
           </Link>
+          <Link href="/idea-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            CEO Idea Workspace
+          </Link>
         </div>
       </Card>
     </div>

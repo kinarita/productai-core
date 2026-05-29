@@ -8,6 +8,8 @@ import {
 } from "@/lib/mission-team/missionWorkflow";
 import { roleResponsibilityDetails } from "@/lib/mission-team/roleResponsibilities";
 import { cooCoordinationNote, missionTeamRoles } from "@/lib/mission-team/missionRoles";
+import { buildPlannerIdeaView, buildProductIdeas } from "@/lib/idea/ideaAnalysis";
+import { PlannerIdeaPanel } from "@/components/idea/PlannerIdeaPanel";
 import { RoleResponsibilityCard } from "@/components/mission-team/RoleResponsibilityCard";
 import { MissionWorkflowView } from "@/components/mission-team/MissionWorkflowView";
 import { ProductPlanningStage } from "@/components/mission-team/ProductPlanningStage";
@@ -23,6 +25,7 @@ export function MissionTeamOverviewPanel({
   compact?: boolean;
 }) {
   const buckets = buildMissionTeamOverview(missions);
+  const plannerView = buildPlannerIdeaView(buildProductIdeas(missions));
 
   return (
     <div className={compact ? "space-y-2" : "space-y-3"}>
@@ -30,6 +33,14 @@ export function MissionTeamOverviewPanel({
         Mission Team turns CEO ideas into delivered products. COO coordinates—Planner and Director own
         planning and direction.
       </p>
+      {!compact ? (
+        <div className="rounded-lg border border-border bg-muted/5 px-3 py-2">
+          <p className="text-xs font-medium text-foreground">Product Planner — Idea Organization</p>
+          <div className="mt-2">
+            <PlannerIdeaPanel view={plannerView} />
+          </div>
+        </div>
+      ) : null}
       {buckets.map((bucket) => (
         <div key={bucket.id} className="rounded-lg border border-border bg-background px-3 py-2">
           <p className="text-xs font-medium uppercase text-muted">{bucket.label}</p>
@@ -109,7 +120,10 @@ export function MissionTeamPanel({
       ) : null}
 
       {(activeView === "planning" || compact) && mission ? (
-        <ProductPlanningStage mission={mission} />
+        <div className="space-y-4">
+          <ProductPlanningStage mission={mission} />
+          <PlannerIdeaPanel view={buildPlannerIdeaView(buildProductIdeas(missions))} />
+        </div>
       ) : null}
 
       {(activeView === "direction" || compact) && mission ? (

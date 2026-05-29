@@ -47,6 +47,8 @@ import { DecisionAtlasSummaryPanel } from "@/components/orchestration/DecisionAt
 import { useDecisionTraceability } from "@/lib/hooks/useDecisionTraceability";
 import { TraceabilitySummaryPanel } from "@/components/orchestration/TraceabilitySummary";
 import { MissionTeamOverviewPanel } from "@/components/mission-team/MissionTeamPanel";
+import { useIdeaWorkspace } from "@/lib/hooks/useIdeaWorkspace";
+import { IdeaSummaryCard } from "@/components/idea/IdeaSummaryCard";
 import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPanel";
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
@@ -225,6 +227,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     missions,
     tasks,
   });
+  const { overview: ideaOverview } = useIdeaWorkspace({ missions });
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -546,6 +549,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           description="Product planning, mission direction, architecture, development, and QA across active missions"
         >
           <MissionTeamOverviewPanel missions={missions} compact />
+        </Card>
+
+        <Card
+          title="Idea Workspace Overview"
+          description="CEO ideas, Product Brief drafts, and approved briefs—the ProductAI entry point"
+          action={
+            <Link href="/idea-workspace" className="text-xs text-accent hover:underline">
+              Open Idea Workspace
+            </Link>
+          }
+        >
+          <IdeaSummaryCard summary={ideaOverview} compact />
         </Card>
 
         <Card

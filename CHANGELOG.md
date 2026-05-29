@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-3 CEO Idea Workspace)
+
+- CEO Idea Workspace from idea capture through Product Brief preview and review connection.
+- Problem discovery, value proposition, MVP scope, and feature prioritization panels.
+- CEO Home and Product Planner integration; lifecycle and handoff links.
+- Feed idea events; localStorage persistence (`productai-idea-workspace`).
+- Documentation: `docs/PHASE9_CEO_IDEA_WORKSPACE.md`.
+
 ### Added (Phase 9-2 Artifact Review Workspace)
 
 - Artifact Review workspace for review state, human comments, timeline, and advisory recommendations.

@@ -262,6 +262,14 @@ export type HandoffFeedEventType =
   | "artifact_handed_off"
   | "workflow_snapshot";
 
+export type IdeaFeedEventType =
+  | "idea_captured"
+  | "idea_refined"
+  | "product_brief_drafted"
+  | "product_brief_review_requested"
+  | "product_brief_approved"
+  | "idea_snapshot";
+
 export type ReviewFeedEventType =
   | "artifact_comment_added"
   | "artifact_changes_requested"
@@ -293,7 +301,8 @@ export interface OrganizationFeedItem {
     | OutcomeFeedEventType
     | LifecycleFeedEventType
     | HandoffFeedEventType
-    | ReviewFeedEventType;
+    | ReviewFeedEventType
+    | IdeaFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

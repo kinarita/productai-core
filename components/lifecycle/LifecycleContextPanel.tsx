@@ -16,6 +16,7 @@ import { buildLifecycleJourney } from "@/lib/lifecycle/lifecycleAnalysis";
 import { buildOutcomeSignals } from "@/lib/outcome/outcomeSignals";
 import { buildMissionHandoffContext } from "@/lib/handoff/handoffAnalysis";
 import { getLifecycleReviewSummaryForMission } from "@/lib/review/reviewAnalysis";
+import { getIdeaLifecycleConnection, buildProductIdeas } from "@/lib/idea/ideaAnalysis";
 import { useMemo } from "react";
 
 export function MissionLifecycleContextPanel({
@@ -67,6 +68,11 @@ export function MissionLifecycleContextPanel({
     [mission, tasks]
   );
 
+  const ideaLifecycle = useMemo(
+    () => getIdeaLifecycleConnection(buildProductIdeas([mission])),
+    [mission]
+  );
+
   const { view } = context;
 
   return (
@@ -105,10 +111,20 @@ export function MissionLifecycleContextPanel({
           <p className="text-[10px] uppercase text-muted">Pending Reviews</p>
           <p className="text-sm">{reviewSummary.pendingReviewCount}</p>
         </div>
+        <div className="rounded-lg border border-border px-3 py-2">
+          <p className="text-[10px] uppercase text-muted">Idea Stage (this mission)</p>
+          <p className="text-sm">{ideaLifecycle.ideaStageCount > 0 ? "In Idea exploration" : "In Planning"}</p>
+        </div>
       </div>
       <p className="text-xs text-muted">{view.progressNote}</p>
       <LifecycleJourneyPanel journey={journey} compact />
       <LifecycleTimeline steps={context.timeline} compact />
+      <Link
+        href={`/idea-workspace?idea=idea-${mission.id}`}
+        className="mr-4 inline-block text-xs text-accent hover:underline"
+      >
+        Open Idea Workspace
+      </Link>
       <Link
         href={`/artifact-review?mission=${mission.id}`}
         className="mr-4 inline-block text-xs text-accent hover:underline"

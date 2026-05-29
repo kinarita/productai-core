@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 9-3 CEO Idea Workspace
+
+### Objective
+
+CEO idea exploration through Product Brief with Planner organization—human authorization only.
+
+### Implemented in Phase 9-3
+
+- Idea library: model, states, analysis, brief, discovery, value, MVP, features, feed, store
+- `CeoIdeaWorkspace` with canvas, panels, and Product Brief preview
+- CEO Home overview; Mission Team Planner panel; lifecycle and handoff integration
+- Feed idea events; `/idea-workspace` route
+- Documentation: `docs/PHASE9_CEO_IDEA_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No auto planning, approval, mission creation, or execution automation
+
 ## 2026-05-29 — Phase 9-2 Artifact Review Workspace
 
 ### Objective
