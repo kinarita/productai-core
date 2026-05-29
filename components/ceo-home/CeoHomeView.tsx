@@ -63,6 +63,8 @@ import { QaWorkspaceSummary } from "@/components/qa/QaWorkspaceSummary";
 import { useQaWorkspace } from "@/lib/hooks/useQaWorkspace";
 import { useArtifactLineage } from "@/lib/hooks/useArtifactLineage";
 import { ArtifactLineageSummary } from "@/components/lineage/ArtifactLineageSummary";
+import { useCrossReviewWorkspace } from "@/lib/hooks/useCrossReviewWorkspace";
+import { CrossReviewSummary } from "@/components/cross-review/CrossReviewSummary";
 import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPanel";
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
@@ -254,6 +256,11 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     releases,
   });
   const { overview: lineageOverview } = useArtifactLineage({
+    missions,
+    tasks,
+    feedItems,
+  });
+  const { ceoSummary: crossReviewCeoSummary } = useCrossReviewWorkspace({
     missions,
     tasks,
     feedItems,
@@ -771,6 +778,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <ArtifactLineageSummary summary={lineageOverview} compact />
+        </Card>
+
+        <Card
+          title="Review Overview"
+          description="Cross-role reviews—pending, active, approved, and concentration areas"
+          action={
+            <Link href="/review-workspace" className="text-xs text-accent hover:underline">
+              Open Review Workspace
+            </Link>
+          }
+        >
+          <CrossReviewSummary summary={crossReviewCeoSummary} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

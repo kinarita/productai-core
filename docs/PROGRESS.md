@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 10-2 Cross-Role Review Workspace
+
+### Objective
+
+Cross-role review visibility so the CEO can see pending reviews, reviewers, and blockers in one workspace—no auto approval or prioritization.
+
+### Implemented in Phase 10-2
+
+- `Review Workspace` at `/review-workspace`
+- `CrossRoleReviewRecord`, board, role matrix, inspector, dependencies, traceability, concentration
+- CEO Home Review Overview; Artifact Lineage, Mission Detail, Team Handoff, Artifact Review integration
+- Feed review workspace events; localStorage `productai-review-workspace`
+- Documentation: `docs/PHASE10_CROSS_ROLE_REVIEW_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- Review visibility only—no auto approval, prioritization, or execution
+
 ## 2026-05-30 — Phase 10-1 Artifact Lineage Workspace
 
 ### Objective

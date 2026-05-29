@@ -96,6 +96,7 @@ import { MissionDesignContextPanel } from "@/components/designer/MissionDesignCo
 import { MissionDevelopmentContextPanel } from "@/components/developer/MissionDevelopmentContextPanel";
 import { MissionQualityContextPanel } from "@/components/qa/MissionQualityContextPanel";
 import { MissionLineageContextPanel } from "@/components/lineage/MissionLineageContextPanel";
+import { MissionCrossReviewContextPanel } from "@/components/cross-review/MissionCrossReviewContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1229,6 +1230,16 @@ export function MissionDetailView({
             />
             {mission ? (
               <MissionLineageContextPanel mission={mission} tasks={missionTasks} />
+            ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Review Context"
+              description="Active and pending cross-role reviews for this mission"
+            />
+            {mission ? (
+              <MissionCrossReviewContextPanel mission={mission} tasks={missionTasks} />
             ) : null}
           </Card>
 

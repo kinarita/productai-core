@@ -4,6 +4,13 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-30
 
+### Added (Phase 10-2 Cross-Role Review Workspace)
+
+- Review Workspace (`/review-workspace`) for cross-role review board, role matrix, inspector, dependencies, and concentration views.
+- CEO Home Review Overview; Artifact Lineage Open Review Context; Mission Detail and Team Handoff integration.
+- Feed review workspace events; localStorage persistence (`productai-review-workspace`).
+- Documentation: `docs/PHASE10_CROSS_ROLE_REVIEW_WORKSPACE.md`.
+
 ### Added (Phase 10-1 Artifact Lineage Workspace)
 
 - Artifact Lineage Workspace (`/artifact-lineage`) tracing Idea → Product Brief → Mission Plan → Technical Specification → Design Specification → Implementation Plan → Test Plan per mission.

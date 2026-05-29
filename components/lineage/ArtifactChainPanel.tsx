@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { LineageChainNode } from "@/lib/lineage/artifactChain";
+import { crossReviewWorkspaceHref } from "@/lib/cross-review/crossRoleReviewWorkspace";
 
 export function ArtifactChainPanel({
   chain,
@@ -38,6 +40,15 @@ export function ArtifactChainPanel({
               <span>·</span>
               <span>{node.lastUpdated}</span>
             </div>
+            {node.stepId !== "idea" ? (
+              <Link
+                href={crossReviewWorkspaceHref({ artifactId: node.artifactId })}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-2 inline-block text-[10px] text-accent hover:underline"
+              >
+                Open Review Context
+              </Link>
+            ) : null}
           </button>
           {index < chain.length - 1 ? (
             <div className="flex h-8 flex-col items-center justify-center text-muted" aria-hidden>

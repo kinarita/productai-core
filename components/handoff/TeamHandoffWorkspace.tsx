@@ -18,6 +18,8 @@ import { useHandoffWorkspaceStore } from "@/lib/store/handoffWorkspaceStore";
 import { cn } from "@/lib/utils";
 import { buildHandoffLineageContextItems } from "@/lib/lineage/artifactLineageAnalysis";
 import { ArtifactLineageHandoffPanel } from "@/components/lineage/ArtifactLineageHandoffPanel";
+import { buildHandoffReviewContextItems } from "@/lib/cross-review/crossRoleReviewAnalysis";
+import { HandoffReviewContextPanel } from "@/components/cross-review/HandoffReviewContextPanel";
 import { useMemo } from "react";
 
 export function TeamHandoffWorkspace({
@@ -49,6 +51,11 @@ export function TeamHandoffWorkspace({
 
   const lineageHandoffItems = useMemo(
     () => buildHandoffLineageContextItems({ missions, tasks }),
+    [missions, tasks]
+  );
+
+  const handoffReviewItems = useMemo(
+    () => buildHandoffReviewContextItems({ missions, tasks }),
     [missions, tasks]
   );
 
@@ -186,6 +193,12 @@ export function TeamHandoffWorkspace({
         </Card>
       )}
 
+      {(view === "timeline" || view === "context") && (
+        <Card title="Review Context" description="Handoff review and approval context—display only">
+          <HandoffReviewContextPanel items={handoffReviewItems} compact={view === "timeline"} />
+        </Card>
+      )}
+
       {(view === "summary" || view === "context") && (
         <Card title="Handoff Summary" description="Active artifacts, reviews, and completed handoffs">
           <HandoffSummaryCard summary={overview} />
@@ -251,6 +264,9 @@ export function TeamHandoffWorkspace({
           </Link>
           <Link href="/artifact-lineage" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Artifact Lineage Workspace
+          </Link>
+          <Link href="/review-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Review Workspace
           </Link>
           <Link href="/idea-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             CEO Idea Workspace

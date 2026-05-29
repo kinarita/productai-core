@@ -152,6 +152,10 @@ const typeLabels: Record<string, string> = {
   artifact_lineage_updated: "Artifact Lineage Updated",
   artifact_lineage_reviewed: "Artifact Lineage Reviewed",
   artifact_lineage_snapshot: "Artifact Lineage Snapshot",
+  review_workspace_created: "Review Workspace Created",
+  review_context_updated: "Review Context Updated",
+  review_traceability_updated: "Review Traceability Updated",
+  review_snapshot: "Review Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -260,6 +264,10 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   artifact_lineage_updated: "accent",
   artifact_lineage_reviewed: "warning",
   artifact_lineage_snapshot: "default",
+  review_workspace_created: "info",
+  review_context_updated: "accent",
+  review_traceability_updated: "warning",
+  review_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
@@ -307,7 +315,11 @@ function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): bool
       item.type === "artifact_lineage_created" ||
       item.type === "artifact_lineage_updated" ||
       item.type === "artifact_lineage_reviewed" ||
-      item.type === "artifact_lineage_snapshot"
+      item.type === "artifact_lineage_snapshot" ||
+      item.type === "review_workspace_created" ||
+      item.type === "review_context_updated" ||
+      item.type === "review_traceability_updated" ||
+      item.type === "review_snapshot"
     );
   }
   return true;

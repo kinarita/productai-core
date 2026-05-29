@@ -16,6 +16,7 @@ import { reviewStateLevels } from "@/lib/review/reviewStatus";
 import { useReviewWorkspaceStore } from "@/lib/store/reviewWorkspaceStore";
 import { cn } from "@/lib/utils";
 import { artifactLineageHref } from "@/lib/lineage/artifactLineageWorkspace";
+import { crossReviewWorkspaceHref } from "@/lib/cross-review/crossRoleReviewWorkspace";
 
 export function ArtifactReviewWorkspace({
   missions,
@@ -210,6 +211,15 @@ export function ArtifactReviewWorkspace({
         <div className="grid gap-2 sm:grid-cols-2">
           <Link href="/artifact-lineage" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Artifact Lineage Workspace
+          </Link>
+          <Link
+            href={crossReviewWorkspaceHref({
+              missionId: filterMissionId ?? undefined,
+              artifactId: filterArtifactId ?? selectedRecord?.artifactId,
+            })}
+            className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
+          >
+            Review Workspace
           </Link>
           <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             AI Team Handoff Workflow

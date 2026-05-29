@@ -186,6 +186,9 @@ export function ArtifactLineageWorkspace({
           <Link href="/artifact-review" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Artifact Review
           </Link>
+          <Link href="/review-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Review Workspace
+          </Link>
           <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Team Handoff
           </Link>

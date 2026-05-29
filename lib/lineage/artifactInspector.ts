@@ -3,6 +3,7 @@ import type { LineageChainNode } from "@/lib/lineage/artifactChain";
 import { buildDependencyContext } from "@/lib/lineage/dependencyContext";
 import { buildReviewTraceability } from "@/lib/lineage/reviewTraceability";
 import { displayNameForStep } from "@/lib/lineage/teamOwnership";
+import { crossReviewWorkspaceHref } from "@/lib/cross-review/crossRoleReviewWorkspace";
 
 export interface ArtifactInspectorView {
   artifactName: string;
@@ -63,6 +64,13 @@ export function buildArtifactInspector(input: {
   const workspaces: Array<{ label: string; href: string }> = [
     { label: `${displayNameForStep(input.selected.stepId)} Workspace`, href: input.selected.workspaceHref },
     { label: "Artifact Review", href: input.selected.artifactReviewHref },
+    {
+      label: "Open Review Context",
+      href: crossReviewWorkspaceHref({
+        missionId: input.mission.id,
+        artifactId: input.selected.artifactId,
+      }),
+    },
     { label: "Artifact Lineage", href: input.selected.lineageHref },
     { label: "Mission Detail", href: `/missions/${input.mission.id}` },
   ];
