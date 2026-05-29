@@ -20,7 +20,7 @@ export function CrossReviewWorkspaceView() {
 
   return (
     <AppShell
-      title="Review Workspace"
+      title="Reviews"
       description="Cross-role review visibility—see what is pending, in review, and approved without automatic approval"
     >
       <div className="mb-4 flex flex-wrap gap-4">

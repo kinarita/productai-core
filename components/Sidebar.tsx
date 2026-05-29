@@ -3,71 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
-  Target,
-  MessageSquare,
-  Users,
-  Scale,
-  ListTodo,
-  GitBranch,
-  BookOpen,
-  Gauge,
-  Settings,
-  Briefcase,
-  Package,
-  GitPullRequest,
-  Rocket,
-  CircleDot,
-  Route,
-  ArrowRightLeft,
-  Link2,
-  Lightbulb,
-  ClipboardCheck,
-  Eye,
-  FileText,
-  Compass,
-  Layers,
-  Palette,
-  Code2,
-  ShieldCheck,
-  LayoutDashboard,
-  type LucideIcon,
-} from "lucide-react";
+  agentFirstAdvancedNavItems,
+  agentFirstNavItems,
+} from "@/lib/agent-first/agentFirstNav";
 import { cn } from "@/lib/utils";
-
-const navItems: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/ceo-home", label: "CEO Home", icon: Home },
-  { href: "/ceo-command-center", label: "CEO Command Center", icon: LayoutDashboard },
-  { href: "/idea-workspace", label: "CEO Idea Workspace", icon: Lightbulb },
-  { href: "/product-brief", label: "Product Brief", icon: FileText },
-  { href: "/director-workspace", label: "Director Workspace", icon: Compass },
-  { href: "/architect-workspace", label: "Architect Workspace", icon: Layers },
-  { href: "/designer-workspace", label: "Designer Workspace", icon: Palette },
-  { href: "/developer-workspace", label: "Developer Workspace", icon: Code2 },
-  { href: "/qa-workspace", label: "QA Workspace", icon: ShieldCheck },
-  { href: "/coo-workspace", label: "AI COO Workspace", icon: Briefcase },
-  { href: "/delivery-workspace", label: "Delivery Workspace", icon: Package },
-  { href: "/repository-workspace", label: "Repository Workspace", icon: GitPullRequest },
-  { href: "/release-workspace", label: "Release Readiness", icon: Rocket },
-  { href: "/code-release-workspace", label: "Code & Release", icon: CircleDot },
-  { href: "/product-lifecycle", label: "Product Lifecycle", icon: Route },
-  { href: "/team-handoff", label: "Team Handoff", icon: ArrowRightLeft },
-  { href: "/artifact-review", label: "Artifact Review", icon: ClipboardCheck },
-  { href: "/artifact-lineage", label: "Artifact Lineage", icon: Link2 },
-  { href: "/review-workspace", label: "Review Workspace", icon: Eye },
-  { href: "/missions", label: "Products / Missions", icon: Target },
-  { href: "/organization-feed", label: "Organization Feed", icon: MessageSquare },
-  { href: "/executive-sync", label: "Executive Sync", icon: Users },
-  { href: "/judgment", label: "Judgment Center", icon: Scale },
-  { href: "/tasks", label: "Tasks & Execution", icon: ListTodo },
-  { href: "/code-release", label: "Branches & PRs", icon: GitBranch },
-  { href: "/memory", label: "Memory Vault", icon: BookOpen },
-  { href: "/runtime-cost", label: "Runtime & Cost", icon: Gauge },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
 
 export function Sidebar() {
   const pathname = usePathname();
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-sidebar">
@@ -77,29 +24,57 @@ export function Sidebar() {
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">ProductAI</p>
-          <p className="text-xs text-muted">Organization OS</p>
+          <p className="text-xs text-muted">AI Team OS</p>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-accent text-white"
-                  : "text-muted hover:bg-surface hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="leading-tight">{label}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-4 overflow-y-auto p-3">
+        <div className="space-y-0.5">
+          {agentFirstNavItems.map(({ href, label, icon: Icon }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-accent text-white"
+                    : "text-muted hover:bg-surface hover:text-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="leading-tight">{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div>
+          <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-wide text-muted">
+            Advanced
+          </p>
+          <div className="space-y-0.5">
+            {agentFirstAdvancedNavItems.map(({ href, label, icon: Icon }) => {
+              const active = isActive(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    active
+                      ? "bg-surface font-medium text-foreground"
+                      : "text-muted hover:bg-surface hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0 opacity-70" />
+                  <span className="leading-tight">{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       <div className="border-t border-border p-4">
@@ -108,7 +83,7 @@ export function Sidebar() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-40" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
           </span>
-          <p className="text-xs text-muted">AI org operational</p>
+          <p className="text-xs text-muted">AI team operational</p>
         </div>
       </div>
     </aside>

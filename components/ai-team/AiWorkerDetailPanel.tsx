@@ -1,0 +1,88 @@
+"use client";
+
+import Link from "next/link";
+import type { AiWorkerMissionStatus } from "@/lib/agent-first/workerAnalysis";
+import { cn } from "@/lib/utils";
+
+const statusStyles: Record<AiWorkerMissionStatus["status"], string> = {
+  completed: "bg-success/15 text-success",
+  in_progress: "bg-accent/15 text-accent",
+  waiting: "bg-warning/15 text-warning",
+  not_started: "bg-border text-muted",
+};
+
+export function AiWorkerDetailPanel({
+  entry,
+  selected,
+  onSelect,
+}: {
+  entry: AiWorkerMissionStatus;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const { worker, status, statusLabel, explainability } = entry;
+
+  return (
+    <div className="rounded-lg border border-border bg-background">
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(
+          "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
+          selected ? "bg-surface" : "hover:bg-surface/60"
+        )}
+      >
+        <span className="flex items-center gap-3">
+          <span className="text-xl" aria-hidden>
+            {worker.emoji}
+          </span>
+          <span>
+            <span className="block text-sm font-medium text-foreground">{worker.title}</span>
+            <span className="text-xs text-muted">
+              {worker.outputLabel}
+            </span>
+          </span>
+        </span>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+            statusStyles[status]
+          )}
+        >
+          {statusLabel}
+        </span>
+      </button>
+
+      {selected ? (
+        <div className="space-y-4 border-t border-border px-4 py-4">
+          <section>
+            <p className="text-xs font-medium uppercase text-muted">実施内容</p>
+            <p className="mt-1 text-sm text-foreground">{explainability.workSummary}</p>
+          </section>
+          <section>
+            <p className="text-xs font-medium uppercase text-muted">入力</p>
+            <p className="mt-1 text-sm text-muted">{explainability.inputSummary}</p>
+          </section>
+          <section>
+            <p className="text-xs font-medium uppercase text-muted">出力</p>
+            <p className="mt-1 text-sm text-foreground">{explainability.outputSummary}</p>
+          </section>
+          <section>
+            <p className="text-xs font-medium uppercase text-muted">Why（判断理由）</p>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted">
+              {explainability.whyReasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          </section>
+          <Link
+            href={entry.workspaceHref}
+            className="inline-block text-xs text-accent hover:underline"
+          >
+            詳細ワークスペースを開く（上級者向け）
+          </Link>
+        </div>
+      ) : null}
+    </div>
+  );
+}

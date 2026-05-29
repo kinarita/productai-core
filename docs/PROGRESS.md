@@ -1,5 +1,41 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 11 Agent-First UI (Phase 1)
+
+### Objective
+
+Simplify user-facing navigation to Projects / Tasks / AI Team / Reviews / Releases / Memory; add Project Dashboard home and AI Team explainability view; hide org-centric workspaces from sidebar while keeping internal routes.
+
+### Implemented
+
+- Project Dashboard at `/` (stage progress, workers, reviews, artifacts)
+- AI Team at `/ai-team` (worker status, Input/Output/Why panels)
+- Releases hub at `/releases`
+- Sidebar Phase 1 nav + Advanced (Artifact Lineage)
+- `lib/agent-first/*` analysis layer
+- Documentation: `docs/PHASE11_AGENT_FIRST_UI.md`
+
+### Scope boundaries (kept)
+
+- No new AI roles, execution, GitHub/MCP, or auto-approval
+- Legacy workspaces remain at existing URLs
+
+## 2026-05-30 — Phase 10 MVP Review & Consolidation
+
+### Objective
+
+Transition from feature expansion to MVP review: workspace inventory, navigation audit, duplicate analysis, CEO journey validation, scorecard, technical debt report, and prioritized consolidation recommendations—no new workspaces or execution.
+
+### Delivered
+
+- `docs/PHASE10_MVP_REVIEW.md` — full report (inventory, nav audit, duplicates, CEO journey, scorecard 4.0/5.0, tech debt, top 10 improvements)
+- `npm run build` / `npm run lint` verified
+
+### Scope boundaries (kept)
+
+- No new workspaces, AI roles, execution, GitHub/MCP, or auto-approval
+- No deletions; hide/merge recommendations are report-only
+
 ## 2026-05-30 — Phase 10-3 CEO Command Center
 
 ### Objective
