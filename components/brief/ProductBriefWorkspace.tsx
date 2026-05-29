@@ -187,6 +187,14 @@ export function ProductBriefWorkspace({
                   <Link href={c.artifactReviewHref} className="text-accent hover:underline">
                     Artifact Review
                   </Link>
+                  {c.missionId ? (
+                    <Link
+                      href={`/architect-workspace?mission=${c.missionId}`}
+                      className="text-accent hover:underline"
+                    >
+                      Architect Workspace
+                    </Link>
+                  ) : null}
                 </div>
               </li>
             ))}
@@ -232,6 +240,14 @@ export function ProductBriefWorkspace({
           >
             Open Director Workspace
           </Link>
+          {selectedBrief?.missionId ? (
+            <Link
+              href={`/architect-workspace?mission=${selectedBrief.missionId}`}
+              className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
+            >
+              Open Architect Workspace
+            </Link>
+          ) : null}
           <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             AI Team Handoff Workflow
           </Link>

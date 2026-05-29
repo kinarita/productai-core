@@ -59,12 +59,18 @@ export function DirectorCoordinationStage({
           >
             Open Director Workspace
           </Link>
+          <Link
+            href={`/architect-workspace?mission=${mission.id}`}
+            className="ml-3 mt-2 inline-block text-[10px] text-accent hover:underline"
+          >
+            Open Architect Workspace
+          </Link>
         </div>
       ) : null}
       {architectCandidates.length > 0 ? (
         <div className="rounded-lg border border-border px-3 py-2">
           <p className="text-xs font-medium text-foreground">Architect Handoff Candidates</p>
-          <p className="mt-1 text-[10px] text-muted">Visualization only—no Architect Workspace yet.</p>
+          <p className="mt-1 text-[10px] text-muted">Visualization only—recommendation only, no auto handoff.</p>
           <div className="mt-2">
             <ArchitectHandoffCandidatesPanel candidates={architectCandidates} compact />
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { Mission, Task } from "@/types/productai";
 import { Card } from "@/components/Card";
 import { ProductBriefIntakePanel } from "@/components/director/ProductBriefIntakePanel";
@@ -12,6 +12,8 @@ import { ReviewSchedulePanel } from "@/components/director/ReviewSchedulePanel";
 import { DependencyMapPanel } from "@/components/director/DependencyMapPanel";
 import { ArchitectHandoffPanel } from "@/components/director/ArchitectHandoffPanel";
 import { ArchitectHandoffCandidatesPanel } from "@/components/director/ArchitectHandoffCandidatesPanel";
+import { ArchitectHandoffContextPanel } from "@/components/architect/ArchitectHandoffContextPanel";
+import { buildArchitectHandoffContextItems } from "@/lib/architect/architectAnalysis";
 import { DirectorWorkspaceSummary } from "@/components/director/DirectorWorkspaceSummary";
 import { useDirectorWorkspace } from "@/lib/hooks/useDirectorWorkspace";
 import { useDirectorWorkspaceStore } from "@/lib/store/directorWorkspaceStore";
@@ -70,6 +72,11 @@ export function DirectorWorkspace({
     missionId: filterMissionId,
     reviewStateFilter: selectedReviewState,
   });
+
+  const architectHandoffContextItems = useMemo(
+    () => buildArchitectHandoffContextItems(missions, tasks),
+    [missions, tasks]
+  );
 
   useEffect(() => {
     if (initialBriefId) setSelectedBrief(initialBriefId);
@@ -220,8 +227,14 @@ export function DirectorWorkspace({
       )}
 
       {architectCandidates.length > 0 && (view === "architect" || view === "context") && (
-        <Card title="Architect Handoff Candidates" description="Visualization only—no Architect Workspace yet">
+        <Card title="Architect Handoff Candidates" description="Visualization only">
           <ArchitectHandoffCandidatesPanel candidates={architectCandidates} />
+        </Card>
+      )}
+
+      {(view === "architect" || view === "context") && (
+        <Card title="Architect Handoff Context" description="Mission, objective, and Architect Workspace link">
+          <ArchitectHandoffContextPanel items={architectHandoffContextItems} />
         </Card>
       )}
 
@@ -266,6 +279,12 @@ export function DirectorWorkspace({
             className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
           >
             AI Team Handoff
+          </Link>
+          <Link
+            href="/architect-workspace"
+            className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
+          >
+            Architect Workspace
           </Link>
           <Link
             href="/ceo-home"

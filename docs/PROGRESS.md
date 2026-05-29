@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 9-6 Architect Workspace
+
+### Objective
+
+Architect Workspace for Technical Specification and design artifacts from Director handoff through Architecture Review readiness.
+
+### Implemented in Phase 9-6
+
+- Architect library: technical spec, system/component/data/API/dependency design, architecture review
+- `ArchitectWorkspace` at `/architect-workspace`
+- CEO Home Architecture Overview; Director, Mission Detail, Product Brief, Artifact Review integration
+- Feed architecture events; localStorage `productai-architect-workspace`
+- Documentation: `docs/PHASE9_ARCHITECT_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No auto coding, repository changes, GitHub actions, MCP, or deployment
+
 ## 2026-05-29 — Phase 9-5 Director Workspace (Mission Planning)
 
 ### Objective

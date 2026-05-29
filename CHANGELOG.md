@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-6 Architect Workspace)
+
+- Architect Workspace (`/architect-workspace`) for Technical Specification through Architecture Review.
+- System, component, data, API, and dependency design panels—display only, no code generation.
+- CEO Home, Director, Mission Detail, Product Brief, and Artifact Review integration.
+- Feed architecture events; localStorage persistence (`productai-architect-workspace`).
+- Documentation: `docs/PHASE9_ARCHITECT_WORKSPACE.md`.
+
 ### Added (Phase 9-5 Director Workspace)
 
 - Director Workspace (`/director-workspace`) for Mission Plan, Delivery Plan, Task Breakdown, Review Schedule, and Architect Handoff readiness.

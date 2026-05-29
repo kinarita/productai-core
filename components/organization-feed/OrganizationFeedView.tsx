@@ -128,6 +128,11 @@ const typeLabels: Record<string, string> = {
   director_dependency_identified: "Director Dependency Identified",
   director_handoff_candidate: "Director Handoff Candidate",
   director_snapshot: "Director Snapshot",
+  technical_specification_created: "Technical Specification Created",
+  architecture_review_requested: "Architecture Review Requested",
+  architecture_dependency_identified: "Architecture Dependency Identified",
+  architecture_review_completed: "Architecture Review Completed",
+  architecture_snapshot: "Architecture Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -212,6 +217,11 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   director_dependency_identified: "default",
   director_handoff_candidate: "accent",
   director_snapshot: "default",
+  technical_specification_created: "info",
+  architecture_review_requested: "warning",
+  architecture_dependency_identified: "default",
+  architecture_review_completed: "accent",
+  architecture_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

@@ -290,6 +290,13 @@ export type DirectorFeedEventType =
   | "director_handoff_candidate"
   | "director_snapshot";
 
+export type ArchitectFeedEventType =
+  | "technical_specification_created"
+  | "architecture_review_requested"
+  | "architecture_dependency_identified"
+  | "architecture_review_completed"
+  | "architecture_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -319,7 +326,8 @@ export interface OrganizationFeedItem {
     | ReviewFeedEventType
     | IdeaFeedEventType
     | ProductBriefFeedEventType
-    | DirectorFeedEventType;
+    | DirectorFeedEventType
+    | ArchitectFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;
