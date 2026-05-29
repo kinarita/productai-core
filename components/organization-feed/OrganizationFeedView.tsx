@@ -649,6 +649,21 @@ export function OrganizationFeedView({
           >
             Continue governance story ({getGovernanceStoryMode(activeStoryMode).title}) →
           </Link>
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, {
+                scope: "governance_review",
+                governanceAttention:
+                  activeAttentionFilter !== "all"
+                    ? activeAttentionFilter
+                    : replayQuery.governanceAttention,
+              })
+            )}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Open knowledge context →
+          </Link>
         </div>
       </div>
       <div className="mb-4 rounded-lg border border-border bg-surface p-3">

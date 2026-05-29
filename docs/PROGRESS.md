@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-11 executive governance knowledge graph)
+
+- Added governance knowledge graph model, rule-based builder, and relationship analysis (no LLM, no autonomous decisions).
+- Added executive role nodes, graph explorer, relationship inspector, and CEO knowledge graph summary.
+- Integrated knowledge context on CEO Home, Runtime (above replay diagnostics), Mission Detail, and Organization Feed.
+- localStorage persistence for graph explorer selection (`productai-governance-graph`).
+- Documentation: `docs/PHASE7_EXECUTIVE_KNOWLEDGE_GRAPH.md`.
+
 ## 2026-05-28 (Phase 7-10 executive governance narratives and review journeys)
 
 - Added rule-based governance narrative builder, saved narratives, and executive narrative panel.

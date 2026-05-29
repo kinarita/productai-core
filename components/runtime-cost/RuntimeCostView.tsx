@@ -83,6 +83,7 @@ import {
   formatReplayInterpretationExport,
 } from "@/lib/replay-query/replayExportContext";
 import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
+import { GovernanceKnowledgeGraph } from "@/components/orchestration/GovernanceKnowledgeGraph";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -1511,6 +1512,19 @@ export function RuntimeCostView() {
           linkBasePath="/runtime-cost"
           compact
         />
+
+        <Card
+          title="Knowledge Context"
+          description="Governance relationship view—interpretation continuity above replay diagnostics"
+        >
+          <GovernanceKnowledgeGraph
+            decisionAttention={decisionAttentionItems}
+            compact
+            showSummary
+            showExplorer
+            showInspector={false}
+          />
+        </Card>
 
         <Card title="Replay Diagnostics">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

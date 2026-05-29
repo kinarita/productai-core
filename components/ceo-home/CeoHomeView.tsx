@@ -40,6 +40,8 @@ import { ExecutiveWalkthroughPanel } from "@/components/orchestration/ExecutiveW
 import { ExecutiveReplayWorkspace } from "@/components/orchestration/ExecutiveReplayWorkspace";
 import { ExecutiveGovernanceWorkspace } from "@/components/orchestration/ExecutiveGovernanceWorkspace";
 import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
+import { KnowledgeGraphSummaryPanel } from "@/components/orchestration/KnowledgeGraphSummary";
+import { useGovernanceKnowledgeGraph } from "@/lib/hooks/useGovernanceKnowledgeGraph";
 
 const healthVariant = {
   stable: "success" as const,
@@ -149,6 +151,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
       }),
     [diagnostics, filteredProcessingSessions, replay.memoryItems, replayQuery, runtimeAlerts]
   );
+  const { summary: knowledgeGraphSummary } = useGovernanceKnowledgeGraph(decisionAttentionItems);
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -443,6 +446,13 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           linkBasePath="/ceo-home"
           onExportDigest={(text) => void navigator.clipboard.writeText(text)}
         />
+
+        <Card
+          title="Knowledge Graph Summary"
+          description="Connected themes, review areas, and executive participation for CEO understanding"
+        >
+          <KnowledgeGraphSummaryPanel summary={knowledgeGraphSummary} compact />
+        </Card>
 
         <ExecutiveWalkthroughPanel
           replayQuery={replayQuery}

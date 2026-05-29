@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-11 executive governance knowledge graph)
+
+- Governance knowledge graph model, builder, relationship analysis, and localStorage store.
+- `GovernanceKnowledgeGraph`, `KnowledgeGraphExplorer`, `RelationshipInspector`, and `KnowledgeGraphSummary` components.
+- CEO Home knowledge graph summary; Runtime knowledge context above replay diagnostics.
+- Mission relationship view and Organization Feed open knowledge context link.
+- Documentation: `docs/PHASE7_EXECUTIVE_KNOWLEDGE_GRAPH.md`.
+
 ### Added (Phase 7-10 executive governance narratives and review journeys)
 
 - Executive governance narratives, replay storytelling panels, continuity maps, and review journeys (rule-based only).

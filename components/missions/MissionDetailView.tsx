@@ -74,6 +74,8 @@ import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/Rep
 import { GovernanceReadingModeSwitcher } from "@/components/orchestration/GovernanceReadingModeSwitcher";
 import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history/readingModes";
 import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
+import { useGovernanceKnowledgeGraph } from "@/lib/hooks/useGovernanceKnowledgeGraph";
+import { MissionRelationshipView } from "@/components/orchestration/RelationshipInspector";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -241,6 +243,7 @@ export function MissionDetailView({
       replayQuery,
     ]
   );
+  const { graph: missionKnowledgeGraph } = useGovernanceKnowledgeGraph(decisionAttentionItems);
 
   useEffect(() => {
     setActiveMission(missionId);
@@ -932,6 +935,13 @@ export function MissionDetailView({
                 linkBasePath="/runtime-cost"
                 compact
               />
+            </div>
+            <div className="mt-3">
+              <SectionHeader
+                title="Mission relationship view"
+                description="Narratives, journals, attention, and interpretations connected to this mission"
+              />
+              <MissionRelationshipView missionId={missionId} graph={missionKnowledgeGraph} />
             </div>
             <div className="mt-3">
               <GovernanceReadingModeSwitcher compact />
