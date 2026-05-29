@@ -17,6 +17,7 @@ import {
   Package,
   GitPullRequest,
   Rocket,
+  CircleDot,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,12 +28,13 @@ const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/delivery-workspace", label: "Delivery Workspace", icon: Package },
   { href: "/repository-workspace", label: "Repository Workspace", icon: GitPullRequest },
   { href: "/release-workspace", label: "Release Readiness", icon: Rocket },
+  { href: "/code-release-workspace", label: "Code & Release", icon: CircleDot },
   { href: "/missions", label: "Products / Missions", icon: Target },
   { href: "/organization-feed", label: "Organization Feed", icon: MessageSquare },
   { href: "/executive-sync", label: "Executive Sync", icon: Users },
   { href: "/judgment", label: "Judgment Center", icon: Scale },
   { href: "/tasks", label: "Tasks & Execution", icon: ListTodo },
-  { href: "/code-release", label: "Code & Release", icon: GitBranch },
+  { href: "/code-release", label: "Branches & PRs", icon: GitBranch },
   { href: "/memory", label: "Memory Vault", icon: BookOpen },
   { href: "/runtime-cost", label: "Runtime & Cost", icon: Gauge },
   { href: "/settings", label: "Settings", icon: Settings },

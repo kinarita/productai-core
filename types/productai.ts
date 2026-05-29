@@ -242,6 +242,13 @@ export type ReleaseFeedEventType =
   | "release_ready"
   | "release_snapshot";
 
+export type OutcomeFeedEventType =
+  | "outcome_observation_started"
+  | "outcome_signal_recorded"
+  | "outcome_review_recorded"
+  | "outcome_followup_added"
+  | "outcome_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -264,7 +271,8 @@ export interface OrganizationFeedItem {
     | CooFeedEventType
     | DeliveryFeedEventType
     | RepositoryFeedEventType
-    | ReleaseFeedEventType;
+    | ReleaseFeedEventType
+    | OutcomeFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

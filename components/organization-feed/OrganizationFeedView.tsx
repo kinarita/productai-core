@@ -95,6 +95,11 @@ const typeLabels: Record<string, string> = {
   release_risk_observed: "Release Risk Observed",
   release_ready: "Release Ready",
   release_snapshot: "Release Snapshot",
+  outcome_observation_started: "Outcome Observation Started",
+  outcome_signal_recorded: "Outcome Signal Recorded",
+  outcome_review_recorded: "Outcome Review Recorded",
+  outcome_followup_added: "Outcome Follow-up Added",
+  outcome_snapshot: "Outcome Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -146,6 +151,11 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   release_risk_observed: "warning",
   release_ready: "accent",
   release_snapshot: "default",
+  outcome_observation_started: "info",
+  outcome_signal_recorded: "accent",
+  outcome_review_recorded: "info",
+  outcome_followup_added: "warning",
+  outcome_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

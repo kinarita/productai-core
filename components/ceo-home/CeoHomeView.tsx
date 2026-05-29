@@ -51,11 +51,13 @@ import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPan
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
 import { useDeliveryWorkspace } from "@/lib/hooks/useDeliveryWorkspace";
-import { branches, commits, pullRequests, releases } from "@/data/mockData";
+import { branches, commits, memories, pullRequests, releases } from "@/data/mockData";
 import { RepositoryOverviewCard } from "@/components/repository/RepositorySummaryCard";
 import { useRepositoryWorkspace } from "@/lib/hooks/useRepositoryWorkspace";
 import { ReleaseOverviewCard } from "@/components/release/ReleaseSummaryCard";
 import { useReleaseWorkspace } from "@/lib/hooks/useReleaseWorkspace";
+import { OutcomeOverviewCard } from "@/components/outcome/OutcomeSummaryCard";
+import { useOutcomeWorkspace } from "@/lib/hooks/useOutcomeWorkspace";
 
 const healthVariant = {
   stable: "success" as const,
@@ -192,6 +194,14 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     tasks,
     pullRequests,
     releases,
+  });
+  const { overview: outcomeOverview } = useOutcomeWorkspace({
+    missions,
+    tasks,
+    memories,
+    feedItems,
+    releases,
+    pullRequests,
   });
 
   const operationalAlerts = [
@@ -562,6 +572,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <ReleaseOverviewCard overview={releaseOverview} compact />
+        </Card>
+
+        <Card
+          title="Code & Release Overview"
+          description="Released missions, observed outcomes, validated outcomes, and follow-up reviews"
+          action={
+            <Link href="/code-release-workspace" className="text-xs text-accent hover:underline">
+              Open Code & Release Workspace
+            </Link>
+          }
+        >
+          <OutcomeOverviewCard overview={outcomeOverview} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

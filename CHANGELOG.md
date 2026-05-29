@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 8-5 Code & Release Workspace)
+
+- Code & Release workspace for Mission → Outcome post-release visibility.
+- Outcome status levels, signals, timeline, and release outcome context (visualization only).
+- CEO Home overview; COO Release → Outcome link; Mission Detail outcome context; Feed outcome events.
+- localStorage persistence (`productai-code-release-workspace`).
+- Documentation: `docs/PHASE8_CODE_RELEASE_WORKSPACE.md`.
+
 ### Added (Phase 8-4 Release Readiness Workspace)
 
 - Release Readiness Workspace for cross-cutting mission release board, checklist, and risks.

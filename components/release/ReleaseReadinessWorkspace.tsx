@@ -223,6 +223,9 @@ export function ReleaseReadinessWorkspace({
           <Link href="/coo-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             AI COO Workspace
           </Link>
+          <Link href="/code-release-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Code & Release Workspace — Release → Outcome
+          </Link>
           <Link href="/organization-feed" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Organization Feed — release events
           </Link>

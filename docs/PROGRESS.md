@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 8-5 Code & Release Workspace
+
+### Objective
+
+Post-release outcome visibility from mission through release to outcome without deploy or automatic validation.
+
+### Implemented in Phase 8-5
+
+- Outcome library: status model, signals, analysis, summary, timeline, feed, store
+- `CodeReleaseWorkspace` with mission board, signals, timeline, release outcome context
+- CEO Home Code & Release Overview; COO Release → Outcome; Mission Detail outcome context
+- Feed outcome events; `/code-release-workspace` route
+- Documentation: `docs/PHASE8_CODE_RELEASE_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No GitHub API, deploy, CI/CD, MCP, automatic release, or automatic outcome validation
+
 ## 2026-05-29 — Phase 8-4 Release Readiness Workspace
 
 ### Objective
