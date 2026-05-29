@@ -93,6 +93,7 @@ import { MissionHandoffContextPanel } from "@/components/handoff/MissionHandoffC
 import { MissionReviewContextPanel } from "@/components/review/MissionReviewContextPanel";
 import { MissionArchitectureContextPanel } from "@/components/architect/MissionArchitectureContextPanel";
 import { MissionDesignContextPanel } from "@/components/designer/MissionDesignContextPanel";
+import { MissionDevelopmentContextPanel } from "@/components/developer/MissionDevelopmentContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1154,6 +1155,34 @@ export function MissionDetailView({
             </div>
             {mission ? (
               <MissionDesignContextPanel
+                mission={mission}
+                missions={allMissions}
+                tasks={missionTasks}
+              />
+            ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Development Context"
+              description="Implementation plan, work breakdown, repository plan, and development readiness"
+            />
+            <div className="mb-3 flex flex-wrap gap-3">
+              <Link
+                href={`/developer-workspace?mission=${missionId}`}
+                className="text-xs text-accent hover:underline"
+              >
+                Open Developer Workspace
+              </Link>
+              <Link
+                href={`/artifact-review?mission=${missionId}&artifact=${missionId}-implementation_plan`}
+                className="text-xs text-accent hover:underline"
+              >
+                Implementation Plan Review
+              </Link>
+            </div>
+            {mission ? (
+              <MissionDevelopmentContextPanel
                 mission={mission}
                 missions={allMissions}
                 tasks={missionTasks}

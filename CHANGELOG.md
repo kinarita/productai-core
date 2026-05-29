@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-8 Developer Workspace)
+
+- Developer Workspace (`/developer-workspace`) for Implementation Plan, work breakdown, repository plan, and development readiness.
+- Design intake from Designer; technical risk and review preparation panels.
+- CEO Home, Designer, Mission Detail, Artifact Review (`implementation_plan`) integration.
+- Feed development events; localStorage persistence (`productai-developer-workspace`).
+- Documentation: `docs/PHASE9_DEVELOPER_WORKSPACE.md`.
+
 ### Added (Phase 9-7 Designer Workspace)
 
 - Designer Workspace (`/designer-workspace`) for User Flow, UX Specification, Design Specification, and Design Review.

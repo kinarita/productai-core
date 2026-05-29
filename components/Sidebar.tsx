@@ -26,6 +26,7 @@ import {
   Compass,
   Layers,
   Palette,
+  Code2,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/director-workspace", label: "Director Workspace", icon: Compass },
   { href: "/architect-workspace", label: "Architect Workspace", icon: Layers },
   { href: "/designer-workspace", label: "Designer Workspace", icon: Palette },
+  { href: "/developer-workspace", label: "Developer Workspace", icon: Code2 },
   { href: "/coo-workspace", label: "AI COO Workspace", icon: Briefcase },
   { href: "/delivery-workspace", label: "Delivery Workspace", icon: Package },
   { href: "/repository-workspace", label: "Repository Workspace", icon: GitPullRequest },

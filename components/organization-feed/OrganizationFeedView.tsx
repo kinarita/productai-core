@@ -138,6 +138,11 @@ const typeLabels: Record<string, string> = {
   design_review_requested: "Design Review Requested",
   design_review_completed: "Design Review Completed",
   design_snapshot: "Design Snapshot",
+  implementation_plan_created: "Implementation Plan Created",
+  development_review_requested: "Development Review Requested",
+  technical_risk_identified: "Technical Risk Identified",
+  development_review_completed: "Development Review Completed",
+  development_snapshot: "Development Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -232,6 +237,11 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   design_review_requested: "warning",
   design_review_completed: "accent",
   design_snapshot: "default",
+  implementation_plan_created: "info",
+  development_review_requested: "warning",
+  technical_risk_identified: "warning",
+  development_review_completed: "accent",
+  development_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

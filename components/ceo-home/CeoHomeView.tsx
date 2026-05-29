@@ -57,6 +57,8 @@ import { ArchitectWorkspaceSummary } from "@/components/architect/ArchitectWorks
 import { useArchitectWorkspace } from "@/lib/hooks/useArchitectWorkspace";
 import { DesignerWorkspaceSummary } from "@/components/designer/DesignerWorkspaceSummary";
 import { useDesignerWorkspace } from "@/lib/hooks/useDesignerWorkspace";
+import { DeveloperWorkspaceSummary } from "@/components/developer/DeveloperWorkspaceSummary";
+import { useDeveloperWorkspace } from "@/lib/hooks/useDeveloperWorkspace";
 import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPanel";
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
@@ -240,6 +242,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
   const { overview: directorPlanningOverview } = useDirectorWorkspace({ missions, tasks });
   const { overview: architectureOverview } = useArchitectWorkspace({ missions, tasks });
   const { overview: designOverview } = useDesignerWorkspace({ missions, tasks });
+  const { overview: developmentOverview } = useDeveloperWorkspace({ missions, tasks });
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -621,6 +624,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <DesignerWorkspaceSummary summary={designOverview} compact />
+        </Card>
+
+        <Card
+          title="Development Overview"
+          description="Implementation plans, development reviews, technical risks, and QA planning candidates"
+          action={
+            <Link href="/developer-workspace" className="text-xs text-accent hover:underline">
+              Open Developer Workspace
+            </Link>
+          }
+        >
+          <DeveloperWorkspaceSummary summary={developmentOverview} compact />
         </Card>
 
         <Card

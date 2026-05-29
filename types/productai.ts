@@ -304,6 +304,13 @@ export type DesignerFeedEventType =
   | "design_review_completed"
   | "design_snapshot";
 
+export type DeveloperFeedEventType =
+  | "implementation_plan_created"
+  | "development_review_requested"
+  | "technical_risk_identified"
+  | "development_review_completed"
+  | "development_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -335,7 +342,8 @@ export interface OrganizationFeedItem {
     | ProductBriefFeedEventType
     | DirectorFeedEventType
     | ArchitectFeedEventType
-    | DesignerFeedEventType;
+    | DesignerFeedEventType
+    | DeveloperFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;
