@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/Card";
 import { GovernanceReadingModeSwitcher } from "@/components/orchestration/GovernanceReadingModeSwitcher";
+import { GovernanceStoryModeSwitcher } from "@/components/orchestration/GovernanceStoryModeSwitcher";
 import { GovernanceWorkspacePanels } from "@/components/orchestration/GovernanceWorkspacePanels";
 import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history/readingModes";
 import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
@@ -62,14 +63,18 @@ export function ExecutiveGovernanceWorkspace({
   return (
     <Card
       title="Executive Governance Workspace"
-      description="Longitudinal replay review, reading modes, and interpretation sequencing"
+      description="Governance narratives, review journeys, continuity maps, and longitudinal replay review"
     >
       <p className="text-xs text-muted">
-        Longitudinal governance review helps maintain continuity across executive interpretation sessions.
+        This workspace organizes governance flow from past to present for reflective reading—it does not
+        conclude or decide on your behalf.
       </p>
 
       <div className="mt-3">
         <GovernanceReadingModeSwitcher />
+      </div>
+      <div className="mt-3">
+        <GovernanceStoryModeSwitcher />
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">

@@ -16,7 +16,12 @@ export type GovernanceWorkspacePanelId =
   | "continuity_memory"
   | "review_sequencing"
   | "diagnostics"
-  | "longitudinal";
+  | "longitudinal"
+  | "narratives"
+  | "story_panel"
+  | "continuity_map"
+  | "review_journey"
+  | "story_mode";
 
 export interface GovernanceReadingMode {
   id: GovernanceReadingModeId;
@@ -37,7 +42,7 @@ export const governanceReadingModes: GovernanceReadingMode[] = [
     title: "Executive overview",
     description:
       "Continuity summary, governance digest, and replay confidence for organization-wide reading.",
-    recommendedPanels: ["digest", "diagnostics", "review_sequencing"],
+    recommendedPanels: ["digest", "diagnostics", "review_sequencing", "narratives", "story_mode"],
     recommendedReplayQuery: modeQuery({
       scope: "organization",
       replayWindow: "latest",
@@ -50,7 +55,15 @@ export const governanceReadingModes: GovernanceReadingMode[] = [
     title: "Deep review",
     description:
       "Interpretation history, journals, review concentration, and continuity shifts for reflective reading.",
-    recommendedPanels: ["replay_history", "journals", "longitudinal", "comparison"],
+    recommendedPanels: [
+      "replay_history",
+      "journals",
+      "longitudinal",
+      "comparison",
+      "story_panel",
+      "continuity_map",
+      "review_journey",
+    ],
     recommendedReplayQuery: modeQuery({
       scope: "governance_review",
       governance: "review_lifecycle",
@@ -64,7 +77,14 @@ export const governanceReadingModes: GovernanceReadingMode[] = [
     title: "Runtime continuity",
     description:
       "Advisory density, runtime continuity signals, and replay diagnostics in observability context.",
-    recommendedPanels: ["diagnostics", "comparison", "continuity_memory", "digest"],
+    recommendedPanels: [
+      "diagnostics",
+      "comparison",
+      "continuity_memory",
+      "digest",
+      "continuity_map",
+      "story_panel",
+    ],
     recommendedReplayQuery: modeQuery({
       scope: "runtime",
       continuity: "continuity_runtime",
@@ -78,7 +98,15 @@ export const governanceReadingModes: GovernanceReadingMode[] = [
     title: "Attention tracking",
     description:
       "Decision attention lifecycle, unresolved review themes, and governance memory traceability.",
-    recommendedPanels: ["journals", "replay_history", "digest", "review_sequencing"],
+    recommendedPanels: [
+      "journals",
+      "replay_history",
+      "digest",
+      "review_sequencing",
+      "narratives",
+      "review_journey",
+      "story_mode",
+    ],
     recommendedReplayQuery: modeQuery({
       governanceAttention: "attention",
       governance: "decision_attention",

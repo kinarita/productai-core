@@ -40,6 +40,9 @@ import { ExecutiveGovernanceDigestPanel } from "@/components/orchestration/Execu
 import { GovernanceReadingModeSwitcher } from "@/components/orchestration/GovernanceReadingModeSwitcher";
 import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history/readingModes";
 import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
+import { GovernanceStoryModeSwitcher } from "@/components/orchestration/GovernanceStoryModeSwitcher";
+import { getGovernanceStoryMode } from "@/lib/orchestration/governance-history/storyModes";
+import { useGovernanceNarrativeStore } from "@/lib/store/governanceNarrativeStore";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -320,6 +323,7 @@ export function OrganizationFeedView({
   const lastReplayView = useReplayPersonalizationStore((s) => s.lastReplayView);
   const activeReadingMode = useGovernanceWorkspaceStore((s) => s.activeReadingMode);
   const createWorkspace = useGovernanceWorkspaceStore((s) => s.createWorkspace);
+  const activeStoryMode = useGovernanceNarrativeStore((s) => s.activeStoryMode);
 
   useEffect(() => {
     recordReplayView(replayQuery);
@@ -579,6 +583,72 @@ export function OrganizationFeedView({
           >
             Pin to executive workspace
           </button>
+        </div>
+      </div>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-3">
+        <p className="text-xs font-medium uppercase text-muted">Governance story</p>
+        <p className="mt-1 text-xs text-muted">
+          Open narratives, review journeys, and continuity maps to understand AI organization change as
+          flow—not as automated conclusions.
+        </p>
+        <div className="mt-2">
+          <GovernanceStoryModeSwitcher compact />
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, {
+                governance: "governance_summary",
+                governanceAttention:
+                  activeAttentionFilter !== "all"
+                    ? activeAttentionFilter
+                    : replayQuery.governanceAttention,
+              })
+            )}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Open narrative →
+          </Link>
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, {
+                governance: "review_lifecycle",
+                governanceAttention:
+                  activeAttentionFilter !== "all"
+                    ? activeAttentionFilter
+                    : replayQuery.governanceAttention,
+              })
+            )}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Open review journey →
+          </Link>
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, {
+                continuity: "continuity_review",
+                governanceAttention:
+                  activeAttentionFilter !== "all"
+                    ? activeAttentionFilter
+                    : replayQuery.governanceAttention,
+              })
+            )}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Open continuity map →
+          </Link>
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, getGovernanceReadingMode("deep_review").recommendedReplayQuery)
+            )}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Continue governance story ({getGovernanceStoryMode(activeStoryMode).title}) →
+          </Link>
         </div>
       </div>
       <div className="mb-4 rounded-lg border border-border bg-surface p-3">

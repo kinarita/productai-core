@@ -64,6 +64,14 @@ export function ExecutiveGovernanceDigestPanel({
       ) : null}
 
       <div className="rounded-lg border border-border bg-background px-3 py-2">
+        <p className="text-xs font-medium uppercase text-muted">Governance narrative context</p>
+        <p className="mt-1 text-sm font-medium text-foreground">{digest.narrativeSummary.title}</p>
+        <p className="mt-1 text-xs text-muted">{digest.narrativeSummary.summary}</p>
+        <p className="mt-2 text-xs text-muted">{digest.continuityStory}</p>
+        <p className="mt-2 text-xs text-muted">{digest.reviewJourneySummary}</p>
+      </div>
+
+      <div className="rounded-lg border border-border bg-background px-3 py-2">
         <p className="text-xs font-medium uppercase text-muted">Digest sequence context</p>
         <p className="mt-1 text-xs text-muted">{digest.digestSequenceContext}</p>
         <p className="mt-2 text-xs text-muted">{digest.previousInterpretationContinuity}</p>

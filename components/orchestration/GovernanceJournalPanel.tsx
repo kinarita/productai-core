@@ -6,6 +6,7 @@ import { useGovernanceJournalStore } from "@/lib/store/governanceJournalStore";
 import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
 import { buildExecutiveGovernanceDigest } from "@/lib/orchestration/governance-history/governanceDigest";
 import { useReplayInterpretationStore } from "@/lib/store/replayInterpretationStore";
+import { useGovernanceNarrativeStore } from "@/lib/store/governanceNarrativeStore";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
 
 interface GovernanceJournalPanelProps {
@@ -27,6 +28,9 @@ export function GovernanceJournalPanel({
   const records = useReplayInterpretationStore((s) => s.records);
   const activeWorkspaceId = useGovernanceWorkspaceStore((s) => s.activeWorkspaceId);
   const pinJournal = useGovernanceWorkspaceStore((s) => s.pinJournal);
+  const saveNarrative = useGovernanceNarrativeStore((s) => s.saveNarrative);
+  const activeJourneyId = useGovernanceNarrativeStore((s) => s.activeJourneyId);
+  const journeys = useGovernanceNarrativeStore((s) => s.journeys);
 
   const [title, setTitle] = useState("");
   const [interpretation, setInterpretation] = useState("");
@@ -69,6 +73,9 @@ export function GovernanceJournalPanel({
     setComparisonNote("");
     setMessage("Governance journaling helps preserve interpretation continuity across executive review sessions.");
   };
+
+  const digestPreview = buildExecutiveGovernanceDigest({ interpretations: records, journals: entries });
+  const activeJourney = journeys.find((j) => j.id === activeJourneyId) ?? journeys[0];
 
   return (
     <div className={compact ? "space-y-2" : "space-y-3"}>
@@ -134,6 +141,9 @@ export function GovernanceJournalPanel({
                   ? (id) => pinJournal(activeWorkspaceId, id)
                   : undefined
               }
+              relatedContinuityTheme={digestPreview.narrativeSummary.continuityTheme}
+              relatedJourneyLabel={activeJourney?.title}
+              onOpenNarrative={() => saveNarrative({ interpretations: records, journals: entries })}
             />
           ))}
         </ul>

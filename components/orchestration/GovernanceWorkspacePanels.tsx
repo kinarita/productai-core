@@ -8,6 +8,11 @@ import { GovernanceJournalPanel } from "@/components/orchestration/GovernanceJou
 import { ReplayComparisonPanel } from "@/components/orchestration/ReplayComparisonPanel";
 import { ReplayReviewSequence } from "@/components/orchestration/ReplayReviewSequence";
 import { LongitudinalGovernanceReview } from "@/components/orchestration/LongitudinalGovernanceReview";
+import { GovernanceStoryModeSwitcher } from "@/components/orchestration/GovernanceStoryModeSwitcher";
+import { ExecutiveGovernanceNarrativePanel } from "@/components/orchestration/ExecutiveGovernanceNarrative";
+import { ReplayStoryPanel } from "@/components/orchestration/ReplayStoryPanel";
+import { GovernanceContinuityMap } from "@/components/orchestration/GovernanceContinuityMap";
+import { ExecutiveReviewJourneyPanel } from "@/components/orchestration/ExecutiveReviewJourney";
 import { buildReadingContinuitySummary } from "@/lib/orchestration/governance-history/replayReadingContinuity";
 import { useGovernanceWorkspaceStore } from "@/lib/store/governanceWorkspaceStore";
 import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
@@ -126,6 +131,44 @@ export function GovernanceWorkspacePanels({
         <div>
           <p className="text-xs font-medium uppercase text-muted">Longitudinal review</p>
           <LongitudinalGovernanceReview compact />
+        </div>
+      ) : null}
+
+      {panels.has("story_mode") ? (
+        <div>
+          <GovernanceStoryModeSwitcher compact />
+        </div>
+      ) : null}
+
+      {panels.has("narratives") ? (
+        <div>
+          <p className="text-xs font-medium uppercase text-muted">Governance narratives</p>
+          <ExecutiveGovernanceNarrativePanel replayDiagnostics={replayDiagnostics} compact />
+        </div>
+      ) : null}
+
+      {panels.has("story_panel") ? (
+        <div>
+          <p className="text-xs font-medium uppercase text-muted">Replay interpretation story</p>
+          <ReplayStoryPanel replayDiagnostics={replayDiagnostics} />
+        </div>
+      ) : null}
+
+      {panels.has("continuity_map") ? (
+        <div>
+          <p className="text-xs font-medium uppercase text-muted">Governance continuity map</p>
+          <GovernanceContinuityMap compact />
+        </div>
+      ) : null}
+
+      {panels.has("review_journey") ? (
+        <div>
+          <p className="text-xs font-medium uppercase text-muted">Executive review journey</p>
+          <ExecutiveReviewJourneyPanel
+            replayQuery={replayQuery}
+            linkBasePath={linkBasePath}
+            compact
+          />
         </div>
       ) : null}
     </div>

@@ -72,6 +72,9 @@ import {
   buildExecutiveGovernanceDigest,
   formatExecutiveGovernanceDigest,
 } from "@/lib/orchestration/governance-history/governanceDigest";
+import { buildNarrativeSummary } from "@/lib/orchestration/governance-history/narrativeBuilder";
+import { formatGovernanceNarrativeExport } from "@/lib/replay-query/governanceNarrativeExport";
+import { useGovernanceNarrativeStore } from "@/lib/store/governanceNarrativeStore";
 import { useReplayInterpretationStore } from "@/lib/store/replayInterpretationStore";
 import { useGovernanceJournalStore } from "@/lib/store/governanceJournalStore";
 import { getReplayInterpretationPreset } from "@/lib/orchestration/governance-history/replayInterpretationPresets";
@@ -201,6 +204,9 @@ export function RuntimeCostView() {
   const readabilityMode = useReplayPersonalizationStore((s) => s.readabilityMode);
   const interpretationRecords = useReplayInterpretationStore((s) => s.records);
   const journalEntries = useGovernanceJournalStore((s) => s.entries);
+  const savedNarratives = useGovernanceNarrativeStore((s) => s.narratives);
+  const savedJourneys = useGovernanceNarrativeStore((s) => s.journeys);
+  const activeJourneyId = useGovernanceNarrativeStore((s) => s.activeJourneyId);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -570,6 +576,44 @@ export function RuntimeCostView() {
         continuityCategory: "continuity_governance",
         advisoryLevel: "advisory_low",
         replayTags: ["replay", "digest", "export"],
+        replaySeverity: "low",
+        replaySource: "coo",
+      }),
+    });
+  };
+
+  const exportGovernanceNarrative = () => {
+    const narrativeSummary = buildNarrativeSummary({
+      interpretations: interpretationRecords,
+      journals: journalEntries,
+      diagnostics: replayDiagnostics,
+    });
+    const narrative = savedNarratives[0] ?? null;
+    const journey =
+      savedJourneys.find((j) => j.id === activeJourneyId) ?? savedJourneys[0] ?? null;
+    const text = formatGovernanceNarrativeExport({
+      narrativeSummary,
+      narrative,
+      journey,
+      diagnostics: replayDiagnostics,
+    });
+    void navigator.clipboard.writeText(text);
+    addFeedItem({
+      type: "coordination",
+      author: "COO",
+      authorName: "Nova",
+      missionId: "organization",
+      missionName: "Organization",
+      message:
+        "COO exported executive governance narrative for reflective continuity reading (interpretation support only).",
+      status: "active",
+      requiresCeoApproval: false,
+      ...buildReplayMetadata({
+        governanceCategory: "governance_replay",
+        replayCategory: "replay_summary",
+        continuityCategory: "continuity_governance",
+        advisoryLevel: "advisory_low",
+        replayTags: ["replay", "narrative", "export"],
         replaySeverity: "low",
         replaySource: "coo",
       }),
@@ -1319,6 +1363,7 @@ export function RuntimeCostView() {
               onCopy={copyReplaySummary}
               onExportInterpretation={exportReplayInterpretation}
               onExportGovernanceDigest={exportGovernanceDigest}
+              onExportGovernanceNarrative={exportGovernanceNarrative}
               readabilityMode={readabilityMode}
               interpretationPresetTitle={interpretationPresetTitle}
               bookmarkContinuityNote="Replay bookmarks help maintain continuity across governance interpretation sessions."
@@ -1330,6 +1375,7 @@ export function RuntimeCostView() {
               onShare={shareReplayView}
               onExportInterpretation={exportReplayInterpretation}
               onExportGovernanceDigest={exportGovernanceDigest}
+              onExportGovernanceNarrative={exportGovernanceNarrative}
             />
           </div>
           <div className="mt-3">

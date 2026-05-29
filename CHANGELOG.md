@@ -4,6 +4,15 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-10 executive governance narratives and review journeys)
+
+- Executive governance narratives, replay storytelling panels, continuity maps, and review journeys (rule-based only).
+- `GovernanceStoryModeSwitcher` with summary, detailed, continuity, and attention story modes.
+- Narrative builder, narrative store (localStorage), and governance narrative export on replay share/summary.
+- Digest narrative context fields; journal links to narratives and continuity themes.
+- Organization Feed governance story CTAs with attention query continuity preserved.
+- Documentation: `docs/PHASE7_EXECUTIVE_GOVERNANCE_NARRATIVES.md`.
+
 ### Added (Phase 7-9 executive governance workspace and longitudinal replay review)
 
 - Executive governance workspace model, store, and `ExecutiveGovernanceWorkspace` component.

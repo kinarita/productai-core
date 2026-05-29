@@ -5,6 +5,9 @@ import {
   type ReplayReflectionObservation,
 } from "@/lib/orchestration/governance-history/replayReflectionMemory";
 import { digestContextFromRecords } from "@/lib/orchestration/governance-history/replayReadingContinuity";
+import { buildNarrativeSummary } from "@/lib/orchestration/governance-history/narrativeBuilder";
+import { buildActiveReviewJourney } from "@/lib/orchestration/governance-history/reviewJourney";
+import type { NarrativeSummary } from "@/lib/orchestration/governance-history/narrativeBuilder";
 
 export interface ExecutiveGovernanceDigest {
   generatedAt: string;
@@ -19,6 +22,9 @@ export interface ExecutiveGovernanceDigest {
   previousInterpretationContinuity: string;
   unresolvedContinuityThemes: string[];
   suggestedReviewContinuation: string;
+  narrativeSummary: NarrativeSummary;
+  continuityStory: string;
+  reviewJourneySummary: string;
 }
 
 export function buildExecutiveGovernanceDigest(input: {
@@ -82,6 +88,25 @@ export function buildExecutiveGovernanceDigest(input: {
       ? `Suggested continuation (advisory): reopen ${recent[0].scope.replaceAll("_", " ")} replay and review ${recent[0].reviewFocus.slice(0, 80)}…`
       : "Record an interpretation to enable digest sequencing suggestions.";
 
+  const narrativeSummary = buildNarrativeSummary({
+    interpretations: input.interpretations,
+    journals: input.journals,
+    digest: null,
+  });
+  const continuityStory = [
+    narrativeSummary.continuityTheme,
+    digestSequenceContext,
+    previousInterpretationContinuity,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const journey = buildActiveReviewJourney({
+    interpretations: input.interpretations,
+    journals: input.journals,
+    narrativeSummary,
+  });
+  const reviewJourneySummary = `${journey.title}: ${journey.continuityFocus} · ${journey.nextSuggestedReading}`;
+
   return {
     generatedAt: new Date().toISOString(),
     recentInterpretations: recent,
@@ -96,6 +121,9 @@ export function buildExecutiveGovernanceDigest(input: {
     previousInterpretationContinuity,
     unresolvedContinuityThemes,
     suggestedReviewContinuation,
+    narrativeSummary,
+    continuityStory,
+    reviewJourneySummary,
   };
 }
 
@@ -134,6 +162,15 @@ export function formatExecutiveGovernanceDigest(digest: ExecutiveGovernanceDiges
     "",
     "Suggested review continuation:",
     digest.suggestedReviewContinuation,
+    "",
+    "Narrative summary:",
+    digest.narrativeSummary.summary,
+    "",
+    "Continuity story:",
+    digest.continuityStory,
+    "",
+    "Review journey summary:",
+    digest.reviewJourneySummary,
     "",
     "Excludes execution state, authorization state, operator state, and execution targets.",
   ];
