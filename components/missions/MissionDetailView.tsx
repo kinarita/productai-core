@@ -94,6 +94,7 @@ import { MissionReviewContextPanel } from "@/components/review/MissionReviewCont
 import { MissionArchitectureContextPanel } from "@/components/architect/MissionArchitectureContextPanel";
 import { MissionDesignContextPanel } from "@/components/designer/MissionDesignContextPanel";
 import { MissionDevelopmentContextPanel } from "@/components/developer/MissionDevelopmentContextPanel";
+import { MissionQualityContextPanel } from "@/components/qa/MissionQualityContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1186,6 +1187,36 @@ export function MissionDetailView({
                 mission={mission}
                 missions={allMissions}
                 tasks={missionTasks}
+              />
+            ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Quality Context"
+              description="Test plan, validation checklist, acceptance criteria, and QA readiness"
+            />
+            <div className="mb-3 flex flex-wrap gap-3">
+              <Link
+                href={`/qa-workspace?mission=${missionId}`}
+                className="text-xs text-accent hover:underline"
+              >
+                Open QA Workspace
+              </Link>
+              <Link
+                href={`/artifact-review?mission=${missionId}&artifact=${missionId}-test_plan`}
+                className="text-xs text-accent hover:underline"
+              >
+                Test Plan Review
+              </Link>
+            </div>
+            {mission ? (
+              <MissionQualityContextPanel
+                mission={mission}
+                missions={allMissions}
+                tasks={missionTasks}
+                pullRequests={pullRequests}
+                releases={releases}
               />
             ) : null}
           </Card>

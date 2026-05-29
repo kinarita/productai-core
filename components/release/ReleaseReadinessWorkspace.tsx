@@ -15,6 +15,7 @@ import { releaseWorkspaceAdvisoryNote, releaseReadinessLevels } from "@/lib/rele
 import { useReleaseWorkspaceStore } from "@/lib/store/releaseWorkspaceStore";
 import type { ReleaseReadinessLevelId } from "@/lib/release/releaseWorkspace";
 import { cn } from "@/lib/utils";
+import { MissionQualityContextPanel } from "@/components/qa/MissionQualityContextPanel";
 
 export function MissionReleaseContextPanel({
   mission,
@@ -201,6 +202,20 @@ export function ReleaseReadinessWorkspace({
           <ReleaseChecklistPanel items={checklistForMission} />
         ) : (
           <p className="text-xs text-muted">Select a mission filter to view its release checklist.</p>
+        )}
+      </Card>
+
+      <Card title="QA Validation Context" description="QA readiness and validation planning inputs (display only)">
+        {selectedMission ? (
+          <MissionQualityContextPanel
+            mission={selectedMission}
+            missions={missions}
+            tasks={tasks}
+            pullRequests={pullRequests}
+            releases={releases}
+          />
+        ) : (
+          <p className="text-xs text-muted">Select a mission filter to view its QA validation context.</p>
         )}
       </Card>
 

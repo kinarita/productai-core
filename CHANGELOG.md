@@ -4,6 +4,13 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-9 QA Workspace)
+
+- QA Workspace (`/qa-workspace`) for Test Plan, validation checklist, acceptance criteria, quality risk review, release validation context, and QA readiness.
+- CEO Home Quality Overview; Developer, Mission Detail, Release Readiness integration.
+- Artifact Review integration (`test_plan`) and QA feed events; localStorage persistence (`productai-qa-workspace`).
+- Documentation: `docs/PHASE9_QA_WORKSPACE.md`.
+
 ### Added (Phase 9-8 Developer Workspace)
 
 - Developer Workspace (`/developer-workspace`) for Implementation Plan, work breakdown, repository plan, and development readiness.

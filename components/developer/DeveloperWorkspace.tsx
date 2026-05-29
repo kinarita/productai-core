@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { Mission, Task } from "@/types/productai";
 import { Card } from "@/components/Card";
 import { DesignIntakePanel } from "@/components/developer/DesignIntakePanel";
@@ -12,7 +12,10 @@ import { TechnicalRiskReviewPanel } from "@/components/developer/TechnicalRiskRe
 import { ReviewPreparationPanel } from "@/components/developer/ReviewPreparationPanel";
 import { DevelopmentReadinessPanel } from "@/components/developer/DevelopmentReadinessPanel";
 import { DeveloperWorkspaceSummary } from "@/components/developer/DeveloperWorkspaceSummary";
+import { QaHandoffContextPanel } from "@/components/qa/QaHandoffContextPanel";
+import { pullRequests, releases } from "@/data/mockData";
 import { useDeveloperWorkspace } from "@/lib/hooks/useDeveloperWorkspace";
+import { buildQaHandoffContextItems } from "@/lib/qa/qaAnalysis";
 import { useDeveloperWorkspaceStore } from "@/lib/store/developerWorkspaceStore";
 import type { DeveloperWorkspaceViewId } from "@/lib/developer/developerWorkspace";
 import type { DevelopmentReadinessStateId } from "@/lib/developer/developerWorkspace";
@@ -71,6 +74,17 @@ export function DeveloperWorkspace({
     implementationPlanId: filterPlanId,
     reviewStateFilter: selectedReviewState,
   });
+
+  const qaHandoffItems = useMemo(
+    () =>
+      buildQaHandoffContextItems({
+        missions,
+        tasks,
+        pullRequests,
+        releases,
+      }),
+    [missions, tasks]
+  );
 
   useEffect(() => {
     if (initialMissionId) setSelectedMission(initialMissionId);
@@ -220,6 +234,12 @@ export function DeveloperWorkspace({
         </Card>
       )}
 
+      {(view === "readiness" || view === "context") && (
+        <Card title="QA Handoff Context" description="Implementation plan, technical risks, and QA readiness">
+          <QaHandoffContextPanel items={qaHandoffItems} compact />
+        </Card>
+      )}
+
       <Card title="Workspace Links" description="Design to implementation planning continuity">
         <div className="grid gap-2 sm:grid-cols-2">
           <Link
@@ -239,6 +259,12 @@ export function DeveloperWorkspace({
             className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
           >
             Artifact Review Workspace
+          </Link>
+          <Link
+            href="/qa-workspace"
+            className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
+          >
+            QA Workspace
           </Link>
           <Link href="/ceo-home" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             CEO Home

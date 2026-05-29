@@ -143,6 +143,11 @@ const typeLabels: Record<string, string> = {
   technical_risk_identified: "Technical Risk Identified",
   development_review_completed: "Development Review Completed",
   development_snapshot: "Development Snapshot",
+  test_plan_created: "Test Plan Created",
+  qa_review_requested: "QA Review Requested",
+  quality_risk_identified: "Quality Risk Identified",
+  qa_review_completed: "QA Review Completed",
+  qa_snapshot: "QA Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -242,6 +247,11 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   technical_risk_identified: "warning",
   development_review_completed: "accent",
   development_snapshot: "default",
+  test_plan_created: "info",
+  qa_review_requested: "warning",
+  quality_risk_identified: "warning",
+  qa_review_completed: "accent",
+  qa_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
@@ -278,7 +288,16 @@ function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): bool
     return item.type === "runtime";
   }
   if (filter === "escalations") return item.type === "escalation";
-  if (filter === "qa") return item.type === "qa_review";
+  if (filter === "qa") {
+    return (
+      item.type === "qa_review" ||
+      item.type === "test_plan_created" ||
+      item.type === "qa_review_requested" ||
+      item.type === "quality_risk_identified" ||
+      item.type === "qa_review_completed" ||
+      item.type === "qa_snapshot"
+    );
+  }
   return true;
 }
 
@@ -299,7 +318,7 @@ function matchesStatus(item: OrganizationFeedItem, status?: string) {
     return item.type === "escalation";
   }
   if (normalized === "in_review") {
-    return item.type === "qa_review";
+    return item.type === "qa_review" || item.type === "qa_review_requested";
   }
   if (normalized === "completed") {
     return item.type === "implementation";

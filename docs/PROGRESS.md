@@ -1,5 +1,24 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 9-9 QA Workspace
+
+### Objective
+
+QA Workspace for quality planning from Developer implementation artifacts through Test Plan, validation checklist, acceptance criteria, release validation context, and QA readiness.
+
+### Implemented in Phase 9-9
+
+- `QA Workspace` at `/qa-workspace`
+- QA library: test plan model, validation checklist, acceptance criteria, quality risk review, release validation, QA readiness
+- CEO Home Quality Overview; Developer, Mission Detail, Release Readiness integration
+- Artifact Review integration (`test_plan`) and new QA feed events
+- localStorage `productai-qa-workspace`
+- Documentation: `docs/PHASE9_QA_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No auto testing, QA approval, release approval, repository changes, PR creation, GitHub actions, MCP execution, deployment, or autonomous execution
+
 ## 2026-05-29 — Phase 9-8 Developer Workspace
 
 ### Objective

@@ -311,6 +311,13 @@ export type DeveloperFeedEventType =
   | "development_review_completed"
   | "development_snapshot";
 
+export type QaFeedEventType =
+  | "test_plan_created"
+  | "qa_review_requested"
+  | "quality_risk_identified"
+  | "qa_review_completed"
+  | "qa_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -343,7 +350,8 @@ export interface OrganizationFeedItem {
     | DirectorFeedEventType
     | ArchitectFeedEventType
     | DesignerFeedEventType
-    | DeveloperFeedEventType;
+    | DeveloperFeedEventType
+    | QaFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;
