@@ -85,6 +85,7 @@ import {
 import { useReplayPersonalizationStore } from "@/lib/store/replayPersonalizationStore";
 import { GovernanceKnowledgeGraph } from "@/components/orchestration/GovernanceKnowledgeGraph";
 import { ExecutiveDecisionMemoryAtlas } from "@/components/orchestration/ExecutiveDecisionMemoryAtlas";
+import { ExecutiveDecisionTraceability } from "@/components/orchestration/ExecutiveDecisionTraceability";
 
 export function RuntimeCostView() {
   const validationMetrics = getReplayValidationMetrics();
@@ -1537,6 +1538,22 @@ export function RuntimeCostView() {
               compact
               showSummary
               showThemes
+              showTimeline={false}
+              showInspector={false}
+            />
+          </Card>
+        </div>
+
+        <div id="decision-traceability">
+          <Card
+            title="Decision Traceability"
+            description="Explainability pathways above decision context—does not replace replay diagnostics"
+          >
+            <ExecutiveDecisionTraceability
+              decisionAttention={decisionAttentionItems}
+              compact
+              showSummary
+              showPaths
               showTimeline={false}
               showInspector={false}
             />

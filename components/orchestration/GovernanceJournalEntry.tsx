@@ -76,6 +76,12 @@ export function GovernanceJournalEntryCard({
         >
           Open decision atlas
         </Link>
+        <Link
+          href="/runtime-cost#decision-traceability"
+          className="text-[11px] font-medium text-accent hover:underline"
+        >
+          Open traceability
+        </Link>
         {onPin ? (
           <button
             type="button"
@@ -95,6 +101,11 @@ export function GovernanceJournalEntryCard({
           </button>
         ) : null}
       </div>
+      {entry.relatedDecisionPathways && entry.relatedDecisionPathways.length > 0 ? (
+        <p className="mt-1 text-[11px] text-muted">
+          Decision pathways: {entry.relatedDecisionPathways.length} linked for explainability reading
+        </p>
+      ) : null}
     </li>
   );
 }

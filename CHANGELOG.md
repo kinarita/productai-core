@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-13 executive decision traceability)
+
+- Executive decision traceability above decision memory atlas with pathways and explainability edges.
+- Decision path explorer, traceability inspector, summary, and path timeline components.
+- CEO Home traceability summary; Runtime decision traceability; Mission decision path view; Feed CTAs.
+- Narrative and journal `relatedDecisionPathways` with traceability navigation links.
+- Documentation: `docs/PHASE7_EXECUTIVE_DECISION_TRACEABILITY.md`.
+
 ### Added (Phase 7-12 executive decision memory atlas)
 
 - Decision memory atlas above knowledge graph with decision themes and executive memory summary.

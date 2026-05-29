@@ -78,6 +78,8 @@ import { useGovernanceKnowledgeGraph } from "@/lib/hooks/useGovernanceKnowledgeG
 import { MissionRelationshipView } from "@/components/orchestration/RelationshipInspector";
 import { useDecisionMemoryAtlas } from "@/lib/hooks/useDecisionMemoryAtlas";
 import { MissionDecisionContextView } from "@/components/orchestration/DecisionMemoryInspector";
+import { useDecisionTraceability } from "@/lib/hooks/useDecisionTraceability";
+import { MissionDecisionPathView } from "@/components/orchestration/TraceabilityInspector";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -247,6 +249,7 @@ export function MissionDetailView({
   );
   const { graph: missionKnowledgeGraph } = useGovernanceKnowledgeGraph(decisionAttentionItems);
   const { atlas: missionDecisionAtlas } = useDecisionMemoryAtlas(decisionAttentionItems);
+  const { traceability: missionTraceability } = useDecisionTraceability(decisionAttentionItems);
 
   useEffect(() => {
     setActiveMission(missionId);
@@ -952,6 +955,13 @@ export function MissionDetailView({
                 description="Themes, narratives, attention, and review journeys for this mission"
               />
               <MissionDecisionContextView missionId={missionId} atlas={missionDecisionAtlas} />
+            </div>
+            <div className="mt-3">
+              <SectionHeader
+                title="Mission decision path view"
+                description="Related pathways, themes, narratives, and attention for explainability"
+              />
+              <MissionDecisionPathView missionId={missionId} traceability={missionTraceability} />
             </div>
             <div className="mt-3">
               <GovernanceReadingModeSwitcher compact />

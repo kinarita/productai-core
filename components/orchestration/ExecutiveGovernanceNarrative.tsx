@@ -10,6 +10,8 @@ import {
 import { useReplayInterpretationStore } from "@/lib/store/replayInterpretationStore";
 import { useGovernanceJournalStore } from "@/lib/store/governanceJournalStore";
 import { useGovernanceNarrativeStore } from "@/lib/store/governanceNarrativeStore";
+import { useDecisionTraceability } from "@/lib/hooks/useDecisionTraceability";
+import { collectPathwayIdsForEntity } from "@/lib/orchestration/governance-history/traceabilityBuilder";
 import type { ReplayDiagnostics } from "@/lib/replay-query/replayDiagnostics";
 
 export function ExecutiveGovernanceNarrativePanel({
@@ -24,6 +26,7 @@ export function ExecutiveGovernanceNarrativePanel({
   const narratives = useGovernanceNarrativeStore((s) => s.narratives);
   const saveNarrative = useGovernanceNarrativeStore((s) => s.saveNarrative);
   const removeNarrative = useGovernanceNarrativeStore((s) => s.removeNarrative);
+  const { traceability } = useDecisionTraceability([]);
 
   const liveSummary = useMemo(
     () => buildNarrativeSummary({ interpretations: records, journals, diagnostics: replayDiagnostics }),
@@ -50,16 +53,34 @@ export function ExecutiveGovernanceNarrativePanel({
             ).join(", ")}
           </p>
         ) : null}
-        <Link
-          href="/runtime-cost#decision-memory-atlas"
-          className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
-        >
-          Open decision memory atlas →
-        </Link>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link
+            href="/runtime-cost#decision-memory-atlas"
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            Open decision memory atlas →
+          </Link>
+          <Link
+            href="/runtime-cost#decision-traceability"
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            Open decision traceability →
+          </Link>
+        </div>
       </div>
       <button
         type="button"
-        onClick={() => saveNarrative({ interpretations: records, journals })}
+        onClick={() => {
+          const narrative = saveNarrative({ interpretations: records, journals });
+          const pathwayIds = collectPathwayIdsForEntity(traceability.pathways, narrative.id);
+          if (pathwayIds.length > 0) {
+            useGovernanceNarrativeStore.setState((state) => ({
+              narratives: state.narratives.map((n) =>
+                n.id === narrative.id ? { ...n, relatedDecisionPathways: pathwayIds } : n
+              ),
+            }));
+          }
+        }}
         className="rounded-lg border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-surface"
       >
         Save governance narrative
@@ -76,6 +97,17 @@ export function ExecutiveGovernanceNarrativePanel({
                   Decision themes: {decisionThemeTitles(n.relatedDecisionThemes).join(", ")}
                 </p>
               ) : null}
+              {n.relatedDecisionPathways?.length ? (
+                <p className="mt-1 text-[11px] text-muted">
+                  Decision pathways: {n.relatedDecisionPathways.length} linked (advisory)
+                </p>
+              ) : null}
+              <Link
+                href="/runtime-cost#decision-traceability"
+                className="mt-1 inline-block text-[11px] font-medium text-accent hover:underline"
+              >
+                View traceability →
+              </Link>
               <button
                 type="button"
                 onClick={() => removeNarrative(n.id)}

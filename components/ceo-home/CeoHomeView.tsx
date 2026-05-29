@@ -44,6 +44,8 @@ import { KnowledgeGraphSummaryPanel } from "@/components/orchestration/Knowledge
 import { useGovernanceKnowledgeGraph } from "@/lib/hooks/useGovernanceKnowledgeGraph";
 import { useDecisionMemoryAtlas } from "@/lib/hooks/useDecisionMemoryAtlas";
 import { DecisionAtlasSummaryPanel } from "@/components/orchestration/DecisionAtlasSummary";
+import { useDecisionTraceability } from "@/lib/hooks/useDecisionTraceability";
+import { TraceabilitySummaryPanel } from "@/components/orchestration/TraceabilitySummary";
 
 const healthVariant = {
   stable: "success" as const,
@@ -155,6 +157,7 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
   );
   const { summary: knowledgeGraphSummary } = useGovernanceKnowledgeGraph(decisionAttentionItems);
   const { summary: decisionAtlasSummary } = useDecisionMemoryAtlas(decisionAttentionItems);
+  const { summary: traceabilitySummary } = useDecisionTraceability(decisionAttentionItems);
 
   const operationalAlerts = [
     ...runtimeAlerts.slice(0, 3).map((a) => ({
@@ -462,6 +465,13 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           description="Decision themes, review continuity, and executive participation across governance memory"
         >
           <DecisionAtlasSummaryPanel summary={decisionAtlasSummary} compact />
+        </Card>
+
+        <Card
+          title="Executive Decision Traceability Summary"
+          description="Top pathways, review paths, and continuity chains for explainability reading"
+        >
+          <TraceabilitySummaryPanel summary={traceabilitySummary} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

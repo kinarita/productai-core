@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-13 executive decision traceability)
+
+- Added decision traceability layered on memory atlas and knowledge graph (pathways, rule-based only).
+- Added path explorer, traceability inspector, summary panels, and decision path timeline.
+- Integrated traceability on CEO Home, Runtime, Mission Detail, Feed, narratives, and journals.
+- localStorage persistence for traceability view state (`productai-decision-traceability`).
+- Documentation: `docs/PHASE7_EXECUTIVE_DECISION_TRACEABILITY.md`.
+
 ## 2026-05-28 (Phase 7-12 executive decision memory atlas)
 
 - Added decision memory atlas layered on the governance knowledge graph (rule-based themes, no LLM).

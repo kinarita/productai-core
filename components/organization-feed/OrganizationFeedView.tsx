@@ -44,6 +44,7 @@ import { GovernanceStoryModeSwitcher } from "@/components/orchestration/Governan
 import { getGovernanceStoryMode } from "@/lib/orchestration/governance-history/storyModes";
 import { useGovernanceNarrativeStore } from "@/lib/store/governanceNarrativeStore";
 import { useDecisionMemoryAtlasStore } from "@/lib/store/decisionMemoryAtlasStore";
+import { useDecisionTraceabilityStore } from "@/lib/store/decisionTraceabilityStore";
 
 const typeLabels: Record<string, string> = {
   judgment: "Judgment",
@@ -706,6 +707,48 @@ export function OrganizationFeedView({
             className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
           >
             Open atlas view →
+          </Link>
+        </div>
+      </div>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-3">
+        <p className="text-xs font-medium uppercase text-muted">Decision traceability</p>
+        <p className="mt-1 text-xs text-muted">
+          Open decision paths, traceability view, and continuity chains while preserving replay query
+          continuity.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Link
+            href={buildReplayHref(
+              "/runtime-cost",
+              mergeReplayQuery(replayQuery, {
+                scope: "governance_review",
+                governanceAttention:
+                  activeAttentionFilter !== "all"
+                    ? activeAttentionFilter
+                    : replayQuery.governanceAttention,
+              })
+            ).concat("#decision-traceability")}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface"
+          >
+            Open decision path →
+          </Link>
+          <Link
+            href={buildReplayHref("/runtime-cost", replayQuery).concat("#decision-traceability")}
+            onClick={() => {
+              useDecisionTraceabilityStore.getState().setActiveTraceabilityView("paths");
+            }}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Open traceability view →
+          </Link>
+          <Link
+            href={buildReplayHref("/runtime-cost", replayQuery).concat("#decision-traceability")}
+            onClick={() => {
+              useDecisionTraceabilityStore.getState().setActiveTraceabilityView("timeline");
+            }}
+            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Open continuity chain →
           </Link>
         </div>
       </div>

@@ -20,6 +20,7 @@ export interface GovernanceJournalEntry {
   digestContext?: string;
   comparisonNote?: string;
   relatedDecisionThemes?: DecisionThemeId[];
+  relatedDecisionPathways?: string[];
 }
 
 export function createGovernanceJournalEntry(input: {
@@ -36,6 +37,7 @@ export function createGovernanceJournalEntry(input: {
   digestContext?: string;
   comparisonNote?: string;
   relatedDecisionThemes?: DecisionThemeId[];
+  relatedDecisionPathways?: string[];
 }): GovernanceJournalEntry {
   const themeText = `${input.title} ${input.humanInterpretation} ${input.continuityCategory ?? ""}`;
   return {
@@ -57,5 +59,6 @@ export function createGovernanceJournalEntry(input: {
     comparisonNote: input.comparisonNote,
     relatedDecisionThemes:
       input.relatedDecisionThemes ?? inferDecisionThemes(themeText),
+    relatedDecisionPathways: input.relatedDecisionPathways ?? [],
   };
 }

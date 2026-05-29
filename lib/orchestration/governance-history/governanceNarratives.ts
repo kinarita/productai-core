@@ -20,6 +20,7 @@ export interface ExecutiveGovernanceNarrative {
   relatedJournals: string[];
   relatedDigests: string[];
   relatedDecisionThemes: DecisionThemeId[];
+  relatedDecisionPathways?: string[];
 }
 
 export function createGovernanceNarrative(input: {
@@ -27,6 +28,7 @@ export function createGovernanceNarrative(input: {
   journals: GovernanceJournalEntry[];
   narrativeSummary: NarrativeSummary;
   digestGeneratedAt?: string;
+  relatedDecisionPathways?: string[];
 }): ExecutiveGovernanceNarrative {
   const sorted = [...input.interpretations].sort((a, b) =>
     a.createdAt.localeCompare(b.createdAt)
@@ -63,6 +65,7 @@ export function createGovernanceNarrative(input: {
     relatedDecisionThemes: inferDecisionThemes(
       `${input.narrativeSummary.title} ${input.narrativeSummary.summary} ${input.narrativeSummary.continuityTheme}`
     ),
+    relatedDecisionPathways: input.relatedDecisionPathways ?? [],
   };
 }
 
