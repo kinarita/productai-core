@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 8-4 Release Readiness Workspace
+
+### Objective
+
+Cross-cutting release readiness visibility across mission, task, repository, and review without deploy or release execution.
+
+### Implemented in Phase 8-4
+
+- Release library: readiness levels, checklist, risks, summary, feed, store
+- `ReleaseReadinessWorkspace` with mission board, checklist, risks, and summary
+- CEO Home overview; COO release context links; Mission Detail context; Repository summary embed
+- Feed events: `release_checklist_updated`, `release_risk_observed`, `release_ready`, `release_snapshot`
+- Documentation: `docs/PHASE8_RELEASE_READINESS_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No GitHub API, deploy, release execution, CI/CD, or automatic release approval
+
 ## 2026-05-29 — Phase 8-3 Repository Coordination Workspace
 
 ### Objective

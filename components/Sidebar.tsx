@@ -16,6 +16,7 @@ import {
   Briefcase,
   Package,
   GitPullRequest,
+  Rocket,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/coo-workspace", label: "AI COO Workspace", icon: Briefcase },
   { href: "/delivery-workspace", label: "Delivery Workspace", icon: Package },
   { href: "/repository-workspace", label: "Repository Workspace", icon: GitPullRequest },
+  { href: "/release-workspace", label: "Release Readiness", icon: Rocket },
   { href: "/missions", label: "Products / Missions", icon: Target },
   { href: "/organization-feed", label: "Organization Feed", icon: MessageSquare },
   { href: "/executive-sync", label: "Executive Sync", icon: Users },

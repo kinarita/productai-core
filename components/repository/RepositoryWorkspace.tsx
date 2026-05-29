@@ -11,6 +11,8 @@ import { ReviewCoordinationPanel } from "@/components/repository/ReviewCoordinat
 import { ReleaseCoordinationPanel } from "@/components/repository/ReleaseCoordinationPanel";
 import { RepositorySummaryStats } from "@/components/repository/RepositorySummaryCard";
 import { useRepositoryWorkspace } from "@/lib/hooks/useRepositoryWorkspace";
+import { useReleaseWorkspace } from "@/lib/hooks/useReleaseWorkspace";
+import { ReleaseOverviewCard } from "@/components/release/ReleaseSummaryCard";
 import { buildMissionRepositoryContext } from "@/lib/repository/repositoryCoordination";
 import { repositoryWorkspaceAdvisoryNote } from "@/lib/repository/repositoryWorkspace";
 import { useRepositoryWorkspaceStore } from "@/lib/store/repositoryWorkspaceStore";
@@ -81,6 +83,14 @@ export function RepositoryWorkspace({
   const setSelectedView = useRepositoryWorkspaceStore((s) => s.setSelectedView);
 
   const filterRepositoryId = selectedRepositoryId ?? initialMissionId ?? null;
+
+  const { overview: releaseOverview } = useReleaseWorkspace({
+    missions,
+    tasks,
+    pullRequests,
+    releases,
+    missionId: filterRepositoryId,
+  });
 
   const {
     board,
@@ -207,8 +217,20 @@ export function RepositoryWorkspace({
         <ReviewCoordinationPanel summary={review} />
       </Card>
 
-      <Card title="Release Coordination" description="Candidates, blockers, QA, and documentation">
+      <Card
+        title="Release Coordination"
+        description="Candidates, blockers, QA, and documentation"
+        action={
+          <Link href="/release-workspace" className="text-xs text-accent hover:underline">
+            Release Readiness Summary
+          </Link>
+        }
+      >
         <ReleaseCoordinationPanel view={release} />
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="mb-2 text-xs font-medium uppercase text-muted">Release Readiness Summary</p>
+          <ReleaseOverviewCard overview={releaseOverview} compact />
+        </div>
       </Card>
 
       <Card title="Repository Summary" description="Organization-wide repository coordination metrics">
@@ -225,6 +247,9 @@ export function RepositoryWorkspace({
           </Link>
           <Link href="/organization-feed" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Organization Feed — repository events
+          </Link>
+          <Link href="/release-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Release Readiness Workspace
           </Link>
           <Link href="/code-release" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Code & Release — branch and PR reading

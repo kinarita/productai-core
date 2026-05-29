@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReleaseReadinessView } from "@/lib/delivery/releaseReadiness";
 
 export function ReleaseReadinessPanel({
@@ -42,6 +43,9 @@ export function ReleaseReadinessPanel({
       ) : (
         <p className="text-xs text-muted">No release blockers observed for coordination reading.</p>
       )}
+      <Link href="/release-workspace" className="mt-2 inline-block text-xs text-accent hover:underline">
+        {compact ? "Release Workspace" : "Open Release Readiness Workspace"}
+      </Link>
     </div>
   );
 }

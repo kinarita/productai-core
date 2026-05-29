@@ -54,6 +54,8 @@ import { useDeliveryWorkspace } from "@/lib/hooks/useDeliveryWorkspace";
 import { branches, commits, pullRequests, releases } from "@/data/mockData";
 import { RepositoryOverviewCard } from "@/components/repository/RepositorySummaryCard";
 import { useRepositoryWorkspace } from "@/lib/hooks/useRepositoryWorkspace";
+import { ReleaseOverviewCard } from "@/components/release/ReleaseSummaryCard";
+import { useReleaseWorkspace } from "@/lib/hooks/useReleaseWorkspace";
 
 const healthVariant = {
   stable: "success" as const,
@@ -184,6 +186,12 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     pullRequests,
     releases,
     commits,
+  });
+  const { overview: releaseOverview } = useReleaseWorkspace({
+    missions,
+    tasks,
+    pullRequests,
+    releases,
   });
 
   const operationalAlerts = [
@@ -542,6 +550,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <RepositoryOverviewCard overview={repositoryOverview} compact />
+        </Card>
+
+        <Card
+          title="Release Readiness Overview"
+          description="Ready for release, candidates, preparing missions, and potential risks"
+          action={
+            <Link href="/release-workspace" className="text-xs text-accent hover:underline">
+              Open Release Workspace
+            </Link>
+          }
+        >
+          <ReleaseOverviewCard overview={releaseOverview} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

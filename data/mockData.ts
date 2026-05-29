@@ -715,6 +715,62 @@ export const organizationFeedItems: OrganizationFeedItem[] = [
     governanceCategory: "governance_summary",
     replayTags: ["repository-workspace", "snapshot"],
   },
+  {
+    id: "f-rel-checklist",
+    type: "release_checklist_updated",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-3",
+    missionName: "Mobile Onboarding",
+    message:
+      "Release checklist updated for Mobile Onboarding. QA and review items marked partial for coordination reading.",
+    timestamp: "12:35 PM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["release-workspace", "checklist"],
+  },
+  {
+    id: "f-rel-risk",
+    type: "release_risk_observed",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-2",
+    missionName: "Analytics Pipeline",
+    message:
+      "Release risk observed: pending reviews on Analytics Pipeline. Additional coordination may benefit release confidence.",
+    timestamp: "12:40 PM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["release-workspace", "risk"],
+  },
+  {
+    id: "f-rel-ready",
+    type: "release_ready",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-3",
+    missionName: "Mobile Onboarding",
+    message:
+      "This mission appears ready for release review. No deploy or release execution performed in ProductAI.",
+    timestamp: "12:45 PM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["release-workspace", "ready"],
+  },
+  {
+    id: "f-rel-snapshot",
+    type: "release_snapshot",
+    author: "COO",
+    authorName: "Nova",
+    missionId: "m-1",
+    missionName: "Customer Portal v2",
+    message:
+      "Release snapshot: one candidate and two preparing missions across the organization. Visibility only.",
+    timestamp: "12:50 PM",
+    status: "active",
+    governanceCategory: "governance_summary",
+    replayTags: ["release-workspace", "snapshot"],
+  },
 ];
 
 export const executiveSyncContext = {

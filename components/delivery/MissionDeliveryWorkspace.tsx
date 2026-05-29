@@ -236,6 +236,9 @@ export function MissionDeliveryWorkspace({
           <Link href="/repository-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Repository Context — branches, PRs, review coordination
           </Link>
+          <Link href="/release-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Release Readiness Workspace
+          </Link>
           <Link href="/organization-feed" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Organization Feed — delivery events
           </Link>

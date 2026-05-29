@@ -91,6 +91,10 @@ const typeLabels: Record<string, string> = {
   review_completed: "Review Completed",
   release_candidate_created: "Release Candidate Created",
   repository_snapshot: "Repository Snapshot",
+  release_checklist_updated: "Release Checklist Updated",
+  release_risk_observed: "Release Risk Observed",
+  release_ready: "Release Ready",
+  release_snapshot: "Release Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -138,6 +142,10 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   review_completed: "accent",
   release_candidate_created: "info",
   repository_snapshot: "default",
+  release_checklist_updated: "info",
+  release_risk_observed: "warning",
+  release_ready: "accent",
+  release_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

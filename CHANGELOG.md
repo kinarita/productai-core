@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 8-4 Release Readiness Workspace)
+
+- Release Readiness Workspace for cross-cutting mission release board, checklist, and risks.
+- Readiness levels (Not Ready through Released) and seven-item checklist (complete/partial/missing).
+- CEO Home, COO, Mission Detail, and Repository Workspace integration; Organization Feed release events.
+- localStorage persistence (`productai-release-workspace`).
+- Documentation: `docs/PHASE8_RELEASE_READINESS_WORKSPACE.md`.
+
 ### Added (Phase 8-3 Repository Coordination Workspace)
 
 - Repository coordination workspace for mission-linked branches, pull requests, review, and release context.

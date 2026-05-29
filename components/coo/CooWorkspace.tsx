@@ -157,10 +157,13 @@ export function CooWorkspace({
             Organization Feed — COO coordination events
           </Link>
           <Link href="/delivery-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
-            Open Delivery Workspace
+            Mission Delivery
           </Link>
           <Link href="/repository-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Repository Coordination
+          </Link>
+          <Link href="/release-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Release Readiness
           </Link>
           <Link href="/runtime-cost" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Runtime — knowledge graph & traceability context

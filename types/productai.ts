@@ -236,6 +236,12 @@ export type RepositoryFeedEventType =
   | "release_candidate_created"
   | "repository_snapshot";
 
+export type ReleaseFeedEventType =
+  | "release_checklist_updated"
+  | "release_risk_observed"
+  | "release_ready"
+  | "release_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -257,7 +263,8 @@ export interface OrganizationFeedItem {
     | MissionTeamFeedEventType
     | CooFeedEventType
     | DeliveryFeedEventType
-    | RepositoryFeedEventType;
+    | RepositoryFeedEventType
+    | ReleaseFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

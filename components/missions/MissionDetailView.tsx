@@ -86,6 +86,7 @@ import {
 } from "@/components/mission-team/MissionTeamPanel";
 import { CooContextPanel } from "@/components/coo/CooWorkspace";
 import { MissionDeliveryContextPanel } from "@/components/delivery/MissionDeliveryWorkspace";
+import { MissionReleaseContextPanel } from "@/components/release/ReleaseReadinessWorkspace";
 import { pullRequests, releases } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -976,6 +977,30 @@ export function MissionDetailView({
             </div>
             {mission ? (
               <MissionDeliveryContextPanel
+                mission={mission}
+                tasks={missionTasks}
+                pullRequests={pullRequests}
+                releases={releases}
+              />
+            ) : null}
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <SectionHeader
+                title="Release Readiness Context"
+                description="Checklist, risks, and readiness summary for this mission"
+                className="mb-0"
+              />
+              <Link
+                href={`/release-workspace?mission=${missionId}`}
+                className="shrink-0 text-xs text-accent hover:underline"
+              >
+                Open Release Workspace
+              </Link>
+            </div>
+            {mission ? (
+              <MissionReleaseContextPanel
                 mission={mission}
                 tasks={missionTasks}
                 pullRequests={pullRequests}
