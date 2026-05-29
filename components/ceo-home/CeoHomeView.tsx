@@ -61,6 +61,8 @@ import { DeveloperWorkspaceSummary } from "@/components/developer/DeveloperWorks
 import { useDeveloperWorkspace } from "@/lib/hooks/useDeveloperWorkspace";
 import { QaWorkspaceSummary } from "@/components/qa/QaWorkspaceSummary";
 import { useQaWorkspace } from "@/lib/hooks/useQaWorkspace";
+import { useArtifactLineage } from "@/lib/hooks/useArtifactLineage";
+import { ArtifactLineageSummary } from "@/components/lineage/ArtifactLineageSummary";
 import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPanel";
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
@@ -250,6 +252,11 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     tasks,
     pullRequests,
     releases,
+  });
+  const { overview: lineageOverview } = useArtifactLineage({
+    missions,
+    tasks,
+    feedItems,
   });
 
   const operationalAlerts = [
@@ -752,6 +759,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <ArtifactReviewSummary summary={reviewCeoSummary} compact ceoOverview />
+        </Card>
+
+        <Card
+          title="Artifact Lineage Overview"
+          description="Why each artifact exists—active, complete, and incomplete lineages plus review concentrations"
+          action={
+            <Link href="/artifact-lineage" className="text-xs text-accent hover:underline">
+              Open Artifact Lineage
+            </Link>
+          }
+        >
+          <ArtifactLineageSummary summary={lineageOverview} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

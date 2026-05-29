@@ -148,6 +148,10 @@ const typeLabels: Record<string, string> = {
   quality_risk_identified: "Quality Risk Identified",
   qa_review_completed: "QA Review Completed",
   qa_snapshot: "QA Snapshot",
+  artifact_lineage_created: "Artifact Lineage Created",
+  artifact_lineage_updated: "Artifact Lineage Updated",
+  artifact_lineage_reviewed: "Artifact Lineage Reviewed",
+  artifact_lineage_snapshot: "Artifact Lineage Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -252,6 +256,10 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   quality_risk_identified: "warning",
   qa_review_completed: "accent",
   qa_snapshot: "default",
+  artifact_lineage_created: "info",
+  artifact_lineage_updated: "accent",
+  artifact_lineage_reviewed: "warning",
+  artifact_lineage_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
@@ -295,7 +303,11 @@ function matchesFeedFilter(item: OrganizationFeedItem, filter: FeedFilter): bool
       item.type === "qa_review_requested" ||
       item.type === "quality_risk_identified" ||
       item.type === "qa_review_completed" ||
-      item.type === "qa_snapshot"
+      item.type === "qa_snapshot" ||
+      item.type === "artifact_lineage_created" ||
+      item.type === "artifact_lineage_updated" ||
+      item.type === "artifact_lineage_reviewed" ||
+      item.type === "artifact_lineage_snapshot"
     );
   }
   return true;

@@ -318,6 +318,12 @@ export type QaFeedEventType =
   | "qa_review_completed"
   | "qa_snapshot";
 
+export type LineageFeedEventType =
+  | "artifact_lineage_created"
+  | "artifact_lineage_updated"
+  | "artifact_lineage_reviewed"
+  | "artifact_lineage_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -351,7 +357,8 @@ export interface OrganizationFeedItem {
     | ArchitectFeedEventType
     | DesignerFeedEventType
     | DeveloperFeedEventType
-    | QaFeedEventType;
+    | QaFeedEventType
+    | LineageFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

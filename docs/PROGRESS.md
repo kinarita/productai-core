@@ -1,5 +1,23 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 10-1 Artifact Lineage Workspace
+
+### Objective
+
+Visualize why each artifact exists as a single Mission-scoped lineage chain from Idea through Test Plan—accountability and traceability only.
+
+### Implemented in Phase 10-1
+
+- `Artifact Lineage Workspace` at `/artifact-lineage`
+- Lineage library: `ArtifactLineageRecord`, chain, dependency, review traceability, team ownership, inspector
+- CEO Home Artifact Lineage Overview; Mission Detail, Lifecycle, Team Handoff, Artifact Review integration
+- Feed lineage events; localStorage `productai-artifact-lineage`
+- Documentation: `docs/PHASE10_ARTIFACT_LINEAGE_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No auto approval, auto progression, auto optimization, or execution
+
 ## 2026-05-29 — Phase 9-9 QA Workspace
 
 ### Objective

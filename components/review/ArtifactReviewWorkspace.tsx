@@ -15,6 +15,7 @@ import type { ReviewStateId } from "@/lib/review/reviewStatus";
 import { reviewStateLevels } from "@/lib/review/reviewStatus";
 import { useReviewWorkspaceStore } from "@/lib/store/reviewWorkspaceStore";
 import { cn } from "@/lib/utils";
+import { artifactLineageHref } from "@/lib/lineage/artifactLineageWorkspace";
 
 export function ArtifactReviewWorkspace({
   missions,
@@ -191,8 +192,25 @@ export function ArtifactReviewWorkspace({
         </Card>
       )}
 
+      {filterMissionId ? (
+        <Card title="Artifact Lineage" description="Trace why this artifact exists in the mission chain">
+          <Link
+            href={artifactLineageHref({
+              missionId: filterMissionId,
+              artifactId: filterArtifactId ?? selectedRecord?.artifactId,
+            })}
+            className="text-xs text-accent hover:underline"
+          >
+            Open Artifact Lineage
+          </Link>
+        </Card>
+      ) : null}
+
       <Card title="Workspace Links" description="Team handoff and product lifecycle continuity">
         <div className="grid gap-2 sm:grid-cols-2">
+          <Link href="/artifact-lineage" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Artifact Lineage Workspace
+          </Link>
           <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             AI Team Handoff Workflow
           </Link>

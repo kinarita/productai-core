@@ -95,6 +95,7 @@ import { MissionArchitectureContextPanel } from "@/components/architect/MissionA
 import { MissionDesignContextPanel } from "@/components/designer/MissionDesignContextPanel";
 import { MissionDevelopmentContextPanel } from "@/components/developer/MissionDevelopmentContextPanel";
 import { MissionQualityContextPanel } from "@/components/qa/MissionQualityContextPanel";
+import { MissionLineageContextPanel } from "@/components/lineage/MissionLineageContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1218,6 +1219,16 @@ export function MissionDetailView({
                 pullRequests={pullRequests}
                 releases={releases}
               />
+            ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Artifact Lineage Context"
+              description="Trace why each deliverable exists across the mission artifact chain"
+            />
+            {mission ? (
+              <MissionLineageContextPanel mission={mission} tasks={missionTasks} />
             ) : null}
           </Card>
 

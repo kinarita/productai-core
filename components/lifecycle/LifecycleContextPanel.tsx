@@ -18,6 +18,7 @@ import { buildMissionHandoffContext } from "@/lib/handoff/handoffAnalysis";
 import { getLifecycleReviewSummaryForMission } from "@/lib/review/reviewAnalysis";
 import { getIdeaLifecycleConnection, buildProductIdeas } from "@/lib/idea/ideaAnalysis";
 import { buildLifecycleBriefTransition, buildProductBriefRecords } from "@/lib/brief/productBriefAnalysis";
+import { buildLifecycleLineageContext } from "@/lib/lineage/artifactLineageAnalysis";
 import { useMemo } from "react";
 
 export function MissionLifecycleContextPanel({
@@ -79,6 +80,11 @@ export function MissionLifecycleContextPanel({
     [mission]
   );
 
+  const lineageContext = useMemo(
+    () => buildLifecycleLineageContext({ mission, tasks }),
+    [mission, tasks]
+  );
+
   const { view } = context;
 
   return (
@@ -121,6 +127,18 @@ export function MissionLifecycleContextPanel({
           <p className="text-[10px] uppercase text-muted">Idea Stage (this mission)</p>
           <p className="text-sm">{ideaLifecycle.ideaStageCount > 0 ? "In Idea exploration" : "In Planning"}</p>
         </div>
+        <div className="rounded-lg border border-border px-3 py-2">
+          <p className="text-[10px] uppercase text-muted">Current Lineage Position</p>
+          <p className="text-sm">{lineageContext.currentLineagePosition}</p>
+        </div>
+        <div className="rounded-lg border border-border px-3 py-2">
+          <p className="text-[10px] uppercase text-muted">Previous Stage Artifact</p>
+          <p className="text-sm">{lineageContext.previousStageArtifact ?? "—"}</p>
+        </div>
+        <div className="rounded-lg border border-border px-3 py-2">
+          <p className="text-[10px] uppercase text-muted">Next Stage Artifact</p>
+          <p className="text-sm">{lineageContext.nextStageArtifact ?? "—"}</p>
+        </div>
       </div>
       <p className="text-xs text-muted">{view.progressNote}</p>
       <LifecycleJourneyPanel journey={journey} compact />
@@ -149,9 +167,15 @@ export function MissionLifecycleContextPanel({
       </Link>
       <Link
         href={`/product-lifecycle?mission=${mission.id}`}
-        className="inline-block text-xs text-accent hover:underline"
+        className="mr-4 inline-block text-xs text-accent hover:underline"
       >
         Open Product Lifecycle Workspace
+      </Link>
+      <Link
+        href={lineageContext.lineageHref}
+        className="inline-block text-xs text-accent hover:underline"
+      >
+        Open Artifact Lineage
       </Link>
     </div>
   );

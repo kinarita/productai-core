@@ -2,6 +2,15 @@
 
 All notable changes to ProductAI are documented here.
 
+## 2026-05-30
+
+### Added (Phase 10-1 Artifact Lineage Workspace)
+
+- Artifact Lineage Workspace (`/artifact-lineage`) tracing Idea → Product Brief → Mission Plan → Technical Specification → Design Specification → Implementation Plan → Test Plan per mission.
+- CEO Home overview; Mission Detail, Product Lifecycle, Team Handoff, and Artifact Review deep links.
+- Feed lineage events; localStorage persistence (`productai-artifact-lineage`).
+- Documentation: `docs/PHASE10_ARTIFACT_LINEAGE_WORKSPACE.md`.
+
 ## 2026-05-29
 
 ### Added (Phase 9-9 QA Workspace)

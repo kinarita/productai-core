@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Mission, Task } from "@/types/productai";
 import { buildMissionReviewContext, buildReviewTimeline, buildArtifactReviewRecords } from "@/lib/review/reviewAnalysis";
 import { ArtifactReviewTimeline } from "@/components/review/ArtifactReviewTimeline";
+import { artifactLineageHref } from "@/lib/lineage/artifactLineageWorkspace";
 
 export function MissionReviewContextPanel({
   mission,
@@ -43,12 +44,23 @@ export function MissionReviewContextPanel({
         </div>
       ) : null}
       {timeline.length > 0 ? <ArtifactReviewTimeline steps={timeline} compact /> : null}
-      <Link
-        href={`/artifact-review?mission=${mission.id}${context.currentArtifactId ? `&artifact=${context.currentArtifactId}` : ""}`}
-        className="inline-block text-xs text-accent hover:underline"
-      >
-        Open Artifact Review
-      </Link>
+      <div className="flex flex-wrap gap-4">
+        <Link
+          href={`/artifact-review?mission=${mission.id}${context.currentArtifactId ? `&artifact=${context.currentArtifactId}` : ""}`}
+          className="text-xs text-accent hover:underline"
+        >
+          Open Artifact Review
+        </Link>
+        <Link
+          href={artifactLineageHref({
+            missionId: mission.id,
+            artifactId: context.currentArtifactId ?? undefined,
+          })}
+          className="text-xs text-accent hover:underline"
+        >
+          Open Artifact Lineage
+        </Link>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type {
   Mission,
   Task,
@@ -15,6 +15,7 @@ import { LifecycleStageBoard } from "@/components/lifecycle/LifecycleStageBoard"
 import { LifecycleTimeline } from "@/components/lifecycle/LifecycleTimeline";
 import { LifecycleSummaryCard } from "@/components/lifecycle/LifecycleSummaryCard";
 import { LifecycleMissionView } from "@/components/lifecycle/LifecycleMissionView";
+import { buildLifecycleLineageContext } from "@/lib/lineage/artifactLineageAnalysis";
 import { LifecycleJourneyPanel } from "@/components/lifecycle/LifecycleJourneyPanel";
 import { useLifecycleWorkspace } from "@/lib/hooks/useLifecycleWorkspace";
 import { lifecycleWorkspaceAdvisoryNote } from "@/lib/lifecycle/productLifecycle";
@@ -60,6 +61,15 @@ export function ProductLifecycleWorkspace({
   useEffect(() => {
     if (initialMissionId) setSelectedMission(initialMissionId);
   }, [initialMissionId, setSelectedMission]);
+
+  const selectedMission = filterMissionId
+    ? missions.find((m) => m.id === filterMissionId) ?? null
+    : null;
+
+  const lineageContext = useMemo(() => {
+    if (!selectedMission) return null;
+    return buildLifecycleLineageContext({ mission: selectedMission, tasks });
+  }, [selectedMission, tasks]);
 
   const views = [
     { id: "timeline" as const, label: "Timeline" },
@@ -161,6 +171,31 @@ export function ProductLifecycleWorkspace({
         </Card>
       )}
 
+      {lineageContext && (view === "mission" || view === "context") ? (
+        <Card title="Artifact Lineage Context" description="Position in the seven-artifact chain">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-[10px] uppercase text-muted">Current Lineage Position</p>
+              <p className="text-sm">{lineageContext.currentLineagePosition}</p>
+            </div>
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-[10px] uppercase text-muted">Previous Stage Artifact</p>
+              <p className="text-sm">{lineageContext.previousStageArtifact ?? "—"}</p>
+            </div>
+            <div className="rounded-lg border border-border px-3 py-2">
+              <p className="text-[10px] uppercase text-muted">Next Stage Artifact</p>
+              <p className="text-sm">{lineageContext.nextStageArtifact ?? "—"}</p>
+            </div>
+          </div>
+          <Link
+            href={lineageContext.lineageHref}
+            className="mt-3 inline-block text-xs text-accent hover:underline"
+          >
+            Open Artifact Lineage
+          </Link>
+        </Card>
+      ) : null}
+
       <Card title="Workspace Links" description="Continuity across Phase 8 workspaces">
         <div className="grid gap-2 sm:grid-cols-2">
           <Link href="/coo-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
@@ -180,6 +215,9 @@ export function ProductLifecycleWorkspace({
           </Link>
           <Link href="/ceo-home" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             CEO Home
+          </Link>
+          <Link href="/artifact-lineage" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Artifact Lineage Workspace
           </Link>
         </div>
       </Card>

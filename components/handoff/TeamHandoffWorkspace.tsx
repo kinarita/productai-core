@@ -16,6 +16,9 @@ import type { HandoffRoleId } from "@/lib/handoff/handoffWorkflow";
 import { handoffFlowSteps } from "@/lib/handoff/handoffWorkflow";
 import { useHandoffWorkspaceStore } from "@/lib/store/handoffWorkspaceStore";
 import { cn } from "@/lib/utils";
+import { buildHandoffLineageContextItems } from "@/lib/lineage/artifactLineageAnalysis";
+import { ArtifactLineageHandoffPanel } from "@/components/lineage/ArtifactLineageHandoffPanel";
+import { useMemo } from "react";
 
 export function TeamHandoffWorkspace({
   missions,
@@ -43,6 +46,11 @@ export function TeamHandoffWorkspace({
   });
 
   const briefHandoffCandidates = buildHandoffCandidates(buildProductBriefRecords(missions));
+
+  const lineageHandoffItems = useMemo(
+    () => buildHandoffLineageContextItems({ missions, tasks }),
+    [missions, tasks]
+  );
 
   useEffect(() => {
     if (initialMissionId) setSelectedMission(initialMissionId);
@@ -169,6 +177,15 @@ export function TeamHandoffWorkspace({
         </Card>
       )}
 
+      {(view === "timeline" || view === "context") && (
+        <Card
+          title="Artifact Lineage Context"
+          description="Source and destination artifacts across active missions"
+        >
+          <ArtifactLineageHandoffPanel items={lineageHandoffItems} compact={view === "timeline"} />
+        </Card>
+      )}
+
       {(view === "summary" || view === "context") && (
         <Card title="Handoff Summary" description="Active artifacts, reviews, and completed handoffs">
           <HandoffSummaryCard summary={overview} />
@@ -231,6 +248,9 @@ export function TeamHandoffWorkspace({
           </Link>
           <Link href="/artifact-review" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Artifact Review Workspace
+          </Link>
+          <Link href="/artifact-lineage" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Artifact Lineage Workspace
           </Link>
           <Link href="/idea-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             CEO Idea Workspace
