@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-1 AI Team Handoff Workflow)
+
+- AI Team Handoff workspace for role artifact relay visualization across CEO through QA.
+- Artifact model, handoff status levels, timeline, and organization summary.
+- CEO Home workflow summary; COO coordination panel; Mission Detail team context; Lifecycle team role integration.
+- Feed handoff events; localStorage persistence (`productai-team-handoff`).
+- Documentation: `docs/PHASE9_AI_TEAM_HANDOFF_WORKFLOW.md`.
+
 ### Added (Phase 8-6 Product Lifecycle Workspace)
 
 - Product Lifecycle workspace integrating Idea through Outcome across existing Phase 8 workspaces.

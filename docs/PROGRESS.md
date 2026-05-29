@@ -1,5 +1,24 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 9-1 AI Team Handoff Workflow
+
+### Objective
+
+Visualize AI team artifact relay—what each role receives, produces, and hands off—without execution or automatic approval.
+
+### Implemented in Phase 9-1
+
+- Handoff library: workflow, artifacts, status, analysis, feed, store
+- `TeamHandoffWorkspace` with flow, status board, artifacts, timeline, summary
+- CEO Home AI Team Workflow Summary; COO Workflow Coordination; Mission Detail team context
+- Product Lifecycle context extended with current team role and artifact
+- Feed handoff events; `/team-handoff` route
+- Documentation: `docs/PHASE9_AI_TEAM_HANDOFF_WORKFLOW.md`
+
+### Scope boundaries (kept)
+
+- No Claude Code, GitHub, MCP, agent auto-work, auto-approval, or auto-delegation
+
 ## 2026-05-29 — Phase 8-6 Product Lifecycle Workspace
 
 ### Objective

@@ -60,6 +60,8 @@ import { OutcomeOverviewCard } from "@/components/outcome/OutcomeSummaryCard";
 import { useOutcomeWorkspace } from "@/lib/hooks/useOutcomeWorkspace";
 import { LifecycleSummaryCard } from "@/components/lifecycle/LifecycleSummaryCard";
 import { useLifecycleWorkspace } from "@/lib/hooks/useLifecycleWorkspace";
+import { HandoffSummaryCard } from "@/components/handoff/HandoffSummaryCard";
+import { useHandoffWorkspace } from "@/lib/hooks/useHandoffWorkspace";
 
 const healthVariant = {
   stable: "success" as const,
@@ -212,6 +214,10 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     releases,
     memories,
     feedItems,
+  });
+  const { ceoSummary: handoffCeoSummary } = useHandoffWorkspace({
+    missions,
+    tasks,
   });
 
   const operationalAlerts = [
@@ -606,6 +612,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <LifecycleSummaryCard summary={lifecycleOverview} compact ceoOverview />
+        </Card>
+
+        <Card
+          title="AI Team Workflow Summary"
+          description="Current role, pending reviews, waiting handoffs, and completed handoffs across the AI product organization"
+          action={
+            <Link href="/team-handoff" className="text-xs text-accent hover:underline">
+              Open Team Workflow
+            </Link>
+          }
+        >
+          <HandoffSummaryCard compact ceoOverview ceoSummary={handoffCeoSummary} />
         </Card>
 
         <ExecutiveWalkthroughPanel

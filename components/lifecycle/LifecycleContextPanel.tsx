@@ -14,6 +14,7 @@ import { LifecycleTimeline } from "@/components/lifecycle/LifecycleTimeline";
 import { LifecycleJourneyPanel } from "@/components/lifecycle/LifecycleJourneyPanel";
 import { buildLifecycleJourney } from "@/lib/lifecycle/lifecycleAnalysis";
 import { buildOutcomeSignals } from "@/lib/outcome/outcomeSignals";
+import { buildMissionHandoffContext } from "@/lib/handoff/handoffAnalysis";
 import { useMemo } from "react";
 
 export function MissionLifecycleContextPanel({
@@ -55,6 +56,11 @@ export function MissionLifecycleContextPanel({
     });
   }, [feedItems, memories, mission, releases, tasks]);
 
+  const handoffContext = useMemo(
+    () => buildMissionHandoffContext({ mission, tasks }),
+    [mission, tasks]
+  );
+
   const { view } = context;
 
   return (
@@ -76,6 +82,14 @@ export function MissionLifecycleContextPanel({
         <div className="rounded-lg border border-border px-3 py-2">
           <p className="text-[10px] uppercase text-muted">Release</p>
           <p className="text-sm">{view.relatedRelease}</p>
+        </div>
+        <div className="rounded-lg border border-border px-3 py-2">
+          <p className="text-[10px] uppercase text-muted">Current Team Role</p>
+          <p className="text-sm">{handoffContext.currentRoleLabel}</p>
+        </div>
+        <div className="rounded-lg border border-border px-3 py-2">
+          <p className="text-[10px] uppercase text-muted">Current Artifact</p>
+          <p className="text-sm">{handoffContext.currentArtifact}</p>
         </div>
       </div>
       <p className="text-xs text-muted">{view.progressNote}</p>

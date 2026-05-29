@@ -89,6 +89,7 @@ import { MissionDeliveryContextPanel } from "@/components/delivery/MissionDelive
 import { MissionReleaseContextPanel } from "@/components/release/ReleaseReadinessWorkspace";
 import { MissionOutcomeContextPanel } from "@/components/outcome/CodeReleaseWorkspace";
 import { MissionLifecycleContextPanel } from "@/components/lifecycle/LifecycleContextPanel";
+import { MissionHandoffContextPanel } from "@/components/handoff/MissionHandoffContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1060,6 +1061,25 @@ export function MissionDetailView({
                 memories={memories}
                 feedItems={allFeed}
               />
+            ) : null}
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <SectionHeader
+                title="Team Workflow Context"
+                description="Current role, artifact, next handoff, and workflow timeline"
+                className="mb-0"
+              />
+              <Link
+                href={`/team-handoff?mission=${missionId}`}
+                className="shrink-0 text-xs text-accent hover:underline"
+              >
+                Open Team Handoff
+              </Link>
+            </div>
+            {mission ? (
+              <MissionHandoffContextPanel mission={mission} tasks={missionTasks} />
             ) : null}
           </Card>
 

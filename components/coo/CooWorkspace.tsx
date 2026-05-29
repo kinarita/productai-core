@@ -13,6 +13,8 @@ import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
 import { buildCooMissionContext } from "@/lib/coo/cooMissionAnalysis";
 import { cooWorkspaceAdvisoryNote } from "@/lib/coo/cooWorkspace";
 import { useCooWorkspaceStore } from "@/lib/store/cooWorkspaceStore";
+import { CooHandoffCoordinationPanel } from "@/components/handoff/HandoffFlowView";
+import { useHandoffWorkspace } from "@/lib/hooks/useHandoffWorkspace";
 import { cn } from "@/lib/utils";
 
 export function CooContextPanel({
@@ -85,6 +87,7 @@ export function CooWorkspace({
     tasks,
     decisionAttention,
   });
+  const { cooCoordination } = useHandoffWorkspace({ missions, tasks });
   const selectedView = useCooWorkspaceStore((s) => s.selectedView);
   const setSelectedView = useCooWorkspaceStore((s) => s.setSelectedView);
 
@@ -146,6 +149,13 @@ export function CooWorkspace({
       </Card>
 
       <Card
+        title="Workflow Coordination"
+        description="Role queue, review concentration, and pending handoffs across the AI team"
+      >
+        <CooHandoffCoordinationPanel coordination={cooCoordination} />
+      </Card>
+
+      <Card
         title="Decision Context"
         description="Links to governance knowledge, atlas, traceability, and replay for continuity reading"
       >
@@ -170,6 +180,9 @@ export function CooWorkspace({
           </Link>
           <Link href="/product-lifecycle" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Product Lifecycle
+          </Link>
+          <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            AI Team Handoff
           </Link>
           <Link href="/runtime-cost" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Runtime — knowledge graph & traceability context

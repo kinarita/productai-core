@@ -254,6 +254,14 @@ export type LifecycleFeedEventType =
   | "lifecycle_snapshot"
   | "lifecycle_context_updated";
 
+export type HandoffFeedEventType =
+  | "artifact_created"
+  | "artifact_review_requested"
+  | "artifact_approved"
+  | "artifact_returned"
+  | "artifact_handed_off"
+  | "workflow_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -278,7 +286,8 @@ export interface OrganizationFeedItem {
     | RepositoryFeedEventType
     | ReleaseFeedEventType
     | OutcomeFeedEventType
-    | LifecycleFeedEventType;
+    | LifecycleFeedEventType
+    | HandoffFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

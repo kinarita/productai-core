@@ -103,6 +103,12 @@ const typeLabels: Record<string, string> = {
   lifecycle_stage_changed: "Lifecycle Stage Changed",
   lifecycle_snapshot: "Lifecycle Snapshot",
   lifecycle_context_updated: "Lifecycle Context Updated",
+  artifact_created: "Artifact Created",
+  artifact_review_requested: "Artifact Review Requested",
+  artifact_approved: "Artifact Approved",
+  artifact_returned: "Artifact Returned",
+  artifact_handed_off: "Artifact Handed Off",
+  workflow_snapshot: "Workflow Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -162,6 +168,12 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   lifecycle_stage_changed: "info",
   lifecycle_snapshot: "default",
   lifecycle_context_updated: "accent",
+  artifact_created: "info",
+  artifact_review_requested: "warning",
+  artifact_approved: "accent",
+  artifact_returned: "warning",
+  artifact_handed_off: "default",
+  workflow_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
