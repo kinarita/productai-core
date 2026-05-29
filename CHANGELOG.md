@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-28
 
+### Added (Phase 7-14 mission team role realignment)
+
+- Mission Team role definitions, responsibilities, and delivery-oriented workflow.
+- Product Planner and Director flow stages; COO coordination semantics.
+- CEO Home Mission Team overview; Mission Detail team responsibility panel.
+- Organization Feed mission team stage events (planning, direction, architecture, design, development, QA).
+- Documentation: `docs/PHASE7_MISSION_TEAM_REALIGNMENT.md`.
+
 ### Added (Phase 7-13 executive decision traceability)
 
 - Executive decision traceability above decision memory atlas with pathways and explainability edges.

@@ -199,6 +199,20 @@ export interface ReleaseItem {
   deployedAt?: string;
 }
 
+export type MissionTeamFeedEventType =
+  | "planning_started"
+  | "planning_completed"
+  | "direction_started"
+  | "direction_completed"
+  | "architecture_started"
+  | "architecture_completed"
+  | "design_started"
+  | "design_completed"
+  | "development_started"
+  | "development_completed"
+  | "qa_started"
+  | "qa_completed";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -216,7 +230,8 @@ export interface OrganizationFeedItem {
     | "decision_attention_generated"
     | "decision_attention_reviewed"
     | "decision_attention_resolved"
-    | "decision_attention_deferred";
+    | "decision_attention_deferred"
+    | MissionTeamFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

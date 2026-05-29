@@ -46,6 +46,7 @@ import { useDecisionMemoryAtlas } from "@/lib/hooks/useDecisionMemoryAtlas";
 import { DecisionAtlasSummaryPanel } from "@/components/orchestration/DecisionAtlasSummary";
 import { useDecisionTraceability } from "@/lib/hooks/useDecisionTraceability";
 import { TraceabilitySummaryPanel } from "@/components/orchestration/TraceabilitySummary";
+import { MissionTeamOverviewPanel } from "@/components/mission-team/MissionTeamPanel";
 
 const healthVariant = {
   stable: "success" as const,
@@ -472,6 +473,13 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           description="Top pathways, review paths, and continuity chains for explainability reading"
         >
           <TraceabilitySummaryPanel summary={traceabilitySummary} compact />
+        </Card>
+
+        <Card
+          title="Mission Team Overview"
+          description="Product planning, mission direction, architecture, development, and QA across active missions"
+        >
+          <MissionTeamOverviewPanel missions={missions} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

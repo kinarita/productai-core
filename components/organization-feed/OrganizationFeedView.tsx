@@ -62,6 +62,18 @@ const typeLabels: Record<string, string> = {
   decision_attention_reviewed: "Decision Attention Reviewed",
   decision_attention_resolved: "Decision Attention Resolved",
   decision_attention_deferred: "Decision Attention Deferred",
+  planning_started: "Planning Started",
+  planning_completed: "Planning Completed",
+  direction_started: "Direction Started",
+  direction_completed: "Direction Completed",
+  architecture_started: "Architecture Started",
+  architecture_completed: "Architecture Completed",
+  design_started: "Design Started",
+  design_completed: "Design Completed",
+  development_started: "Development Started",
+  development_completed: "Development Completed",
+  qa_started: "QA Started",
+  qa_completed: "QA Completed",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -80,6 +92,18 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   decision_attention_reviewed: "accent",
   decision_attention_resolved: "default",
   decision_attention_deferred: "warning",
+  planning_started: "info",
+  planning_completed: "accent",
+  direction_started: "info",
+  direction_completed: "accent",
+  architecture_started: "accent",
+  architecture_completed: "default",
+  design_started: "info",
+  design_completed: "default",
+  development_started: "info",
+  development_completed: "default",
+  qa_started: "warning",
+  qa_completed: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
@@ -877,7 +901,7 @@ export function OrganizationFeedView({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={typeVariant[item.type] ?? "default"}>
-                    {typeLabels[item.type] ?? item.type}
+                    {typeLabels[item.type] ?? item.type.replaceAll("_", " ")}
                   </Badge>
                   <MissionLink
                     missionId={item.missionId}

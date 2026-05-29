@@ -80,6 +80,10 @@ import { useDecisionMemoryAtlas } from "@/lib/hooks/useDecisionMemoryAtlas";
 import { MissionDecisionContextView } from "@/components/orchestration/DecisionMemoryInspector";
 import { useDecisionTraceability } from "@/lib/hooks/useDecisionTraceability";
 import { MissionDecisionPathView } from "@/components/orchestration/TraceabilityInspector";
+import {
+  MissionTeamResponsibilityPanel,
+  MissionTeamPanel,
+} from "@/components/mission-team/MissionTeamPanel";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
   stable: "success",
@@ -922,6 +926,21 @@ export function MissionDetailView({
               focusCategory="governance_review"
               compact
             />
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Mission Team responsibility"
+              description="Current workflow stage and Mission Team roles for this mission"
+            />
+            {mission ? (
+              <>
+                <MissionTeamResponsibilityPanel mission={mission} />
+                <div className="mt-3">
+                  <MissionTeamPanel mission={mission} compact />
+                </div>
+              </>
+            ) : null}
           </Card>
 
           <Card>

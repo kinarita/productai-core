@@ -674,6 +674,14 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Added Judgment decision context summary with replay-informed governance explainability.
 - Preserved replay query drilldown continuity across Runtime, Mission, CEO, and Judgment contexts.
 
+## 2026-05-28 (Phase 7-14 mission team role realignment)
+
+- Defined Mission Team roles (Product Planner, Director, Architect, Designer, Developer, QA Reviewer).
+- Clarified COO as coordinator for Planner, Director, and Architect—not direct plan author.
+- Added mission workflow visualization, planning and director stages, and CEO Mission Team overview.
+- Added mission team feed event types (visualization only) and Mission Detail responsibility view.
+- Documentation: `docs/PHASE7_MISSION_TEAM_REALIGNMENT.md`.
+
 ## 2026-05-28 (Phase 7-13 executive decision traceability)
 
 - Added decision traceability layered on memory atlas and knowledge graph (pathways, rule-based only).
