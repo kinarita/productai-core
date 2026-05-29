@@ -92,6 +92,7 @@ import { MissionLifecycleContextPanel } from "@/components/lifecycle/LifecycleCo
 import { MissionHandoffContextPanel } from "@/components/handoff/MissionHandoffContextPanel";
 import { MissionReviewContextPanel } from "@/components/review/MissionReviewContextPanel";
 import { MissionArchitectureContextPanel } from "@/components/architect/MissionArchitectureContextPanel";
+import { MissionDesignContextPanel } from "@/components/designer/MissionDesignContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1125,6 +1126,34 @@ export function MissionDetailView({
             </div>
             {mission ? (
               <MissionArchitectureContextPanel
+                mission={mission}
+                missions={allMissions}
+                tasks={missionTasks}
+              />
+            ) : null}
+          </Card>
+
+          <Card>
+            <SectionHeader
+              title="Design Context"
+              description="User flow, screen inventory, design specification, and review status"
+            />
+            <div className="mb-3 flex flex-wrap gap-3">
+              <Link
+                href={`/designer-workspace?mission=${missionId}`}
+                className="text-xs text-accent hover:underline"
+              >
+                Open Designer Workspace
+              </Link>
+              <Link
+                href={`/artifact-review?mission=${missionId}&artifact=${missionId}-design_specification`}
+                className="text-xs text-accent hover:underline"
+              >
+                Design Specification Review
+              </Link>
+            </div>
+            {mission ? (
+              <MissionDesignContextPanel
                 mission={mission}
                 missions={allMissions}
                 tasks={missionTasks}

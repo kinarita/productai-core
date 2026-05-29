@@ -16,6 +16,7 @@ export type HandoffArtifactTypeId =
   | "dependency_plan"
   | "ui_proposal"
   | "user_flow"
+  | "design_specification"
   | "design_notes"
   | "component_proposal"
   | "implementation_plan"
@@ -66,6 +67,7 @@ export const handoffArtifactDefinitions: HandoffArtifactDefinition[] = [
   { id: "dependency_plan", title: "Dependency Plan", role: "architect", description: "Cross-system dependency mapping." },
   { id: "ui_proposal", title: "UI Proposal", role: "designer", description: "UI direction and layout proposals." },
   { id: "user_flow", title: "User Flow", role: "designer", description: "End-to-end user journey flows." },
+  { id: "design_specification", title: "Design Specification", role: "designer", description: "UX and UI design specification for review." },
   { id: "design_notes", title: "Design Notes", role: "designer", description: "UX and design system notes." },
   { id: "component_proposal", title: "Component Proposal", role: "designer", description: "Reusable component proposals." },
   { id: "implementation_plan", title: "Implementation Plan", role: "developer", description: "Implementation approach and sequencing." },

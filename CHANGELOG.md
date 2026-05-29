@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-7 Designer Workspace)
+
+- Designer Workspace (`/designer-workspace`) for User Flow, UX Specification, Design Specification, and Design Review.
+- Technical specification intake from Architect; component and screen inventories.
+- CEO Home, Architect, Mission Detail, Artifact Review (`design_specification`) integration.
+- Feed design events; localStorage persistence (`productai-designer-workspace`).
+- Documentation: `docs/PHASE9_DESIGNER_WORKSPACE.md`.
+
 ### Added (Phase 9-6 Architect Workspace)
 
 - Architect Workspace (`/architect-workspace`) for Technical Specification through Architecture Review.

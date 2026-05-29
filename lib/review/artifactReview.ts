@@ -7,6 +7,7 @@ export type ReviewTargetTypeId = Extract<
   | "product_brief"
   | "mission_plan"
   | "technical_specification"
+  | "design_specification"
   | "ui_proposal"
   | "implementation_plan"
   | "test_plan"
@@ -47,6 +48,12 @@ export const reviewTargetDefinitions: ReviewTargetDefinition[] = [
     title: "Technical Specification",
     ownerRole: "architect",
     description: "Technical requirements and system constraints.",
+  },
+  {
+    id: "design_specification",
+    title: "Design Specification",
+    ownerRole: "designer",
+    description: "UX and UI design specification for human review.",
   },
   {
     id: "ui_proposal",

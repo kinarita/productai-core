@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { Mission, Task } from "@/types/productai";
 import { Card } from "@/components/Card";
 import { MissionIntakePanel } from "@/components/architect/MissionIntakePanel";
@@ -13,6 +13,8 @@ import { ApiDesignPanel } from "@/components/architect/ApiDesignPanel";
 import { DependencyDesignPanel } from "@/components/architect/DependencyDesignPanel";
 import { ArchitectureReviewPanel } from "@/components/architect/ArchitectureReviewPanel";
 import { ArchitectWorkspaceSummary } from "@/components/architect/ArchitectWorkspaceSummary";
+import { DesignHandoffContextPanel } from "@/components/designer/DesignHandoffContextPanel";
+import { buildDesignHandoffContextItems } from "@/lib/designer/designerAnalysis";
 import { useArchitectWorkspace } from "@/lib/hooks/useArchitectWorkspace";
 import { useArchitectWorkspaceStore } from "@/lib/store/architectWorkspaceStore";
 import type { ArchitectWorkspaceViewId } from "@/lib/architect/architectWorkspace";
@@ -69,6 +71,11 @@ export function ArchitectWorkspace({
     specificationId: filterSpecId,
     reviewStateFilter: selectedReviewState,
   });
+
+  const designHandoffItems = useMemo(
+    () => buildDesignHandoffContextItems(missions, tasks),
+    [missions, tasks]
+  );
 
   useEffect(() => {
     if (initialMissionId) setSelectedMission(initialMissionId);
@@ -224,6 +231,12 @@ export function ArchitectWorkspace({
         </Card>
       )}
 
+      {(view === "review" || view === "context") && (
+        <Card title="Design Handoff Context" description="Technical specification and Designer readiness">
+          <DesignHandoffContextPanel items={designHandoffItems} />
+        </Card>
+      )}
+
       <Card title="Workspace Links" description="Planning to design continuity">
         <div className="grid gap-2 sm:grid-cols-2">
           <Link
@@ -231,6 +244,12 @@ export function ArchitectWorkspace({
             className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
           >
             Director Workspace
+          </Link>
+          <Link
+            href="/designer-workspace"
+            className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
+          >
+            Designer Workspace
           </Link>
           <Link
             href="/product-brief"
