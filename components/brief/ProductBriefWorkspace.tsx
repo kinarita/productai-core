@@ -219,6 +219,19 @@ export function ProductBriefWorkspace({
           <Link href="/artifact-review" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Artifact Review Workspace
           </Link>
+          <Link href="/director-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Director Workspace
+          </Link>
+          <Link
+            href={
+              selectedBrief?.missionId
+                ? `/director-workspace?brief=${selectedBrief.briefId}&mission=${selectedBrief.missionId}`
+                : "/director-workspace"
+            }
+            className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline"
+          >
+            Open Director Workspace
+          </Link>
           <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             AI Team Handoff Workflow
           </Link>

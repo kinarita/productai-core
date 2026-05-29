@@ -4,6 +4,13 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-5 Director Workspace)
+
+- Director Workspace (`/director-workspace`) for Mission Plan, Delivery Plan, Task Breakdown, Review Schedule, and Architect Handoff readiness.
+- Product Brief intake, dependency map, and planning-only task organization from existing tasks.
+- CEO Home, Product Brief, Mission Team, Feed, and Sidebar integration.
+- Documentation: `docs/PHASE9_DIRECTOR_WORKSPACE.md`.
+
 ### Added (Phase 9-4 Product Brief Workspace)
 
 - Product Brief Workspace for Planner → CEO Review → Approval → Director Handoff Ready flow.

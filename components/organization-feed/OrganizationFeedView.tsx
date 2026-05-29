@@ -123,6 +123,11 @@ const typeLabels: Record<string, string> = {
   product_brief_changes_requested: "Product Brief Changes Requested",
   director_handoff_ready: "Director Handoff Ready",
   product_brief_snapshot: "Product Brief Snapshot",
+  director_plan_created: "Director Plan Created",
+  director_plan_review_requested: "Director Plan Review Requested",
+  director_dependency_identified: "Director Dependency Identified",
+  director_handoff_candidate: "Director Handoff Candidate",
+  director_snapshot: "Director Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -202,6 +207,11 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   product_brief_changes_requested: "warning",
   director_handoff_ready: "default",
   product_brief_snapshot: "default",
+  director_plan_created: "info",
+  director_plan_review_requested: "warning",
+  director_dependency_identified: "default",
+  director_handoff_candidate: "accent",
+  director_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

@@ -283,6 +283,13 @@ export type ReviewFeedEventType =
   | "artifact_changes_requested"
   | "artifact_review_snapshot";
 
+export type DirectorFeedEventType =
+  | "director_plan_created"
+  | "director_plan_review_requested"
+  | "director_dependency_identified"
+  | "director_handoff_candidate"
+  | "director_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -311,7 +318,8 @@ export interface OrganizationFeedItem {
     | HandoffFeedEventType
     | ReviewFeedEventType
     | IdeaFeedEventType
-    | ProductBriefFeedEventType;
+    | ProductBriefFeedEventType
+    | DirectorFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;
