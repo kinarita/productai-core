@@ -330,6 +330,12 @@ export type ReviewWorkspaceFeedEventType =
   | "review_traceability_updated"
   | "review_snapshot";
 
+export type CeoCommandFeedEventType =
+  | "ceo_snapshot_created"
+  | "ceo_command_center_viewed"
+  | "ceo_attention_context_updated"
+  | "ceo_workspace_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -365,7 +371,8 @@ export interface OrganizationFeedItem {
     | DeveloperFeedEventType
     | QaFeedEventType
     | LineageFeedEventType
-    | ReviewWorkspaceFeedEventType;
+    | ReviewWorkspaceFeedEventType
+    | CeoCommandFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

@@ -302,6 +302,21 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
             preserved across replay navigation.
           </p>
         ) : null}
+        <Card
+          title="CEO Command Center"
+          description="Single view of product pipeline, reviews, missions, and workspace navigation"
+          action={
+            <Link href="/ceo-command-center" className="text-xs text-accent hover:underline">
+              Open CEO Command Center
+            </Link>
+          }
+        >
+          <p className="text-xs text-muted">
+            See active ideas, missions, reviews, release candidates, and recommended reading without
+            hopping across workspaces—executive visibility only.
+          </p>
+        </Card>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Organization Health"

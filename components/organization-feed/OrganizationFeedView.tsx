@@ -156,6 +156,10 @@ const typeLabels: Record<string, string> = {
   review_context_updated: "Review Context Updated",
   review_traceability_updated: "Review Traceability Updated",
   review_snapshot: "Review Snapshot",
+  ceo_snapshot_created: "CEO Snapshot Created",
+  ceo_command_center_viewed: "CEO Command Center Viewed",
+  ceo_attention_context_updated: "CEO Attention Context Updated",
+  ceo_workspace_snapshot: "CEO Workspace Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -268,6 +272,10 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   review_context_updated: "accent",
   review_traceability_updated: "warning",
   review_snapshot: "default",
+  ceo_snapshot_created: "info",
+  ceo_command_center_viewed: "accent",
+  ceo_attention_context_updated: "warning",
+  ceo_workspace_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [

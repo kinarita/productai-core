@@ -30,12 +30,14 @@ import {
   Palette,
   Code2,
   ShieldCheck,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/ceo-home", label: "CEO Home", icon: Home },
+  { href: "/ceo-command-center", label: "CEO Command Center", icon: LayoutDashboard },
   { href: "/idea-workspace", label: "CEO Idea Workspace", icon: Lightbulb },
   { href: "/product-brief", label: "Product Brief", icon: FileText },
   { href: "/director-workspace", label: "Director Workspace", icon: Compass },

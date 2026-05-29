@@ -4,6 +4,13 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-30
 
+### Added (Phase 10-3 CEO Command Center)
+
+- CEO Command Center (`/ceo-command-center`) aggregating executive overview, product pipeline, review and mission attention, artifact health, team activity, feed summary, and workspace navigation hub.
+- CEO Home entry card; mission deep links to lifecycle, lineage, review, and role workspaces.
+- Feed CEO command events; localStorage persistence (`productai-ceo-command-center`).
+- Documentation: `docs/PHASE10_CEO_COMMAND_CENTER.md`.
+
 ### Added (Phase 10-2 Cross-Role Review Workspace)
 
 - Review Workspace (`/review-workspace`) for cross-role review board, role matrix, inspector, dependencies, and concentration views.
