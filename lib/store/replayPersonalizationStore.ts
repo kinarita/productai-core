@@ -29,6 +29,24 @@ interface ReplayPersonalizationState {
   resetPersonalization: () => void;
 }
 
+function isSameReplayQuery(a: ReplayQueryState | null, b: ReplayQueryState): boolean {
+  if (!a) return false;
+  return (
+    a.mission === b.mission &&
+    a.severity === b.severity &&
+    a.eventType === b.eventType &&
+    a.source === b.source &&
+    a.reasonCategory === b.reasonCategory &&
+    a.continuity === b.continuity &&
+    a.advisory === b.advisory &&
+    a.review === b.review &&
+    a.governance === b.governance &&
+    a.governanceAttention === b.governanceAttention &&
+    a.replayWindow === b.replayWindow &&
+    a.scope === b.scope
+  );
+}
+
 const personalizationInitial = {
   preferredReplayScope: replayQueryDefaults.scope,
   preferredReplayWindow: replayQueryDefaults.replayWindow,
@@ -50,14 +68,17 @@ export const useReplayPersonalizationStore = create<ReplayPersonalizationState>(
         set({ preferredInterpretationPreset: presetId }),
       setReadabilityMode: (mode) => set({ readabilityMode: mode }),
       recordReplayView: (query) =>
-        set((state) => ({
-          lastReplayView: query,
-          preferredReplayScope: query.scope,
-          preferredReplayWindow: query.replayWindow,
-          preferredSeverityFocus:
-            query.severity !== "all" ? query.severity : state.preferredSeverityFocus,
-          continuityMemory: recordReplayContinuityContext(state.continuityMemory, query),
-        })),
+        set((state) => {
+          if (isSameReplayQuery(state.lastReplayView, query)) return state;
+          return {
+            lastReplayView: query,
+            preferredReplayScope: query.scope,
+            preferredReplayWindow: query.replayWindow,
+            preferredSeverityFocus:
+              query.severity !== "all" ? query.severity : state.preferredSeverityFocus,
+            continuityMemory: recordReplayContinuityContext(state.continuityMemory, query),
+          };
+        }),
       applyPersonalizationToQuery: (query, urlHasOverrides) => {
         if (urlHasOverrides) return query;
         const state = get();

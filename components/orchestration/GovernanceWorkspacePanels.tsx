@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { getGovernanceReadingMode } from "@/lib/orchestration/governance-history/readingModes";
 import { ExecutiveGovernanceDigestPanel } from "@/components/orchestration/ExecutiveGovernanceDigest";
 import { ReplayInterpretationHistoryPanel } from "@/components/orchestration/ReplayInterpretationHistoryPanel";
@@ -42,12 +42,14 @@ export function GovernanceWorkspacePanels({
   const mode = getGovernanceReadingMode(activeReadingMode);
   const panels = new Set(mode.recommendedPanels);
 
+  const replayQueryKey = useMemo(() => JSON.stringify(replayQuery), [replayQuery]);
+
   useEffect(() => {
     recordReadingSession({
       readingMode: activeReadingMode,
       replayQuery,
     });
-  }, [activeReadingMode, recordReadingSession, replayQuery]);
+  }, [activeReadingMode, recordReadingSession, replayQueryKey, replayQuery]);
 
   return (
     <div className="space-y-4">

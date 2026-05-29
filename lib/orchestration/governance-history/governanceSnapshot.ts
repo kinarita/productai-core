@@ -38,14 +38,18 @@ export function buildExecutiveGovernanceSnapshot(input: {
     recommendedFocus.push("Maintain continuity cadence and monitor advisory density.");
   }
 
-  return {
-    id: `gov-snapshot-${Date.now()}`,
-    createdAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+  const metrics = {
     governanceHealthScore: analytics.summary.governanceHealthScore,
     reviewRequiredCount: analytics.summary.reviewRequiredCount,
     elevatedRiskCount: analytics.summary.elevatedRiskCount,
     activeProcessingCount: analytics.summary.activeProcessingCount,
     runtimeInstabilityCount: analytics.summary.runtimeInstabilityCount,
+  };
+
+  return {
+    id: `gov-snapshot-${metrics.governanceHealthScore}-${metrics.reviewRequiredCount}-${metrics.elevatedRiskCount}-${metrics.activeProcessingCount}-${metrics.runtimeInstabilityCount}`,
+    createdAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+    ...metrics,
     summary:
       analytics.summary.governanceHealthScore >= 70
         ? "Governance continuity remains operational with moderate advisory review density."

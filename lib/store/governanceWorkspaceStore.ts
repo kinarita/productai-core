@@ -11,6 +11,7 @@ import type { GovernanceReadingModeId } from "@/lib/orchestration/governance-his
 import {
   emptyReplayReadingContinuity,
   recordReplayReadingContinuity,
+  replayReadingContinuityEqual,
   type ReplayReadingContinuity,
 } from "@/lib/orchestration/governance-history/replayReadingContinuity";
 import type { ReplayQueryState } from "@/lib/replay-query/replayQueryTypes";
@@ -115,14 +116,18 @@ export const useGovernanceWorkspaceStore = create<GovernanceWorkspaceState>()(
           ),
         })),
       recordReadingSession: (input) =>
-        set((state) => ({
-          readingContinuity: recordReplayReadingContinuity(state.readingContinuity, {
+        set((state) => {
+          const readingContinuity = recordReplayReadingContinuity(state.readingContinuity, {
             readingMode: input.readingMode,
             replayQuery: input.replayQuery,
             digestContext: input.digestContext,
             reviewTheme: input.reviewTheme,
-          }),
-        })),
+          });
+          if (replayReadingContinuityEqual(state.readingContinuity, readingContinuity)) {
+            return state;
+          }
+          return { readingContinuity };
+        }),
       removeWorkspace: (id) =>
         set((state) => ({
           workspaces: state.workspaces.filter((w) => w.id !== id),

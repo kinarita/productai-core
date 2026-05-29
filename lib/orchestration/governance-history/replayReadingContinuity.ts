@@ -22,6 +22,22 @@ function pushUnique(list: string[], value: string): string[] {
   return [value, ...list.filter((item) => item !== value)].slice(0, MAX);
 }
 
+function continuityArraysEqual(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+export function replayReadingContinuityEqual(
+  a: ReplayReadingContinuity,
+  b: ReplayReadingContinuity
+): boolean {
+  return (
+    continuityArraysEqual(a.recentReviewThemes, b.recentReviewThemes) &&
+    continuityArraysEqual(a.recentReplayModes, b.recentReplayModes) &&
+    continuityArraysEqual(a.recentGovernanceFocus, b.recentGovernanceFocus) &&
+    continuityArraysEqual(a.recentDigestContexts, b.recentDigestContexts)
+  );
+}
+
 export function recordReplayReadingContinuity(
   memory: ReplayReadingContinuity,
   input: {

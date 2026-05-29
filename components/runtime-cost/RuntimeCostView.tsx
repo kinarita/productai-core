@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Card, StatCard } from "@/components/Card";
@@ -14,6 +14,7 @@ import { getHandoffBoundaryMessage } from "@/lib/orchestration/execution/executi
 import { ExecutionReadinessCard } from "@/components/orchestration/ExecutionReadinessCard";
 import { buildExecutionQueue } from "@/lib/orchestration/materialization/executionQueue";
 import { useExecutionStore } from "@/lib/store/executionStore";
+import { useShallow } from "zustand/react/shallow";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
 import { useMaterializationStore } from "@/lib/store/materializationStore";
 import { useMissionStore } from "@/lib/store/missionStore";
@@ -108,7 +109,19 @@ export function RuntimeCostView() {
   const readFailures = useSyncStore((s) => s.readFailures);
   const writeFailures = useSyncStore((s) => s.writeFailures);
   const syncWarnings = useSyncStore((s) => s.syncWarnings);
-  const governanceStats = useExecutionStore((s) => s.getGovernanceStats());
+  const governanceStats = useExecutionStore(
+    useShallow((s) => {
+      const pendingHandoffs = s.tickets.filter(
+        (t) => t.status === "draft" || t.status === "awaiting_handoff"
+      ).length;
+      const approvedHandoffs = s.tickets.filter((t) => t.status === "handoff_approved").length;
+      return {
+        pendingHandoffs,
+        approvedHandoffs,
+        queueSize: pendingHandoffs + approvedHandoffs,
+      };
+    })
+  );
   const missionTickets = useExecutionStore((s) => s.tickets);
   const materializationRecords = useMaterializationStore((s) => s.records);
   const allTasks = useTaskStore((s) => s.tasks);
@@ -134,10 +147,36 @@ export function RuntimeCostView() {
 
   const executionQueue = buildExecutionQueue(missionTickets, materializationRecords);
   const queueItems = useExecutionQueueStore((s) => s.items);
-  const queueSummary = useExecutionQueueStore((s) => s.getGovernanceSummary());
+  const queueSummary = useExecutionQueueStore(
+    useShallow((s) => {
+      const items = s.items;
+      return {
+        queued: items.filter((i) => i.queueStatus === "queued").length,
+        reserved: items.filter((i) => i.queueStatus === "reserved").length,
+        workerPrepared: items.filter((i) => i.queueStatus === "worker_prepared").length,
+        awaitingAuthorization: items.filter(
+          (i) => i.queueStatus === "awaiting_execution_authorization"
+        ).length,
+        runtimeLocked: items.filter((i) => i.runtimeLockStatus !== "unlocked").length,
+        blockedPreparation: items.filter((i) => i.blockingConditions.length > 0).length,
+      };
+    })
+  );
   const runtimeLock = useExecutionQueueStore((s) => s.runtimeLock);
   const refreshRuntimeLock = useExecutionQueueStore((s) => s.refreshRuntimeLock);
-  const authorizationSummary = useExecutionAuthorizationStore((s) => s.getSummary());
+  const authorizationSummary = useExecutionAuthorizationStore(
+    useShallow((s) => {
+      const requests = s.requests;
+      return {
+        pending: requests.filter((r) => r.status === "authorization_requested").length,
+        authorized: requests.filter(
+          (r) => r.status === "authorized" || r.status === "execution_authorized"
+        ).length,
+        denied: requests.filter((r) => r.status === "denied").length,
+        revoked: requests.filter((r) => r.status === "revoked").length,
+      };
+    })
+  );
   const requestAuthorization = useExecutionAuthorizationStore((s) => s.requestAuthorization);
   const authorizeExecution = useExecutionAuthorizationStore((s) => s.authorizeExecution);
   const denyAuthorization = useExecutionAuthorizationStore((s) => s.denyAuthorization);
@@ -145,14 +184,38 @@ export function RuntimeCostView() {
   const getRequestForQueueItem = useExecutionAuthorizationStore((s) => s.getRequestForQueueItem);
   const getAuditForQueueItem = useExecutionAuthorizationStore((s) => s.getAuditForQueueItem);
   const signatures = useExecutionAuthorizationStore((s) => s.signatures);
-  const executeSummary = useExecuteStore((s) => s.getSummary());
+  const executeSummary = useExecuteStore(
+    useShallow((s) => {
+      const stubs = s.stubs;
+      return {
+        reviewPending: stubs.filter((s) => s.executeStatus === "execute_review_pending").length,
+        ready: stubs.filter((s) => s.executeStatus === "execute_ready").length,
+        revoked: stubs.filter((s) => s.executeStatus === "execute_revoked").length,
+        denied: stubs.filter((s) => s.executeStatus === "execute_denied").length,
+      };
+    })
+  );
   const requestExecuteReview = useExecuteStore((s) => s.requestExecuteReview);
   const markExecuteReady = useExecuteStore((s) => s.markExecuteReady);
   const denyExecuteReady = useExecuteStore((s) => s.denyExecuteReady);
   const revokeExecuteReady = useExecuteStore((s) => s.revokeExecuteReady);
   const getExecuteStub = useExecuteStore((s) => s.getStubForQueueItem);
   const getExecuteAudit = useExecuteStore((s) => s.getAuditForQueueItem);
-  const sessionSummary = useExecutionSessionStore((s) => s.getSummary());
+  const sessionSummary = useExecutionSessionStore(
+    useShallow((s) => {
+      const sessions = s.sessions;
+      return {
+        requested: sessions.filter((s) => s.executionSessionStatus === "execution_start_requested")
+          .length,
+        active: sessions.filter((s) => s.executionSessionStatus === "execution_session_active")
+          .length,
+        denied: sessions.filter((s) => s.executionSessionStatus === "execution_start_denied")
+          .length,
+        revoked: sessions.filter((s) => s.executionSessionStatus === "execution_start_revoked")
+          .length,
+      };
+    })
+  );
   const requestExecutionStart = useExecutionSessionStore((s) => s.requestExecutionStart);
   const confirmExecutionBoundary = useExecutionSessionStore((s) => s.confirmExecutionBoundary);
   const startExecutionSession = useExecutionSessionStore((s) => s.startExecutionSession);
@@ -160,7 +223,25 @@ export function RuntimeCostView() {
   const revokeExecutionSession = useExecutionSessionStore((s) => s.revokeExecutionSession);
   const getExecutionSession = useExecutionSessionStore((s) => s.getSessionForQueueItem);
   const getExecutionSessionAudit = useExecutionSessionStore((s) => s.getAuditForQueueItem);
-  const processingSummary = useProcessingStore((s) => s.getSummary());
+  const processingSummary = useProcessingStore(
+    useShallow((s) => {
+      const sessions = s.sessions;
+      return {
+        prepared: sessions.filter((s) => s.processingStatus === "processing_prepared").length,
+        active: sessions.filter((s) => s.processingStatus === "processing_active").length,
+        paused: sessions.filter((s) => s.processingStatus === "processing_paused").length,
+        revoked: sessions.filter((s) => s.processingStatus === "processing_revoked").length,
+        denied: sessions.filter((s) => s.processingStatus === "processing_denied").length,
+        reviewRequired: sessions.filter((s) => s.processingStatus === "processing_review_required")
+          .length,
+        elevatedRisk: sessions.filter((s) =>
+          s.activeReasons.some(
+            (r) => r.severity === "elevated" || r.severity === "critical_review"
+          )
+        ).length,
+      };
+    })
+  );
   const prepareProcessing = useProcessingStore((s) => s.prepareProcessing);
   const activateProcessing = useProcessingStore((s) => s.activateProcessing);
   const requestProcessingReview = useProcessingStore((s) => s.requestProcessingReview);
@@ -170,8 +251,8 @@ export function RuntimeCostView() {
   const revokeProcessing = useProcessingStore((s) => s.revokeProcessing);
   const getProcessingSession = useProcessingStore((s) => s.getSessionForQueueItem);
   const getProcessingAudit = useProcessingStore((s) => s.getAuditForQueueItem);
-  const processingSessions = useProcessingStore((s) => s.getSessions());
-  const processingAuditTrail = useProcessingStore((s) => s.getAuditTrail());
+  const processingSessions = useProcessingStore((s) => s.sessions);
+  const processingAuditTrail = useProcessingStore((s) => s.auditTrail);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [filterAdvisory, setFilterAdvisory] = useState<string>("all");
@@ -485,6 +566,7 @@ export function RuntimeCostView() {
   const trendPoints = useMemo(
     () =>
       replay.snapshots.slice(0, 5).map((snapshot) => ({
+        id: snapshot.id,
         label: snapshot.createdAt,
         governanceHealthScore: snapshot.governanceHealthScore,
         reviewDensity: snapshot.reviewRequiredCount,
@@ -653,10 +735,25 @@ export function RuntimeCostView() {
     });
   };
 
+  const latestSnapshotRecordKey = useMemo(() => {
+    const snapshot = replay.latestSnapshot;
+    if (!snapshot.id) return "";
+    return [
+      snapshot.id,
+      snapshot.governanceHealthScore,
+      snapshot.reviewRequiredCount,
+      snapshot.elevatedRiskCount,
+      snapshot.runtimeInstabilityCount,
+    ].join(":");
+  }, [replay.latestSnapshot]);
+
+  const latestSnapshotRef = useRef(replay.latestSnapshot);
+  latestSnapshotRef.current = replay.latestSnapshot;
+
   useEffect(() => {
-    if (!replay.latestSnapshot.id) return;
-    recordSnapshot(replay.latestSnapshot);
-  }, [recordSnapshot, replay.latestSnapshot]);
+    if (!latestSnapshotRecordKey) return;
+    recordSnapshot(latestSnapshotRef.current);
+  }, [latestSnapshotRecordKey, recordSnapshot]);
 
   return (
     <AppShell

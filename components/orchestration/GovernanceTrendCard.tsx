@@ -9,7 +9,7 @@ export function GovernanceTrendCard({ points }: { points: GovernanceTrendPoint[]
       <p className="text-xs font-medium uppercase text-muted">Historical governance trend</p>
       <ul className="space-y-2">
         {points.slice(0, 5).map((point) => (
-          <li key={point.label} className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
+          <li key={point.id} className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted">
             <span className="font-medium text-foreground">{point.label}</span> · health {point.governanceHealthScore}
             {" · "}review {point.reviewDensity}
             {" · "}runtime {point.runtimeInstability}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { AgentAvatar } from "@/components/AgentAvatar";
@@ -33,13 +34,17 @@ export function ExecutiveSyncView() {
   const ctx = useOrganizationStore((s) => s.executiveSyncState);
   const setExecutiveSyncState = useOrganizationStore((s) => s.setExecutiveSyncState);
   const addFeedItemWithSync = useOrganizationStore((s) => s.addFeedItemWithSync);
-  const proposals = useProposalStore((s) => s.getProposalsForMission(ctx.missionId));
+  const proposals = useProposalStore(
+    useShallow((s) => s.proposals.filter((p) => p.missionId === ctx.missionId))
+  );
   const executionPlans = useProposalStore((s) => s.executionPlans);
   const addProposal = useProposalStore((s) => s.addProposal);
   const updateProposalStatus = useProposalStore((s) => s.updateProposalStatus);
   const addExecutionPlan = useProposalStore((s) => s.addExecutionPlan);
   const getProposal = useProposalStore((s) => s.getProposal);
-  const missionTickets = useExecutionStore((s) => s.getTicketsForMission(ctx.missionId));
+  const missionTickets = useExecutionStore(
+    useShallow((s) => s.tickets.filter((t) => t.missionId === ctx.missionId))
+  );
   const createTicketFromProposal = useExecutionStore((s) => s.createTicketFromProposal);
   const getTicketForProposal = useExecutionStore((s) => s.getTicketForProposal);
   const approveTicketHandoff = useExecutionStore((s) => s.approveTicketHandoff);

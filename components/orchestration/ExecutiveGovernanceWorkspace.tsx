@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/Card";
 import { GovernanceReadingModeSwitcher } from "@/components/orchestration/GovernanceReadingModeSwitcher";
@@ -43,7 +43,11 @@ export function ExecutiveGovernanceWorkspace({
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
   const mode = getGovernanceReadingMode(activeReadingMode);
-  const effectiveQuery = mergeReplayQuery(replayQuery, mode.recommendedReplayQuery);
+  const effectiveQuery = useMemo(
+    () => mergeReplayQuery(replayQuery, mode.recommendedReplayQuery),
+    [replayQuery, mode.recommendedReplayQuery]
+  );
+  const panelsReplayQuery = activeWorkspace?.savedReplayQuery ?? effectiveQuery;
 
   const saveWorkspace = () => {
     const label =
@@ -145,7 +149,7 @@ export function ExecutiveGovernanceWorkspace({
 
       <div className="mt-4">
         <GovernanceWorkspacePanels
-          replayQuery={activeWorkspace?.savedReplayQuery ?? effectiveQuery}
+          replayQuery={panelsReplayQuery}
           replayDiagnostics={replayDiagnostics}
           interpretationPreset={interpretationPreset}
           linkBasePath={linkBasePath}

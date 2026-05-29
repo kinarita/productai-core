@@ -73,6 +73,7 @@ export interface GovernanceReplayBundle {
 }
 
 export interface GovernanceTrendPoint {
+  id: string;
   label: string;
   governanceHealthScore: number;
   reviewDensity: number;
