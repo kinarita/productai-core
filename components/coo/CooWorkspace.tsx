@@ -14,7 +14,9 @@ import { buildCooMissionContext } from "@/lib/coo/cooMissionAnalysis";
 import { cooWorkspaceAdvisoryNote } from "@/lib/coo/cooWorkspace";
 import { useCooWorkspaceStore } from "@/lib/store/cooWorkspaceStore";
 import { CooHandoffCoordinationPanel } from "@/components/handoff/HandoffFlowView";
+import { CooReviewCoordinationPanel } from "@/components/review/MissionReviewContextPanel";
 import { useHandoffWorkspace } from "@/lib/hooks/useHandoffWorkspace";
+import { useReviewWorkspace } from "@/lib/hooks/useReviewWorkspace";
 import { cn } from "@/lib/utils";
 
 export function CooContextPanel({
@@ -88,6 +90,7 @@ export function CooWorkspace({
     decisionAttention,
   });
   const { cooCoordination } = useHandoffWorkspace({ missions, tasks });
+  const { cooCoordination: reviewCoordination } = useReviewWorkspace({ missions, tasks });
   const selectedView = useCooWorkspaceStore((s) => s.selectedView);
   const setSelectedView = useCooWorkspaceStore((s) => s.setSelectedView);
 
@@ -156,6 +159,13 @@ export function CooWorkspace({
       </Card>
 
       <Card
+        title="Review Coordination"
+        description="Review concentrations, pending reviews, and cross-team review areas"
+      >
+        <CooReviewCoordinationPanel coordination={reviewCoordination} />
+      </Card>
+
+      <Card
         title="Decision Context"
         description="Links to governance knowledge, atlas, traceability, and replay for continuity reading"
       >
@@ -183,6 +193,9 @@ export function CooWorkspace({
           </Link>
           <Link href="/team-handoff" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             AI Team Handoff
+          </Link>
+          <Link href="/artifact-review" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Artifact Review
           </Link>
           <Link href="/runtime-cost" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Runtime — knowledge graph & traceability context

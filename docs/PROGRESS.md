@@ -1,5 +1,24 @@
 # ProductAI Development Progress
 
+## 2026-05-29 — Phase 9-2 Artifact Review Workspace
+
+### Objective
+
+Centralize artifact review state, human comments, and advisory recommendations without automatic approval or workflow transition.
+
+### Implemented in Phase 9-2
+
+- Review library: targets, status, analysis, comments, recommendations, feed, store
+- `ArtifactReviewWorkspace` with board, timeline, comments, recommendations, summary
+- CEO Home overview; COO review coordination; Mission Detail review context
+- Team Handoff review deep links; Lifecycle review state integration
+- Feed review events; `/artifact-review` route
+- Documentation: `docs/PHASE9_ARTIFACT_REVIEW_WORKSPACE.md`
+
+### Scope boundaries (kept)
+
+- No auto approve/reject, agent self-approval, GitHub, MCP, or deployment
+
 ## 2026-05-29 — Phase 9-1 AI Team Handoff Workflow
 
 ### Objective

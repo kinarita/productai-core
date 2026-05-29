@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import type { HandoffArtifact } from "@/lib/handoff/handoffArtifacts";
+import { isReviewTargetType } from "@/lib/review/artifactReview";
 import { useHandoffWorkspaceStore } from "@/lib/store/handoffWorkspaceStore";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +38,15 @@ export function RoleArtifactCard({
         <>
           <p className="mt-1 text-[10px] text-muted">{artifact.roleLabel}</p>
           <p className="mt-1 line-clamp-2 text-xs text-muted">{artifact.summary}</p>
+          {isReviewTargetType(artifact.typeId) ? (
+            <Link
+              href={`/artifact-review?mission=${artifact.missionId}&artifact=${artifact.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-2 inline-block text-[10px] text-accent hover:underline"
+            >
+              Open Review Workspace
+            </Link>
+          ) : null}
         </>
       ) : null}
     </button>

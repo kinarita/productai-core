@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { HandoffArtifact } from "@/lib/handoff/handoffArtifacts";
+import { isReviewTargetType } from "@/lib/review/artifactReview";
 import { RoleArtifactCard } from "@/components/handoff/RoleArtifactCard";
 import { useHandoffWorkspaceStore } from "@/lib/store/handoffWorkspaceStore";
 
@@ -45,10 +46,18 @@ export function HandoffArtifactPanel({
           </div>
           <Link
             href={`/missions/${selected.missionId}`}
-            className="mt-3 inline-block text-xs text-accent hover:underline"
+            className="mt-3 mr-4 inline-block text-xs text-accent hover:underline"
           >
             View mission →
           </Link>
+          {isReviewTargetType(selected.typeId) ? (
+            <Link
+              href={`/artifact-review?mission=${selected.missionId}&artifact=${selected.id}`}
+              className="mt-3 inline-block text-xs text-accent hover:underline"
+            >
+              Open Review Workspace →
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>

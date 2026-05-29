@@ -20,6 +20,7 @@ import {
   CircleDot,
   Route,
   ArrowRightLeft,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/code-release-workspace", label: "Code & Release", icon: CircleDot },
   { href: "/product-lifecycle", label: "Product Lifecycle", icon: Route },
   { href: "/team-handoff", label: "Team Handoff", icon: ArrowRightLeft },
+  { href: "/artifact-review", label: "Artifact Review", icon: ClipboardCheck },
   { href: "/missions", label: "Products / Missions", icon: Target },
   { href: "/organization-feed", label: "Organization Feed", icon: MessageSquare },
   { href: "/executive-sync", label: "Executive Sync", icon: Users },

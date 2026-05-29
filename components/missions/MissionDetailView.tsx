@@ -90,6 +90,7 @@ import { MissionReleaseContextPanel } from "@/components/release/ReleaseReadines
 import { MissionOutcomeContextPanel } from "@/components/outcome/CodeReleaseWorkspace";
 import { MissionLifecycleContextPanel } from "@/components/lifecycle/LifecycleContextPanel";
 import { MissionHandoffContextPanel } from "@/components/handoff/MissionHandoffContextPanel";
+import { MissionReviewContextPanel } from "@/components/review/MissionReviewContextPanel";
 import { pullRequests, releases, memories } from "@/data/mockData";
 
 const healthVariant: Record<MissionHealth, "success" | "warning" | "danger"> = {
@@ -1080,6 +1081,25 @@ export function MissionDetailView({
             </div>
             {mission ? (
               <MissionHandoffContextPanel mission={mission} tasks={missionTasks} />
+            ) : null}
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <SectionHeader
+                title="Artifact Review Context"
+                description="Current artifact, review state, and review history"
+                className="mb-0"
+              />
+              <Link
+                href={`/artifact-review?mission=${missionId}`}
+                className="shrink-0 text-xs text-accent hover:underline"
+              >
+                Open Artifact Review
+              </Link>
+            </div>
+            {mission ? (
+              <MissionReviewContextPanel mission={mission} tasks={missionTasks} />
             ) : null}
           </Card>
 

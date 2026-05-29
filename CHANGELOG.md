@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 9-2 Artifact Review Workspace)
+
+- Artifact Review workspace for review state, human comments, timeline, and advisory recommendations.
+- Review board, eight review targets, seven review states, and mission/CEO/COO integration.
+- Team Handoff and Product Lifecycle review links; Feed review events.
+- localStorage persistence (`productai-artifact-review`).
+- Documentation: `docs/PHASE9_ARTIFACT_REVIEW_WORKSPACE.md`.
+
 ### Added (Phase 9-1 AI Team Handoff Workflow)
 
 - AI Team Handoff workspace for role artifact relay visualization across CEO through QA.

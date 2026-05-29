@@ -62,6 +62,8 @@ import { LifecycleSummaryCard } from "@/components/lifecycle/LifecycleSummaryCar
 import { useLifecycleWorkspace } from "@/lib/hooks/useLifecycleWorkspace";
 import { HandoffSummaryCard } from "@/components/handoff/HandoffSummaryCard";
 import { useHandoffWorkspace } from "@/lib/hooks/useHandoffWorkspace";
+import { ArtifactReviewSummary } from "@/components/review/ArtifactReviewSummary";
+import { useReviewWorkspace } from "@/lib/hooks/useReviewWorkspace";
 
 const healthVariant = {
   stable: "success" as const,
@@ -216,6 +218,10 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     feedItems,
   });
   const { ceoSummary: handoffCeoSummary } = useHandoffWorkspace({
+    missions,
+    tasks,
+  });
+  const { ceoSummary: reviewCeoSummary } = useReviewWorkspace({
     missions,
     tasks,
   });
@@ -624,6 +630,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <HandoffSummaryCard compact ceoOverview ceoSummary={handoffCeoSummary} />
+        </Card>
+
+        <Card
+          title="Artifact Review Overview"
+          description="Pending reviews, in review, changes requested, and approved artifacts across the AI team"
+          action={
+            <Link href="/artifact-review" className="text-xs text-accent hover:underline">
+              Open Artifact Reviews
+            </Link>
+          }
+        >
+          <ArtifactReviewSummary summary={reviewCeoSummary} compact ceoOverview />
         </Card>
 
         <ExecutiveWalkthroughPanel

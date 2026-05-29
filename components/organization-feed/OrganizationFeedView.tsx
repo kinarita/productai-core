@@ -109,6 +109,9 @@ const typeLabels: Record<string, string> = {
   artifact_returned: "Artifact Returned",
   artifact_handed_off: "Artifact Handed Off",
   workflow_snapshot: "Workflow Snapshot",
+  artifact_comment_added: "Artifact Comment Added",
+  artifact_changes_requested: "Artifact Changes Requested",
+  artifact_review_snapshot: "Artifact Review Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -174,6 +177,9 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   artifact_returned: "warning",
   artifact_handed_off: "default",
   workflow_snapshot: "default",
+  artifact_comment_added: "info",
+  artifact_changes_requested: "warning",
+  artifact_review_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
