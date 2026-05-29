@@ -4,6 +4,14 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-29
 
+### Added (Phase 8-2 Mission Delivery Workspace)
+
+- Mission delivery workspace for task pipeline, ownership, review, repository, and release readiness visibility.
+- Rule-based delivery bottlenecks and per-mission delivery summaries (no execution or prioritization).
+- CEO Home delivery overview; Mission Detail delivery context; COO Workspace link; Organization Feed delivery events.
+- localStorage persistence for delivery workspace UI selections (`productai-delivery-workspace`).
+- Documentation: `docs/PHASE8_MISSION_DELIVERY_WORKSPACE.md`.
+
 ### Added (Phase 8-1 AI COO Workspace)
 
 - AI COO operational workspace with mission pipeline, board, workflow overview, bottlenecks, and advisory recommendations.

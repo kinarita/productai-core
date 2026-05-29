@@ -219,6 +219,14 @@ export type CooFeedEventType =
   | "coo_coordination_note"
   | "coo_workflow_snapshot";
 
+export type DeliveryFeedEventType =
+  | "task_created"
+  | "task_review_started"
+  | "task_review_completed"
+  | "repository_ready"
+  | "release_readiness_updated"
+  | "delivery_snapshot";
+
 export interface OrganizationFeedItem {
   id: string;
   type:
@@ -238,7 +246,8 @@ export interface OrganizationFeedItem {
     | "decision_attention_resolved"
     | "decision_attention_deferred"
     | MissionTeamFeedEventType
-    | CooFeedEventType;
+    | CooFeedEventType
+    | DeliveryFeedEventType;
   author: AgentRole;
   authorName: string;
   missionId: string;

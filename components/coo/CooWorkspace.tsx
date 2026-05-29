@@ -156,6 +156,9 @@ export function CooWorkspace({
           <Link href="/organization-feed" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Organization Feed — COO coordination events
           </Link>
+          <Link href="/delivery-workspace" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
+            Open Delivery Workspace
+          </Link>
           <Link href="/runtime-cost" className="rounded-lg border border-border px-3 py-2 text-xs text-accent hover:underline">
             Runtime — knowledge graph & traceability context
           </Link>

@@ -49,6 +49,9 @@ import { TraceabilitySummaryPanel } from "@/components/orchestration/Traceabilit
 import { MissionTeamOverviewPanel } from "@/components/mission-team/MissionTeamPanel";
 import { CooWorkspaceSummaryPanel } from "@/components/coo/CooRecommendationsPanel";
 import { useCooWorkspace } from "@/lib/hooks/useCooWorkspace";
+import { DeliveryOverviewCard } from "@/components/delivery/DeliverySummaryCard";
+import { useDeliveryWorkspace } from "@/lib/hooks/useDeliveryWorkspace";
+import { pullRequests, releases } from "@/data/mockData";
 
 const healthVariant = {
   stable: "success" as const,
@@ -165,6 +168,12 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
     missions,
     tasks,
     decisionAttention: decisionAttentionItems,
+  });
+  const { overview: deliveryOverview } = useDeliveryWorkspace({
+    missions,
+    tasks,
+    pullRequests,
+    releases,
   });
 
   const operationalAlerts = [
@@ -499,6 +508,18 @@ export function CeoHomeView({ replayQuery }: CeoHomeViewProps) {
           }
         >
           <CooWorkspaceSummaryPanel summary={cooWorkspaceSummary} compact />
+        </Card>
+
+        <Card
+          title="Delivery Overview"
+          description="Active tasks, review concentration, release-ready missions, and delivery risks"
+          action={
+            <Link href="/delivery-workspace" className="text-xs text-accent hover:underline">
+              Open Delivery Workspace
+            </Link>
+          }
+        >
+          <DeliveryOverviewCard overview={deliveryOverview} compact />
         </Card>
 
         <ExecutiveWalkthroughPanel

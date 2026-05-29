@@ -78,6 +78,12 @@ const typeLabels: Record<string, string> = {
   coo_bottleneck_observed: "COO Bottleneck Observed",
   coo_coordination_note: "COO Coordination Note",
   coo_workflow_snapshot: "COO Workflow Snapshot",
+  task_created: "Task Created",
+  task_review_started: "Task Review Started",
+  task_review_completed: "Task Review Completed",
+  repository_ready: "Repository Ready",
+  release_readiness_updated: "Release Readiness Updated",
+  delivery_snapshot: "Delivery Snapshot",
 };
 
 const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "danger"> = {
@@ -112,6 +118,12 @@ const typeVariant: Record<string, "default" | "info" | "warning" | "accent" | "d
   coo_bottleneck_observed: "warning",
   coo_coordination_note: "default",
   coo_workflow_snapshot: "info",
+  task_created: "info",
+  task_review_started: "warning",
+  task_review_completed: "accent",
+  repository_ready: "accent",
+  release_readiness_updated: "info",
+  delivery_snapshot: "default",
 };
 
 const feedFilters: { key: FeedFilter; label: string }[] = [
