@@ -4,6 +4,13 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-30
 
+### Added (Phase 21A PMF Readiness UX)
+
+- PMF row shows **Not Yet Measurable** instead of misleading low percentages pre-launch.
+- `pmfReadinessScore` and `pmfMeasurementStatus` separated from legacy `PmfReadiness.pmf`.
+- PMF Journey checklist, Planner explanation, and formatted percent display.
+- Documentation: `docs/PHASE21A_PMF_READINESS_UX.md`.
+
 ### Added (Phase 10-3 CEO Command Center)
 
 - CEO Command Center (`/ceo-command-center`) aggregating executive overview, product pipeline, review and mission attention, artifact health, team activity, feed summary, and workspace navigation hub.

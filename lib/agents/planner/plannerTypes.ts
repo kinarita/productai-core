@@ -7,6 +7,7 @@ import type { CustomerProblemFitReport } from "@/lib/cpf/cpfTypes";
 import type { ProblemSolutionFitReport } from "@/lib/psf/psfTypes";
 import type { OpportunityBrief } from "@/lib/opportunity/opportunityTypes";
 import type { PmfReadiness, PmfStage } from "@/lib/pmf/pmfJourney";
+import type { PmfMeasurementStatus } from "@/lib/pmf/pmfStatus";
 import type { DiscoveryMode, ProjectCreationInput } from "@/lib/project-creation/projectCreationTypes";
 
 export const PLANNER_PROMPT_VERSION = "planner-v6";
@@ -56,6 +57,9 @@ export interface PlannerAgentRun {
   discoveryMode?: DiscoveryMode;
   pmfReadiness?: PmfReadiness;
   currentPmfStage?: PmfStage;
+  /** Pre-launch readiness aggregate — NOT achieved PMF (Phase 21A). */
+  pmfReadinessScore?: number;
+  pmfMeasurementStatus?: PmfMeasurementStatus;
   strengths?: string[];
   gaps?: string[];
   nextActions?: string[];
@@ -101,6 +105,9 @@ export interface PlannerRunMeta {
   pendingQuestions?: PlannerQuestion[];
   pmfReadiness?: PmfReadiness;
   currentPmfStage?: PmfStage;
+  /** Pre-launch readiness aggregate — NOT achieved PMF (Phase 21A). */
+  pmfReadinessScore?: number;
+  pmfMeasurementStatus?: PmfMeasurementStatus;
   opportunityBrief?: OpportunityBrief;
   cpfReport?: CustomerProblemFitReport;
   cpfPainPoints?: string[];

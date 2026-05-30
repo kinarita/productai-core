@@ -1,4 +1,12 @@
 import type { DiscoveryMode } from "@/lib/project-creation/projectCreationTypes";
+import {
+  inferPmfMeasurementStatus,
+  roundReadinessScore,
+  type PmfMeasurementContext,
+  type PmfMeasurementStatus,
+} from "@/lib/pmf/pmfStatus";
+
+export type { PmfMeasurementContext, PmfMeasurementStatus } from "@/lib/pmf/pmfStatus";
 
 export type PmfStage =
   | "idea_validation"
@@ -8,12 +16,19 @@ export type PmfStage =
   | "mvp"
   | "pmf";
 
+/**
+ * Per-stage readiness scores (0–100) during discovery.
+ *
+ * **Important:** `pmf` is a legacy internal placeholder — it is NOT measured Product-Market Fit.
+ * Use `PmfMeasurementStatus` + `pmfReadinessScore` (see `lib/pmf/pmfStatus.ts`) in UI and CEO gates.
+ */
 export interface PmfReadiness {
   ideaValidation: number;
   opportunityDiscovery: number;
   cpf: number;
   psf: number;
   mvp: number;
+  /** Internal only — do not display as PMF %. See PmfMeasurementStatus. */
   pmf: number;
 }
 
@@ -99,12 +114,21 @@ export function defaultPmfReadiness(): PmfReadiness {
   };
 }
 
-export function inferCurrentPmfStage(readiness: PmfReadiness): PmfStage {
+export interface PmfStageContext extends PmfMeasurementContext {
+  pmfMeasurementStatus?: PmfMeasurementStatus;
+}
+
+export function inferCurrentPmfStage(
+  readiness: PmfReadiness,
+  ctx: PmfStageContext = {}
+): PmfStage {
   if (readiness.opportunityDiscovery < 45) return "opportunity_discovery";
   if (readiness.cpf < 50) return "cpf";
   if (readiness.psf < 50) return "psf";
   if (readiness.mvp < 40) return "mvp";
-  if (readiness.pmf < 50) return "pmf";
+
+  const status = ctx.pmfMeasurementStatus ?? inferPmfMeasurementStatus(ctx);
+  if (status === "not_measured") return "mvp";
   return "pmf";
 }
 
@@ -157,10 +181,17 @@ export function computePmfReadinessFromSignals(input: {
     100,
     Math.max(0, cpf - 15 - gapPenalty / 3 + psfBonus + (input.discoveryMode === "guided" ? 8 : 0))
   );
-  const mvp = input.hasBrief ? Math.min(100, Math.max(25, psf - 5)) : Math.min(40, psf / 2);
-  const pmf = input.hasBrief ? Math.min(35, mvp / 3) : 0;
+  const mvpRaw = input.hasBrief ? Math.min(100, Math.max(25, psf - 5)) : Math.min(40, psf / 2);
+  const pmfRaw = input.hasBrief ? Math.min(35, mvpRaw / 3) : 0;
 
-  return { ideaValidation, opportunityDiscovery, cpf, psf, mvp, pmf };
+  return {
+    ideaValidation: roundReadinessScore(ideaValidation),
+    opportunityDiscovery: roundReadinessScore(opportunityDiscovery),
+    cpf: roundReadinessScore(cpf),
+    psf: roundReadinessScore(psf),
+    mvp: roundReadinessScore(mvpRaw),
+    pmf: roundReadinessScore(pmfRaw),
+  };
 }
 
 export function topGapSummary(gaps: string[]): string {

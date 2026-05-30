@@ -1,4 +1,8 @@
 import { inferCurrentPmfStage } from "@/lib/pmf/pmfJourney";
+import {
+  computeAggregatePmfReadinessScore,
+  inferPmfMeasurementStatus,
+} from "@/lib/pmf/pmfStatus";
 import type { PlannerStoredRun } from "@/lib/agents/planner/plannerTypes";
 import type {
   PlannerAgentRun,
@@ -15,6 +19,15 @@ export function toPlannerAgentRun(run: PlannerStoredRun | undefined): PlannerAge
   const brief = output?.brief as ProductBriefSections | undefined;
   const meta = run.plannerMeta;
   const assessment = meta?.lastAssessment;
+  const pmfReadiness = meta?.pmfReadiness ?? assessment?.pmfReadiness;
+  const pmfMeasurementStatus =
+    meta?.pmfMeasurementStatus ?? inferPmfMeasurementStatus();
+  const pmfReadinessScore =
+    meta?.pmfReadinessScore ??
+    (pmfReadiness ? computeAggregatePmfReadinessScore(pmfReadiness) : undefined);
+  const currentPmfStage = pmfReadiness
+    ? inferCurrentPmfStage(pmfReadiness, { pmfMeasurementStatus })
+    : (meta?.currentPmfStage ?? "idea_validation");
 
   return {
     missionId: run.missionId,
@@ -31,12 +44,10 @@ export function toPlannerAgentRun(run: PlannerStoredRun | undefined): PlannerAge
     pendingQuestions: meta?.pendingQuestions,
     clarificationHistory: meta?.clarificationHistory,
     discoveryMode: meta?.discoveryMode ?? run.input.discoveryMode,
-    pmfReadiness: meta?.pmfReadiness ?? assessment?.pmfReadiness,
-    currentPmfStage:
-      meta?.currentPmfStage ??
-      (meta?.pmfReadiness || assessment?.pmfReadiness
-        ? inferCurrentPmfStage(meta?.pmfReadiness ?? assessment!.pmfReadiness)
-        : "idea_validation"),
+    pmfReadiness,
+    currentPmfStage,
+    pmfReadinessScore,
+    pmfMeasurementStatus,
     strengths: assessment?.strengths ?? run.audit?.strengths,
     gaps: assessment?.gaps ?? run.audit?.gaps,
     nextActions: assessment?.nextActions ?? run.audit?.nextActions,

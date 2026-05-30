@@ -1,4 +1,5 @@
 import type { PmfReadiness, PmfStage } from "@/lib/pmf/pmfJourney";
+import type { PmfMeasurementStatus } from "@/lib/pmf/pmfStatus";
 import type {
   AdvisoryLevel,
   ContinuityCategory,
@@ -110,6 +111,13 @@ export interface Mission {
   discoveryMode?: "quick" | "guided";
   currentPmfStage?: PmfStage;
   pmfReadiness?: PmfReadiness;
+  /**
+   * Pre-launch discovery readiness aggregate (0–100).
+   * **Not** achieved Product-Market Fit — see `pmfMeasurementStatus`.
+   */
+  pmfReadinessScore?: number;
+  /** Whether PMF has been measured with real users (Phase 21A). */
+  pmfMeasurementStatus?: PmfMeasurementStatus;
 }
 
 export interface Task {

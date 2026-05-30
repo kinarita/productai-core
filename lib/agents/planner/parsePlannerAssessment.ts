@@ -2,6 +2,7 @@ import type { PlannerClarificationAssessment, PlannerQuestion } from "@/lib/agen
 import { buildHeuristicClarificationAssessment, countQuestionsAsked } from "@/lib/agents/planner/plannerClarification";
 import { computePmfReadinessFromSignals, defaultPmfReadiness } from "@/lib/pmf/pmfJourney";
 import type { PmfReadiness } from "@/lib/pmf/pmfJourney";
+import { roundReadinessScore } from "@/lib/pmf/pmfStatus";
 import type { ProjectCreationInput } from "@/lib/project-creation/projectCreationTypes";
 
 const validCategories = new Set([
@@ -36,7 +37,9 @@ function parsePmfReadiness(raw: unknown, fallback: PmfReadiness): PmfReadiness {
   if (!raw || typeof raw !== "object") return fallback;
   const r = raw as Record<string, unknown>;
   const pick = (k: keyof PmfReadiness) =>
-    typeof r[k] === "number" ? Math.max(0, Math.min(100, r[k] as number)) : fallback[k];
+    typeof r[k] === "number"
+      ? roundReadinessScore(r[k] as number)
+      : fallback[k];
   return {
     ideaValidation: pick("ideaValidation"),
     opportunityDiscovery: pick("opportunityDiscovery"),

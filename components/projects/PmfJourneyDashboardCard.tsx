@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card } from "@/components/Card";
 import { pmfStageHumanLabels, topGapSummary, topNextAction } from "@/lib/pmf/pmfJourney";
+import { formatReadinessPercent } from "@/lib/pmf/pmfStatus";
 import type { PlannerAgentRun } from "@/lib/agents/planner/plannerTypes";
 
 export function PmfJourneyDashboardCard({
@@ -38,7 +39,9 @@ export function PmfJourneyDashboardCard({
         </div>
         <div>
           <dt className="text-xs font-medium uppercase text-muted">確信度</dt>
-          <dd className="text-foreground">{readiness.ideaValidation}%（アイデア）</dd>
+          <dd className="text-foreground">
+            {formatReadinessPercent(readiness.ideaValidation)}（アイデア）
+          </dd>
         </div>
         <div>
           <dt className="text-xs font-medium uppercase text-muted">いちばんのギャップ</dt>

@@ -1,5 +1,21 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 21A PMF Readiness UX Correction
+
+### Objective
+
+Stop showing misleading PMF percentages before real users exist; separate PMF Readiness from PMF Status.
+
+### Implemented
+
+- `lib/pmf/pmfStatus.ts` — `PmfMeasurementStatus`, `formatReadinessPercent`, aggregate readiness score
+- PMF row: **Not Yet Measurable** + description (no bar / no fake PMF %)
+- PMF Readiness vs PMF Status cards; journey checklist; Planner explanation
+- `pmfReadinessScore` + `pmfMeasurementStatus` on Mission and Planner run meta
+- `inferCurrentPmfStage` keeps focus on MVP validation pre-launch
+- Rounded readiness scores (no long floats)
+- `docs/PHASE21A_PMF_READINESS_UX.md`
+
 ## 2026-05-30 — Phase 20 Problem Solution Fit (PSF) Engine
 
 ### Objective

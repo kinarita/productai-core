@@ -12,6 +12,7 @@ export type PlannerAgentStoreSlice = {
   getRun: (missionId: string) => PlannerAgentRun | undefined;
   initRun: (missionId: string, input: ProjectCreationInput) => void;
   generateForMission: (missionId: string) => Promise<void>;
+  resumePipeline: (missionId: string) => Promise<void>;
   submitClarification: (missionId: string, answers: Record<string, string>) => Promise<void>;
   retryGeneration: (missionId: string) => Promise<void>;
 };
@@ -20,6 +21,7 @@ const plannerSlice = (state: ReturnType<typeof useAgentRunsStore.getState>): Pla
   getRun: state.getPlannerRun,
   initRun: state.initPlannerRun,
     generateForMission: state.generatePlannerForMission,
+    resumePipeline: state.resumePlannerPipeline,
     submitClarification: state.submitPlannerClarification,
     retryGeneration: state.retryPlannerGeneration,
 });

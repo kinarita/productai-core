@@ -29,6 +29,10 @@ import {
   inferCurrentPmfStage,
 } from "@/lib/pmf/pmfJourney";
 import type { PmfReadiness, PmfStage } from "@/lib/pmf/pmfJourney";
+import {
+  computeAggregatePmfReadinessScore,
+  inferPmfMeasurementStatus,
+} from "@/lib/pmf/pmfStatus";
 import type {
   PlannerAgentRun,
   PlannerGenerationResult,
@@ -60,6 +64,119 @@ function projectNameFromIdea(idea: string): string {
   const firstLine = idea.split("\n")[0]?.trim() ?? idea.trim();
   if (firstLine.length <= 48) return firstLine;
   return `${firstLine.slice(0, 45)}…`;
+}
+
+function plannerStorageKey(missionId: string): string {
+  return agentRunKey(missionId, "product_planner");
+}
+
+function getStoredPlannerRun(
+  get: AgentRunsGet,
+  missionId: string
+): PlannerStoredRun | undefined {
+  return get().runs[plannerStorageKey(missionId)] as PlannerStoredRun | undefined;
+}
+
+function resolvePmfStageFields(pmfReadiness: PmfReadiness) {
+  const pmfMeasurementStatus = inferPmfMeasurementStatus();
+  const pmfReadinessScore = computeAggregatePmfReadinessScore(pmfReadiness);
+  const currentPmfStage = inferCurrentPmfStage(pmfReadiness, { pmfMeasurementStatus });
+  return { pmfReadinessScore, pmfMeasurementStatus, currentPmfStage };
+}
+
+function mergePlannerMeta(
+  base: PlannerRunMeta | undefined,
+  patch: Partial<PlannerRunMeta>
+): PlannerRunMeta {
+  const pmfReadiness = patch.pmfReadiness ?? base?.pmfReadiness;
+  const pmfFields = pmfReadiness ? resolvePmfStageFields(pmfReadiness) : undefined;
+
+  return {
+    discoveryMode: patch.discoveryMode ?? base?.discoveryMode ?? "quick",
+    clarificationRound: patch.clarificationRound ?? base?.clarificationRound ?? 0,
+    clarificationHistory: patch.clarificationHistory ?? base?.clarificationHistory ?? [],
+    lastAssessment: patch.lastAssessment ?? base?.lastAssessment,
+    pendingQuestions:
+      "pendingQuestions" in patch ? patch.pendingQuestions : base?.pendingQuestions,
+    pmfReadiness,
+    currentPmfStage:
+      patch.currentPmfStage ?? pmfFields?.currentPmfStage ?? base?.currentPmfStage,
+    pmfReadinessScore:
+      patch.pmfReadinessScore ?? pmfFields?.pmfReadinessScore ?? base?.pmfReadinessScore,
+    pmfMeasurementStatus:
+      patch.pmfMeasurementStatus ??
+      pmfFields?.pmfMeasurementStatus ??
+      base?.pmfMeasurementStatus,
+    opportunityBrief: patch.opportunityBrief ?? base?.opportunityBrief,
+    cpfReport: patch.cpfReport ?? base?.cpfReport,
+    cpfPainPoints: patch.cpfPainPoints ?? base?.cpfPainPoints,
+    cpfBurningNeeds: patch.cpfBurningNeeds ?? base?.cpfBurningNeeds,
+    psfReport: patch.psfReport ?? base?.psfReport,
+    psfValidationAssumptions:
+      patch.psfValidationAssumptions ?? base?.psfValidationAssumptions,
+    psfValidationRisks: patch.psfValidationRisks ?? base?.psfValidationRisks,
+    psfMvpScope: patch.psfMvpScope ?? base?.psfMvpScope,
+  };
+}
+
+/** Persist pipeline progress so HMR / reload can resume without losing opportunity/cpf/psf. */
+function persistPlannerRun(
+  set: AgentRunsSet,
+  key: string,
+  patch: Partial<PlannerStoredRun> & { plannerMeta?: Partial<PlannerRunMeta> }
+) {
+  set((state) => {
+    const current = state.runs[key] as PlannerStoredRun | undefined;
+    if (!current) return state;
+    const { plannerMeta: metaPatch, ...runPatch } = patch;
+    return {
+      runs: {
+        ...state.runs,
+        [key]: {
+          ...current,
+          ...runPatch,
+          plannerMeta: metaPatch ? mergePlannerMeta(current.plannerMeta, metaPatch) : current.plannerMeta,
+        },
+      },
+    };
+  });
+}
+
+function pipelineIncomplete(run: PlannerStoredRun | undefined): boolean {
+  if (!run?.plannerMeta?.lastAssessment) return false;
+  const meta = run.plannerMeta;
+  return !meta.opportunityBrief || !meta.cpfReport || !meta.psfReport || !run.audit?.output?.brief;
+}
+
+function canResumePlannerPipeline(run: PlannerStoredRun | undefined): boolean {
+  if (!run) return false;
+  if (run.status === "awaiting_clarification") return false;
+  if (run.status === "completed" && run.audit?.output?.brief) return false;
+  return pipelineIncomplete(run);
+}
+
+function failPlannerRunPreservingMeta(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  message: string,
+  audit?: AgentAuditRecord<ProjectCreationInput, PlannerGenerationResult>
+) {
+  const key = plannerStorageKey(missionId);
+  const latest = getStoredPlannerRun(get, missionId);
+  if (!latest) return;
+  if (audit) get().appendAudit(audit);
+  set((state) => ({
+    runs: {
+      ...state.runs,
+      [key]: {
+        ...latest,
+        status: "failed",
+        errorMessage: message,
+        audit: audit ?? latest.audit,
+      },
+    },
+  }));
 }
 
 type AgentRunsGet = () => AgentRunsState;
@@ -341,16 +458,17 @@ async function completePlannerBrief(
     audit?: AgentAuditRecord<ProjectCreationInput, PlannerGenerationResult>;
   }
 ) {
+  const loadRun = () => getStoredPlannerRun(get, ctx.missionId) ?? ctx.run;
+
   let output = ctx.output;
   let audit = ctx.audit;
-  let runWithOpportunity = ctx.run;
 
-  if (!ctx.run.plannerMeta?.opportunityBrief) {
+  if (!loadRun().plannerMeta?.opportunityBrief) {
     get().setPlannerStatus(ctx.missionId, "working");
     const discovery = await ensureOpportunityDiscovery(get, {
       missionId: ctx.missionId,
       providerInput: ctx.providerInput,
-      run: ctx.run,
+      run: loadRun(),
     });
     applyPmfToMission(
       ctx.missionId,
@@ -358,37 +476,27 @@ async function completePlannerBrief(
       discovery.currentPmfStage,
       ctx.providerInput.discoveryMode ?? "quick"
     );
-    runWithOpportunity = {
-      ...ctx.run,
+    const base = loadRun();
+    persistPlannerRun(set, ctx.key, {
+      status: "working",
       plannerMeta: {
-        ...ctx.run.plannerMeta,
-        discoveryMode: ctx.run.plannerMeta?.discoveryMode ?? ctx.run.input.discoveryMode ?? "quick",
-        clarificationRound: ctx.run.plannerMeta?.clarificationRound ?? 0,
-        clarificationHistory: ctx.run.plannerMeta?.clarificationHistory ?? [],
-        lastAssessment: ctx.run.plannerMeta?.lastAssessment,
+        discoveryMode: base.plannerMeta?.discoveryMode ?? base.input.discoveryMode ?? "quick",
+        clarificationRound: base.plannerMeta?.clarificationRound ?? 0,
+        clarificationHistory: base.plannerMeta?.clarificationHistory ?? [],
+        lastAssessment: base.plannerMeta?.lastAssessment,
         opportunityBrief: discovery.opportunityBrief,
         pmfReadiness: discovery.pmfReadiness,
         currentPmfStage: discovery.currentPmfStage,
       },
-    };
-    set((state) => ({
-      runs: {
-        ...state.runs,
-        [ctx.key]: {
-          ...runWithOpportunity,
-          status: "working",
-        },
-      },
-    }));
+    });
   }
 
-  let runWithCpf = runWithOpportunity;
-  if (!runWithOpportunity.plannerMeta?.cpfReport) {
+  if (!loadRun().plannerMeta?.cpfReport) {
     get().setPlannerStatus(ctx.missionId, "working");
     const cpf = await ensureCustomerProblemFit(get, {
       missionId: ctx.missionId,
       providerInput: ctx.providerInput,
-      run: runWithOpportunity,
+      run: loadRun(),
     });
     applyPmfToMission(
       ctx.missionId,
@@ -396,43 +504,30 @@ async function completePlannerBrief(
       cpf.currentPmfStage,
       ctx.providerInput.discoveryMode ?? "quick"
     );
-    runWithCpf = {
-      ...runWithOpportunity,
+    const base = loadRun();
+    persistPlannerRun(set, ctx.key, {
+      status: "working",
       plannerMeta: {
-        ...runWithOpportunity.plannerMeta,
-        discoveryMode:
-          runWithOpportunity.plannerMeta?.discoveryMode ??
-          ctx.run.input.discoveryMode ??
-          "quick",
-        clarificationRound: runWithOpportunity.plannerMeta?.clarificationRound ?? 0,
-        clarificationHistory: runWithOpportunity.plannerMeta?.clarificationHistory ?? [],
-        lastAssessment: runWithOpportunity.plannerMeta?.lastAssessment,
-        opportunityBrief: runWithOpportunity.plannerMeta?.opportunityBrief,
+        discoveryMode: base.plannerMeta?.discoveryMode ?? base.input.discoveryMode ?? "quick",
+        clarificationRound: base.plannerMeta?.clarificationRound ?? 0,
+        clarificationHistory: base.plannerMeta?.clarificationHistory ?? [],
+        lastAssessment: base.plannerMeta?.lastAssessment,
+        opportunityBrief: base.plannerMeta?.opportunityBrief,
         cpfReport: cpf.cpfReport,
         cpfPainPoints: cpf.painPoints,
         cpfBurningNeeds: cpf.burningNeeds,
         pmfReadiness: cpf.pmfReadiness,
         currentPmfStage: cpf.currentPmfStage,
       },
-    };
-    set((state) => ({
-      runs: {
-        ...state.runs,
-        [ctx.key]: {
-          ...runWithCpf,
-          status: "working",
-        },
-      },
-    }));
+    });
   }
 
-  let runWithPsf = runWithCpf;
-  if (!runWithCpf.plannerMeta?.psfReport) {
+  if (!loadRun().plannerMeta?.psfReport) {
     get().setPlannerStatus(ctx.missionId, "working");
     const psf = await ensureProblemSolutionFit(get, {
       missionId: ctx.missionId,
       providerInput: ctx.providerInput,
-      run: runWithCpf,
+      run: loadRun(),
     });
     applyPmfToMission(
       ctx.missionId,
@@ -440,19 +535,18 @@ async function completePlannerBrief(
       psf.currentPmfStage,
       ctx.providerInput.discoveryMode ?? "quick"
     );
-    runWithPsf = {
-      ...runWithCpf,
+    const base = loadRun();
+    persistPlannerRun(set, ctx.key, {
+      status: "working",
       plannerMeta: {
-        ...runWithCpf.plannerMeta,
-        discoveryMode:
-          runWithCpf.plannerMeta?.discoveryMode ?? ctx.run.input.discoveryMode ?? "quick",
-        clarificationRound: runWithCpf.plannerMeta?.clarificationRound ?? 0,
-        clarificationHistory: runWithCpf.plannerMeta?.clarificationHistory ?? [],
-        lastAssessment: runWithCpf.plannerMeta?.lastAssessment,
-        opportunityBrief: runWithCpf.plannerMeta?.opportunityBrief,
-        cpfReport: runWithCpf.plannerMeta?.cpfReport,
-        cpfPainPoints: runWithCpf.plannerMeta?.cpfPainPoints,
-        cpfBurningNeeds: runWithCpf.plannerMeta?.cpfBurningNeeds,
+        discoveryMode: base.plannerMeta?.discoveryMode ?? base.input.discoveryMode ?? "quick",
+        clarificationRound: base.plannerMeta?.clarificationRound ?? 0,
+        clarificationHistory: base.plannerMeta?.clarificationHistory ?? [],
+        lastAssessment: base.plannerMeta?.lastAssessment,
+        opportunityBrief: base.plannerMeta?.opportunityBrief,
+        cpfReport: base.plannerMeta?.cpfReport,
+        cpfPainPoints: base.plannerMeta?.cpfPainPoints,
+        cpfBurningNeeds: base.plannerMeta?.cpfBurningNeeds,
         psfReport: psf.psfReport,
         psfValidationAssumptions: psf.validationAssumptions,
         psfValidationRisks: psf.validationRisks,
@@ -460,16 +554,7 @@ async function completePlannerBrief(
         pmfReadiness: psf.pmfReadiness,
         currentPmfStage: psf.currentPmfStage,
       },
-    };
-    set((state) => ({
-      runs: {
-        ...state.runs,
-        [ctx.key]: {
-          ...runWithPsf,
-          status: "working",
-        },
-      },
-    }));
+    });
   }
 
   if (!output) {
@@ -512,7 +597,8 @@ async function completePlannerBrief(
 
   get().appendAudit(successAudit);
 
-  const priorMeta = runWithPsf.plannerMeta;
+  const finalRun = loadRun();
+  const priorMeta = finalRun.plannerMeta;
   const briefPmf = computePmfReadinessFromSignals({
     completenessScore: priorMeta?.lastAssessment?.completenessScore ?? 75,
     missingAreas: priorMeta?.lastAssessment?.missingAreas ?? [],
@@ -531,37 +617,30 @@ async function completePlannerBrief(
     briefPmf.psf = Math.max(briefPmf.psf, priorMeta.psfReport.psfScore);
   }
 
-  set((state) => ({
-    runs: {
-      ...state.runs,
-      [ctx.key]: {
-        ...runWithPsf,
-        status: "completed",
-        input: ctx.providerInput,
-        reasoning: output.reasoning,
-        audit: successAudit,
-        plannerMeta: {
-          ...priorMeta,
-          discoveryMode: priorMeta?.discoveryMode ?? ctx.run.input.discoveryMode ?? "quick",
-          clarificationRound: priorMeta?.clarificationRound ?? 0,
-          clarificationHistory: priorMeta?.clarificationHistory ?? [],
-          pendingQuestions: undefined,
-          lastAssessment: priorMeta?.lastAssessment,
-          opportunityBrief: priorMeta?.opportunityBrief,
-          cpfReport: priorMeta?.cpfReport,
-          cpfPainPoints: priorMeta?.cpfPainPoints,
-          cpfBurningNeeds: priorMeta?.cpfBurningNeeds,
-          psfReport: priorMeta?.psfReport,
-          psfValidationAssumptions: priorMeta?.psfValidationAssumptions,
-          psfValidationRisks: priorMeta?.psfValidationRisks,
-          psfMvpScope: priorMeta?.psfMvpScope,
-          pmfReadiness: briefPmf,
-          currentPmfStage: inferCurrentPmfStage(briefPmf),
-        },
-        errorMessage: undefined,
-      },
+  persistPlannerRun(set, ctx.key, {
+    status: "completed",
+    input: ctx.providerInput,
+    reasoning: output.reasoning,
+    audit: successAudit,
+    errorMessage: undefined,
+    plannerMeta: {
+      discoveryMode: priorMeta?.discoveryMode ?? ctx.run.input.discoveryMode ?? "quick",
+      clarificationRound: priorMeta?.clarificationRound ?? 0,
+      clarificationHistory: priorMeta?.clarificationHistory ?? [],
+      pendingQuestions: undefined,
+      lastAssessment: priorMeta?.lastAssessment,
+      opportunityBrief: priorMeta?.opportunityBrief,
+      cpfReport: priorMeta?.cpfReport,
+      cpfPainPoints: priorMeta?.cpfPainPoints,
+      cpfBurningNeeds: priorMeta?.cpfBurningNeeds,
+      psfReport: priorMeta?.psfReport,
+      psfValidationAssumptions: priorMeta?.psfValidationAssumptions,
+      psfValidationRisks: priorMeta?.psfValidationRisks,
+      psfMvpScope: priorMeta?.psfMvpScope,
+      pmfReadiness: briefPmf,
+      currentPmfStage: inferCurrentPmfStage(briefPmf),
     },
-  }));
+  });
 
   queueMicrotask(() => {
     applyPmfToMission(
@@ -605,6 +684,7 @@ function applyPmfToMission(
   currentPmfStage: PmfStage,
   discoveryMode: ProjectCreationInput["discoveryMode"]
 ) {
+  const { pmfReadinessScore, pmfMeasurementStatus } = resolvePmfStageFields(pmfReadiness);
   useMissionStore.setState((state) => ({
     missions: state.missions.map((m) =>
       m.id === missionId
@@ -613,6 +693,8 @@ function applyPmfToMission(
             discoveryMode,
             pmfReadiness,
             currentPmfStage,
+            pmfReadinessScore,
+            pmfMeasurementStatus,
             updatedAt: "Just now",
           }
         : m
@@ -655,6 +737,8 @@ interface AgentRunsState {
   appendPlannerActivity: (missionId: string, message: string) => void;
   appendPlannerActivities: (missionId: string, messages: string[]) => void;
   generatePlannerForMission: (missionId: string) => Promise<void>;
+  /** Resume opportunity → cpf → psf → brief after reload or interrupted pipeline. */
+  resumePlannerPipeline: (missionId: string) => Promise<void>;
   submitPlannerClarification: (
     missionId: string,
     answers: Record<string, string>
@@ -953,13 +1037,49 @@ export const useAgentRunsStore = create<AgentRunsState>()(
             errorMessage: message,
             clarificationRound: round,
           };
-          get().appendAudit(failureAudit);
-          set((state) => ({
-            runs: {
-              ...state.runs,
-              [key]: { ...run, status: "failed", audit: failureAudit, errorMessage: message },
-            },
-          }));
+          failPlannerRunPreservingMeta(set, get, missionId, message, failureAudit);
+          get().appendPlannerActivity(missionId, "Planning failed — retry available");
+        } finally {
+          plannerGenerationInFlight.delete(missionId);
+        }
+      },
+
+      resumePlannerPipeline: async (missionId) => {
+        if (plannerGenerationInFlight.has(missionId)) return;
+        const key = plannerStorageKey(missionId);
+        const run = getStoredPlannerRun(get, missionId);
+        if (!canResumePlannerPipeline(run)) return;
+
+        plannerGenerationInFlight.add(missionId);
+        const projectName = projectNameFromIdea(run!.input.idea);
+        const round = run!.plannerMeta?.clarificationRound ?? 0;
+        const providerInput = {
+          ...run!.input,
+          projectName,
+          missionId,
+          clarificationRound: round,
+          questionsAskedSoFar: countQuestionsAskedForRun(run!),
+        };
+
+        get().setPlannerStatus(missionId, "working", undefined);
+        get().appendPlannerActivity(missionId, "Planner resumed pipeline");
+
+        try {
+          await completePlannerBrief(set, get, {
+            missionId,
+            key,
+            run: getStoredPlannerRun(get, missionId)!,
+            providerInput,
+            projectName,
+          });
+          get().appendPlannerActivities(missionId, [
+            "Planner generated Product Brief",
+            "Planning completed",
+          ]);
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Planner pipeline failed";
+          failPlannerRunPreservingMeta(set, get, missionId, message);
           get().appendPlannerActivity(missionId, "Planning failed — retry available");
         } finally {
           plannerGenerationInFlight.delete(missionId);
@@ -1110,7 +1230,7 @@ export const useAgentRunsStore = create<AgentRunsState>()(
           throw new Error("Unexpected clarification response");
         } catch (error) {
           const message = error instanceof Error ? error.message : "Clarification failed";
-          get().setPlannerStatus(missionId, "failed", message);
+          failPlannerRunPreservingMeta(set, get, missionId, message);
           get().appendPlannerActivity(missionId, "Planning failed — retry available");
         } finally {
           plannerGenerationInFlight.delete(missionId);
@@ -1118,9 +1238,15 @@ export const useAgentRunsStore = create<AgentRunsState>()(
       },
 
       retryPlannerGeneration: async (missionId) => {
-        const key = agentRunKey(missionId, "product_planner");
-        const run = get().runs[key];
+        const key = plannerStorageKey(missionId);
+        const run = getStoredPlannerRun(get, missionId);
         if (!run) return;
+
+        if (canResumePlannerPipeline(run)) {
+          await get().resumePlannerPipeline(missionId);
+          return;
+        }
+
         set((state) => ({
           runs: {
             ...state.runs,
