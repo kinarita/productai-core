@@ -31,7 +31,8 @@ export function AiTeamView() {
       selectedMission
         ? mergePlannerIntoWorkerStatuses(
             buildAiWorkerStatusesForMission(selectedMission),
-            plannerRun
+            plannerRun,
+            selectedMission
           )
         : [],
     [selectedMission, plannerRun]

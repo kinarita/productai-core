@@ -1,6 +1,13 @@
 import type { AiWorkerMissionStatus } from "@/lib/agent-first/workerAnalysis";
 import type { PlannerAgentRun } from "@/lib/agents/planner/plannerTypes";
 import { formatProductBriefMarkdown } from "@/lib/agents/planner/formatProductBrief";
+import {
+  getCurrentBrief,
+  getLatestApprovedBrief,
+  getCooReviewReport,
+  isArchitectUnlocked,
+} from "@/lib/coo-review/architectGate";
+import type { Mission } from "@/types/productai";
 
 function projectNameFromIdea(idea: string): string {
   const firstLine = idea.split("\n")[0]?.trim() ?? idea.trim();
@@ -19,11 +26,30 @@ const plannerStatusLabels: Record<PlannerAgentRun["status"], string> = {
 
 export function mergePlannerIntoWorkerStatuses(
   statuses: AiWorkerMissionStatus[],
-  run?: PlannerAgentRun
+  run?: PlannerAgentRun,
+  mission?: Mission
 ): AiWorkerMissionStatus[] {
   if (!run) return statuses;
 
+  const architectUnlocked = isArchitectUnlocked(mission, run);
+
   return statuses.map((entry) => {
+    if (entry.worker.id === "architect" && !architectUnlocked) {
+      return {
+        ...entry,
+        status: "not_started",
+        statusLabel: "Locked",
+        explainability: {
+          ...entry.explainability,
+          workSummary:
+            "Architect Agent is locked until the CEO approves architecture (human decision).",
+          outputSummary: getCooReviewReport(mission, run)
+            ? `COO recommends ${getCooReviewReport(mission, run)!.recommendation} — awaiting CEO approval`
+            : "Awaiting COO Review after Product Brief",
+        },
+      };
+    }
+
     if (entry.worker.id !== "product_planner") return entry;
 
     const statusLabel = plannerStatusLabels[run.status];
@@ -96,8 +122,10 @@ export function mergePlannerIntoWorkerStatuses(
 }
 
 export function briefPreviewFromRun(run?: PlannerAgentRun, missionBrief?: string): string {
-  if (run?.brief) {
-    return formatProductBriefMarkdown(projectNameFromIdea(run.input.idea), run.brief);
+  const brief =
+    getLatestApprovedBrief(undefined, run) ?? getCurrentBrief(undefined, run) ?? run?.brief;
+  if (brief && run) {
+    return formatProductBriefMarkdown(projectNameFromIdea(run.input.idea), brief);
   }
   return missionBrief ?? "";
 }

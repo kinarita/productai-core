@@ -1,15 +1,18 @@
 "use client";
 
 import type { ProjectActivityItem } from "@/lib/project-creation/projectCreationTypes";
+import { normalizeActivityFeed } from "@/lib/coo-review/normalizeActivityLabels";
 
 export function ProjectActivityFeed({ items }: { items: ProjectActivityItem[] }) {
-  if (!items.length) {
+  const displayItems = normalizeActivityFeed(items);
+
+  if (!displayItems.length) {
     return <p className="text-sm text-muted">Activity will appear here as your AI team works.</p>;
   }
 
   return (
     <ul className="space-y-3">
-      {items.map((item) => (
+      {displayItems.map((item) => (
         <li
           key={item.id}
           className="flex gap-3 rounded-lg border border-border bg-surface px-4 py-3"

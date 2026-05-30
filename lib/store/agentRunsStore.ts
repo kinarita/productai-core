@@ -33,6 +33,60 @@ import {
   computeAggregatePmfReadinessScore,
   inferPmfMeasurementStatus,
 } from "@/lib/pmf/pmfStatus";
+import type { CooReviewReport, ExecutiveDecisionStatus } from "@/lib/coo-review/cooReviewTypes";
+import {
+  migrateLegacyReviewReport,
+  defaultExecutiveDecisionForReport,
+} from "@/lib/coo-review/cooReviewMigration";
+import {
+  pipelineStageAfterCooReview,
+  pipelineStageAfterExecutiveDecision,
+} from "@/lib/coo-review/projectPipelineStage";
+import {
+  cooReviewCompletedActivity,
+  cooRecommendationActivity,
+  cooReviewStartedActivity,
+  ceoApprovalRequestedActivity,
+  organizationFeedMessageForCooReviewComplete,
+} from "@/lib/coo-review/cooReviewActivity";
+import {
+  humanCeoDecisionAudit,
+  validationRequestedAudit,
+  buildExecutiveAuditRecord,
+} from "@/lib/coo-review/executiveAudit";
+import {
+  plannerReceivedValidationRequestActivity,
+  plannerUpdatedValidationAnalysisActivity,
+  plannerRegeneratedRecommendationInputsActivity,
+  cooReviewRerunActivity,
+} from "@/lib/coo-review/plannerRevalidationActivity";
+import {
+  ceoApprovalCompletedTimelineActivity,
+  ceoApprovedArchitectureActivity,
+  ceoPlacedOnHoldActivity,
+  ceoRequestedValidationActivity,
+} from "@/lib/coo-review/ceoApprovalActivity";
+import { buildChangeSummary } from "@/lib/brief-diff/buildChangeSummary";
+import { buildBriefDiffAuditRecord } from "@/lib/brief-diff/briefDiffAudit";
+import type { BriefApplyFeedback, BriefVersionAuditRecord } from "@/lib/brief-diff/briefDiffTypes";
+import { compareBriefVersions } from "@/lib/brief-diff/computeBriefDiff";
+import {
+  briefDiffGeneratedActivity,
+  briefVersionCreatedActivity,
+  plannerAppliedChangeActivity,
+} from "@/lib/discussion/briefDiffActivity";
+import { appendBriefVersion, seedInitialBriefVersion } from "@/lib/discussion/briefVersioning";
+import { applyBriefChangeProposal } from "@/lib/discussion/applyBriefChangeProposal";
+import {
+  briefUpdatedVersionActivity,
+  suggestedChangeAppliedActivity,
+  ceoStartedDiscussionActivity,
+  cooRespondedToDiscussionActivity,
+  plannerRespondedToDiscussionActivity,
+  suggestedChangeProposedActivity,
+} from "@/lib/discussion/discussionActivity";
+import { buildDiscussionAuditRecord } from "@/lib/discussion/discussionAudit";
+import type { BriefChangeProposal, DiscussionMessage } from "@/lib/discussion/discussionTypes";
 import type {
   PlannerAgentRun,
   PlannerGenerationResult,
@@ -116,6 +170,33 @@ function mergePlannerMeta(
       patch.psfValidationAssumptions ?? base?.psfValidationAssumptions,
     psfValidationRisks: patch.psfValidationRisks ?? base?.psfValidationRisks,
     psfMvpScope: patch.psfMvpScope ?? base?.psfMvpScope,
+    cooReviewReport:
+      patch.cooReviewReport ??
+      migrateLegacyReviewReport(patch.ceoReviewReport) ??
+      migrateLegacyReviewReport(base?.cooReviewReport ?? base?.ceoReviewReport),
+    executiveDecision:
+      patch.executiveDecision ??
+      base?.executiveDecision ??
+      defaultExecutiveDecisionForReport(
+        patch.cooReviewReport ??
+          migrateLegacyReviewReport(patch.ceoReviewReport) ??
+          migrateLegacyReviewReport(base?.cooReviewReport ?? base?.ceoReviewReport)
+      ),
+    validationReason: patch.validationReason ?? base?.validationReason,
+    validationRequestedAt: patch.validationRequestedAt ?? base?.validationRequestedAt,
+    ceoApprovedAt: patch.ceoApprovedAt ?? base?.ceoApprovedAt,
+    cooReviewHistory: patch.cooReviewHistory ?? base?.cooReviewHistory,
+    plannerRevalidationInFlight:
+      patch.plannerRevalidationInFlight ?? base?.plannerRevalidationInFlight,
+    validationRequests: patch.validationRequests ?? base?.validationRequests,
+    discussionMessages: patch.discussionMessages ?? base?.discussionMessages,
+    pendingProposals: patch.pendingProposals ?? base?.pendingProposals,
+    briefVersions: patch.briefVersions ?? base?.briefVersions,
+    briefVersion: patch.briefVersion ?? base?.briefVersion,
+    latestApprovedBriefVersion:
+      patch.latestApprovedBriefVersion ?? base?.latestApprovedBriefVersion,
+    briefVersionAudits: patch.briefVersionAudits ?? base?.briefVersionAudits,
+    lastBriefApplyFeedback: patch.lastBriefApplyFeedback ?? base?.lastBriefApplyFeedback,
   };
 }
 
@@ -441,6 +522,723 @@ async function ensureProblemSolutionFit(
   };
 }
 
+async function ensureCooReview(
+  get: AgentRunsGet,
+  ctx: {
+    missionId: string;
+    providerInput: ProjectCreationInput & {
+      projectName: string;
+      missionId: string;
+      clarificationRound?: number;
+    };
+    run: PlannerStoredRun;
+    brief: ProductBriefSections;
+    briefAudit?: AgentAuditRecord<ProjectCreationInput, PlannerGenerationResult>;
+    forceRerun?: boolean;
+  }
+): Promise<{ report: CooReviewReport; cooReviewHistory: CooReviewReport[] }> {
+  const meta = ctx.run.plannerMeta;
+  const priorHistory = meta?.cooReviewHistory ?? [];
+  const existing =
+    meta?.cooReviewReport ?? migrateLegacyReviewReport(meta?.ceoReviewReport);
+  if (existing && !ctx.forceRerun) {
+    return { report: existing, cooReviewHistory: priorHistory };
+  }
+  const history = existing && ctx.forceRerun ? [...priorHistory, existing] : priorHistory;
+
+  if (!ctx.forceRerun) {
+    useProjectCreationStore.setState((state) => ({
+      activities: [cooReviewStartedActivity(ctx.missionId), ...state.activities].slice(0, 120),
+    }));
+  } else {
+    useProjectCreationStore.setState((state) => ({
+      activities: [cooReviewRerunActivity(ctx.missionId), ...state.activities].slice(0, 120),
+    }));
+  }
+
+  const response = await fetch("/api/agents/planner/coo-review", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...ctx.providerInput,
+      opportunityBrief: meta?.opportunityBrief,
+      cpfReport: meta?.cpfReport,
+      psfReport: meta?.psfReport,
+      brief: ctx.brief,
+      assessment: meta?.lastAssessment,
+      auditSummary: ctx.briefAudit?.analysis,
+      discoveryInsights: {
+        strengths: meta?.lastAssessment?.strengths,
+        gaps: meta?.lastAssessment?.gaps,
+        nextActions: meta?.lastAssessment?.nextActions,
+        painPoints: meta?.cpfPainPoints,
+        validationRisks: meta?.psfValidationRisks,
+        validationAssumptions: meta?.psfValidationAssumptions,
+        mvpScope: meta?.psfMvpScope,
+      },
+    }),
+  });
+
+  const data = (await response.json()) as {
+    cooReviewReport?: CooReviewReport;
+    audit?: AgentAuditRecord<ProjectCreationInput, PlannerGenerationResult>;
+    error?: string;
+  };
+
+  if (!response.ok || !data.cooReviewReport) {
+    throw new Error(data.error ?? "COO review failed");
+  }
+
+  if (data.audit) get().appendAudit(data.audit);
+
+  if (ctx.forceRerun) {
+    get().appendAudit(
+      buildExecutiveAuditRecord({
+        missionId: ctx.missionId,
+        eventType: "coo_review_rerun",
+        summary: `COO review rerun after Planner re-validation (recommendation: ${data.cooReviewReport!.recommendation}).`,
+        reasoning: [
+          "WHY: Prior COO recommendation archived in cooReviewHistory.",
+          `WHY: New overall score ${data.cooReviewReport!.overallScore}/100.`,
+        ],
+        runInput: ctx.providerInput,
+      })
+    );
+  }
+
+  useProjectCreationStore.setState((state) => ({
+    activities: [
+      cooReviewCompletedActivity(ctx.missionId),
+      cooRecommendationActivity(ctx.missionId, data.cooReviewReport!.recommendation),
+      ceoApprovalRequestedActivity(ctx.missionId),
+      ...state.activities,
+    ].slice(0, 120),
+  }));
+
+  return { report: data.cooReviewReport, cooReviewHistory: history };
+}
+
+function applyCooReviewToMission(missionId: string, report: CooReviewReport) {
+  useMissionStore.setState((state) => ({
+    missions: state.missions.map((m) =>
+      m.id === missionId
+        ? {
+            ...m,
+            cooReviewReport: report,
+            executiveDecision: "awaiting_ceo_approval" as const,
+            projectPipelineStage: pipelineStageAfterCooReview(),
+            plannerRevalidationInFlight: false,
+            summary: `COO review complete — Discovery Discussion open for ${m.name}.`,
+            recentActivity: "COO review completed — Discovery Discussion ready",
+            progress: Math.max(m.progress, 30),
+            updatedAt: "Just now",
+          }
+        : m
+    ),
+  }));
+}
+
+async function runPlannerRevalidationForMission(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  validationReason: string
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const brief = run?.audit?.output?.brief as ProductBriefSections | undefined;
+  const meta = run?.plannerMeta;
+  if (!run || !brief || !meta || !validationReason.trim()) return;
+
+  const projectName = projectNameFromIdea(run.input.idea);
+  const providerInput = {
+    ...run.input,
+    projectName,
+    missionId,
+    clarificationRound: meta.clarificationRound ?? 0,
+  };
+
+  const validationRequests = [
+    ...(meta.validationRequests ?? []),
+    { reason: validationReason, requestedAt: new Date().toISOString() },
+  ];
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(meta, {
+      plannerRevalidationInFlight: true,
+      validationRequests,
+    }),
+  });
+
+  useMissionStore.setState((state) => ({
+    missions: state.missions.map((m) =>
+      m.id === missionId
+        ? {
+            ...m,
+            plannerRevalidationInFlight: true,
+            summary: `Needs validation — Planner is reviewing CEO request for ${m.name}.`,
+            recentActivity: "CEO requested more validation",
+            updatedAt: "Just now",
+          }
+        : m
+    ),
+  }));
+
+  get().appendAudit(
+    buildExecutiveAuditRecord({
+      missionId,
+      eventType: "planner_revalidation_started",
+      summary: "Planner re-validation started after CEO validation request.",
+      reasoning: [`WHY: ${validationReason}`],
+      runInput: run.input,
+    })
+  );
+
+  useProjectCreationStore.setState((state) => ({
+    activities: [
+      plannerReceivedValidationRequestActivity(missionId),
+      ...state.activities,
+    ].slice(0, 120),
+  }));
+
+  try {
+    const response = await fetch("/api/agents/planner/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...providerInput,
+        assessment: meta.lastAssessment,
+        opportunityBrief: meta.opportunityBrief,
+        cpfReport: meta.cpfReport,
+        psfReport: meta.psfReport,
+        brief,
+        validationReason,
+      }),
+    });
+
+    const data = (await response.json()) as {
+      opportunityBrief?: OpportunityBrief;
+      cpfReport?: CustomerProblemFitReport;
+      psfReport?: ProblemSolutionFitReport;
+      brief?: ProductBriefSections;
+      assessment?: PlannerRunMeta["lastAssessment"];
+      pmfReadiness?: PmfReadiness;
+      currentPmfStage?: PmfStage;
+      validationAssumptions?: string[];
+      validationRisks?: string[];
+      mvpScope?: string[];
+      audits?: AgentAuditRecord<ProjectCreationInput, PlannerGenerationResult>[];
+      error?: string;
+    };
+
+    if (!response.ok || !data.brief || !data.opportunityBrief || !data.cpfReport || !data.psfReport) {
+      throw new Error(data.error ?? "Planner revalidation failed");
+    }
+
+    for (const audit of data.audits ?? []) {
+      get().appendAudit(audit);
+    }
+
+    useProjectCreationStore.setState((state) => ({
+      activities: [
+        plannerUpdatedValidationAnalysisActivity(missionId),
+        plannerRegeneratedRecommendationInputsActivity(missionId),
+        ...state.activities,
+      ].slice(0, 120),
+    }));
+
+    const updatedOutput: PlannerGenerationResult = {
+      ...(run.audit?.output as PlannerGenerationResult),
+      brief: data.brief,
+      analysis: `Planner re-validated after CEO request: ${validationReason.slice(0, 160)}`,
+    };
+
+    const latestRun = getStoredPlannerRun(get, missionId)!;
+    persistPlannerRun(set, key, {
+      audit: run.audit
+        ? { ...run.audit, output: updatedOutput, status: "success" }
+        : run.audit,
+      plannerMeta: mergePlannerMeta(latestRun.plannerMeta, {
+        lastAssessment: data.assessment ?? meta.lastAssessment,
+        opportunityBrief: data.opportunityBrief,
+        cpfReport: data.cpfReport,
+        cpfPainPoints: data.cpfReport.painPoints.map((p) => p.text),
+        cpfBurningNeeds: meta.cpfBurningNeeds,
+        psfReport: data.psfReport,
+        psfValidationAssumptions: data.validationAssumptions,
+        psfValidationRisks: data.validationRisks,
+        psfMvpScope: data.mvpScope,
+        pmfReadiness: data.pmfReadiness,
+        currentPmfStage: data.currentPmfStage,
+        plannerRevalidationInFlight: true,
+      }),
+    });
+
+    applyBriefToMission(missionId, projectName, data.brief);
+
+    const runAfterBrief = getStoredPlannerRun(get, missionId)!;
+    const { report: cooReviewReport, cooReviewHistory } = await ensureCooReview(get, {
+      missionId,
+      providerInput,
+      run: runAfterBrief,
+      brief: data.brief,
+      briefAudit: runAfterBrief.audit as AgentAuditRecord<
+        ProjectCreationInput,
+        PlannerGenerationResult
+      >,
+      forceRerun: true,
+    });
+
+    persistPlannerRun(set, key, {
+      plannerMeta: mergePlannerMeta(getStoredPlannerRun(get, missionId)!.plannerMeta, {
+        cooReviewReport,
+        cooReviewHistory,
+        executiveDecision: "awaiting_ceo_approval",
+        plannerRevalidationInFlight: false,
+      }),
+    });
+
+    get().appendAudit(
+      buildExecutiveAuditRecord({
+        missionId,
+        eventType: "planner_revalidation_completed",
+        summary: "Planner re-validation completed; discovery artifacts updated.",
+        reasoning: [`WHY: Addressed CEO validation — ${validationReason}`],
+        runInput: run.input,
+      })
+    );
+
+    applyCooReviewToMission(missionId, cooReviewReport);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Planner revalidation failed";
+    get().appendPlannerActivity(missionId, message);
+    persistPlannerRun(set, key, {
+      plannerMeta: mergePlannerMeta(getStoredPlannerRun(get, missionId)?.plannerMeta, {
+        plannerRevalidationInFlight: false,
+      }),
+    });
+    useMissionStore.setState((state) => ({
+      missions: state.missions.map((m) =>
+        m.id === missionId ? { ...m, plannerRevalidationInFlight: false } : m
+      ),
+    }));
+  }
+}
+
+function discussionMessageId(): string {
+  return `msg-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+async function sendDiscoveryDiscussionMessage(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  userMessage: string
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  const brief = run?.audit?.output?.brief as ProductBriefSections | undefined;
+  if (!run || !meta || !brief) return;
+
+  const cooReview =
+    meta.cooReviewReport ?? migrateLegacyReviewReport(meta.ceoReviewReport);
+  const isFirst = !(meta.discussionMessages?.length);
+  const ceoMsg: DiscussionMessage = {
+    id: discussionMessageId(),
+    missionId,
+    participant: "ceo",
+    message: userMessage.trim(),
+    createdAt: new Date().toISOString(),
+  };
+
+  const activities: ProjectActivityItem[] = [];
+  if (isFirst) activities.push(ceoStartedDiscussionActivity(missionId));
+  activities.push(
+    plannerRespondedToDiscussionActivity(missionId),
+    cooRespondedToDiscussionActivity(missionId)
+  );
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(meta, {
+      discussionMessages: [...(meta.discussionMessages ?? []), ceoMsg],
+    }),
+  });
+
+  get().appendAudit(
+    buildDiscussionAuditRecord({
+      missionId,
+      eventType: "discussion_message",
+      summary: `CEO discussion message: ${userMessage.slice(0, 120)}`,
+      reasoning: ["WHY: Discovery Discussion — no automatic brief mutation."],
+      runInput: run.input,
+    })
+  );
+
+  const projectName = projectNameFromIdea(run.input.idea);
+  const mission = useMissionStore.getState().missions.find((m) => m.id === missionId);
+  const response = await fetch("/api/discussion/respond", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      missionId,
+      projectName,
+      userMessage,
+      idea: run.input.idea,
+      targetUsers: run.input.targetUsers,
+      successGoal: run.input.successGoal,
+      missionSummary: mission?.summary,
+      brief,
+      briefVersion: meta.briefVersion,
+      opportunityBrief: meta.opportunityBrief,
+      cpfReport: meta.cpfReport,
+      psfReport: meta.psfReport,
+      psfMvpScope: meta.psfMvpScope,
+      cooReview,
+      validationRequests: meta.validationRequests,
+      discussionMessages: meta.discussionMessages,
+    }),
+  });
+
+  const data = (await response.json()) as {
+    plannerResponse?: string;
+    plannerSummary?: string;
+    plannerDetail?: string;
+    cooResponse?: string;
+    cooSummary?: string;
+    cooDetail?: string;
+    suggestedChanges?: BriefChangeProposal[];
+    relatedSection?: DiscussionMessage["relatedSection"];
+    error?: string;
+  };
+
+  if (!response.ok || !data.plannerResponse || !data.cooResponse) {
+    throw new Error(data.error ?? "Discussion response failed");
+  }
+
+  const plannerMsg: DiscussionMessage = {
+    id: discussionMessageId(),
+    missionId,
+    participant: "planner",
+    message: data.plannerSummary ?? data.plannerResponse,
+    summary: data.plannerSummary ?? data.plannerResponse,
+    detail: data.plannerDetail,
+    createdAt: new Date().toISOString(),
+    relatedSection: data.relatedSection,
+  };
+  const cooMsg: DiscussionMessage = {
+    id: discussionMessageId(),
+    missionId,
+    participant: "coo",
+    message: data.cooSummary ?? data.cooResponse,
+    summary: data.cooSummary ?? data.cooResponse,
+    detail: data.cooDetail,
+    createdAt: new Date().toISOString(),
+    relatedSection: data.relatedSection,
+  };
+
+  const latest = getStoredPlannerRun(get, missionId)!;
+  const proposals = data.suggestedChanges ?? [];
+  const pending = [
+    ...(latest.plannerMeta?.pendingProposals ?? []).filter((p) => p.status === "pending"),
+    ...proposals,
+  ];
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(latest.plannerMeta, {
+      discussionMessages: [
+        ...(latest.plannerMeta?.discussionMessages ?? []),
+        plannerMsg,
+        cooMsg,
+      ],
+      pendingProposals: pending,
+    }),
+  });
+
+  get().appendAudit(
+    buildDiscussionAuditRecord({
+      missionId,
+      eventType: "discussion_response",
+      summary: "Planner and COO responded in Discovery Discussion.",
+      reasoning: [
+        `WHY: Planner — ${data.plannerResponse.slice(0, 80)}`,
+        `WHY: COO — ${data.cooResponse.slice(0, 80)}`,
+      ],
+      runInput: run.input,
+    })
+  );
+
+  for (const proposal of proposals) {
+    get().appendAudit(
+      buildDiscussionAuditRecord({
+        missionId,
+        eventType: "change_proposed",
+        summary: `Change proposed: ${proposal.title}`,
+        reasoning: [`WHY: ${proposal.description}`],
+        runInput: run.input,
+        decisions: [proposal.id],
+      })
+    );
+    activities.push(suggestedChangeProposedActivity(missionId, proposal.title));
+  }
+
+  useProjectCreationStore.setState((state) => ({
+    activities: [...activities, ...state.activities].slice(0, 120),
+  }));
+
+  useMissionStore.setState((state) => ({
+    missions: state.missions.map((m) =>
+      m.id === missionId
+        ? {
+            ...m,
+            projectPipelineStage: pipelineStageAfterCooReview(),
+            recentActivity: "Discovery Discussion in progress",
+            updatedAt: "Just now",
+          }
+        : m
+    ),
+  }));
+
+}
+
+function applyDiscoveryBriefProposal(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  proposalId: string
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  const brief = run?.audit?.output?.brief as ProductBriefSections | undefined;
+  if (!run || !meta || !brief) return;
+
+  const proposal = meta.pendingProposals?.find((p) => p.id === proposalId && p.status === "pending");
+  if (!proposal) return;
+
+  const applied = applyBriefChangeProposal(proposal, {
+    brief,
+    opportunityBrief: meta.opportunityBrief,
+    cpfReport: meta.cpfReport,
+    psfReport: meta.psfReport,
+    psfMvpScope: meta.psfMvpScope,
+  });
+
+  const currentVersion = meta.briefVersion ?? 1;
+  const versions = meta.briefVersions ?? [];
+  const seeded = versions.length
+    ? versions
+    : seedInitialBriefVersion({
+        brief,
+        opportunityBrief: meta.opportunityBrief,
+        cpfReport: meta.cpfReport,
+        psfReport: meta.psfReport,
+        psfMvpScope: meta.psfMvpScope,
+      }).briefVersions;
+  const prevRecord = seeded.find((v) => v.version === currentVersion) ?? seeded[seeded.length - 1]!;
+  const prevBrief = prevRecord.brief;
+  const prevMvp = prevRecord.psfMvpScope ?? meta.psfMvpScope;
+
+  const diff = compareBriefVersions(
+    currentVersion,
+    currentVersion + 1,
+    prevBrief,
+    applied.brief,
+    prevMvp,
+    applied.psfMvpScope
+  );
+  const changeSummary = buildChangeSummary(diff, proposal);
+  const nextVersion = currentVersion + 1;
+
+  const { briefVersion, briefVersions } = appendBriefVersion({
+    currentVersion,
+    versions: seeded,
+    brief: applied.brief,
+    label: proposal.title.slice(0, 48) || applied.versionLabel,
+    opportunityBrief: applied.opportunityBrief,
+    cpfReport: applied.cpfReport,
+    psfReport: applied.psfReport,
+    psfMvpScope: applied.psfMvpScope,
+    proposalId,
+    previousVersionId: currentVersion,
+    changeSummary,
+    diff,
+    reason: proposal.reason,
+    impact: proposal.impact,
+    confidence: proposal.confidence,
+    appliedBy: "ceo",
+  });
+
+  const versionAudit: BriefVersionAuditRecord = {
+    versionId: nextVersion,
+    previousVersionId: currentVersion,
+    changeSummary,
+    diff,
+    reason: proposal.reason,
+    impact: proposal.impact,
+    confidence: proposal.confidence,
+    sourceDiscussionId: proposalId,
+    appliedBy: "ceo",
+    timestamp: new Date().toISOString(),
+  };
+
+  const applyFeedback: BriefApplyFeedback = {
+    missionId,
+    version: briefVersion,
+    previousVersion: currentVersion,
+    summary: changeSummary,
+    proposalTitle: proposal.title,
+    proposalId,
+    diff,
+    createdAt: versionAudit.timestamp,
+  };
+
+  const updatedOutput: PlannerGenerationResult = {
+    ...(run.audit?.output as PlannerGenerationResult),
+    brief: applied.brief,
+    analysis: `Brief v${briefVersion} — ${applied.versionLabel}`,
+  };
+
+  const updatedProposals = (meta.pendingProposals ?? []).map((p) =>
+    p.id === proposalId ? { ...p, status: "applied" as const } : p
+  );
+
+  persistPlannerRun(set, key, {
+    audit: run.audit ? { ...run.audit, output: updatedOutput } : run.audit,
+    plannerMeta: mergePlannerMeta(meta, {
+      opportunityBrief: applied.opportunityBrief,
+      cpfReport: applied.cpfReport,
+      psfReport: applied.psfReport,
+      psfMvpScope: applied.psfMvpScope,
+      briefVersion,
+      briefVersions,
+      pendingProposals: updatedProposals,
+      briefVersionAudits: [...(meta.briefVersionAudits ?? []), versionAudit],
+      lastBriefApplyFeedback: applyFeedback,
+    }),
+  });
+
+  const projectName = projectNameFromIdea(run.input.idea);
+  applyBriefToMission(missionId, projectName, applied.brief);
+
+  get().appendAudit(
+    buildBriefDiffAuditRecord({
+      missionId,
+      eventType: "change_applied_with_review",
+      audit: versionAudit,
+      runInput: run.input,
+    })
+  );
+  get().appendAudit(
+    buildBriefDiffAuditRecord({
+      missionId,
+      eventType: "brief_diff_generated",
+      audit: versionAudit,
+      runInput: run.input,
+    })
+  );
+  get().appendAudit(
+    buildBriefDiffAuditRecord({
+      missionId,
+      eventType: "brief_version_created",
+      audit: versionAudit,
+      runInput: run.input,
+    })
+  );
+
+  useProjectCreationStore.setState((state) => ({
+    activities: [
+      plannerAppliedChangeActivity(missionId, proposal.title, briefVersion),
+      briefVersionCreatedActivity(missionId, briefVersion, proposal.title),
+      briefDiffGeneratedActivity(missionId, currentVersion, briefVersion),
+      suggestedChangeAppliedActivity(missionId, briefVersion),
+      ...state.activities,
+    ].slice(0, 120),
+  }));
+
+  useMissionStore.setState((state) => ({
+    missions: state.missions.map((m) =>
+      m.id === missionId
+        ? {
+            ...m,
+            briefVersion,
+            recentActivity: `Brief v${briefVersion} created — ${proposal.title}`,
+            updatedAt: "Just now",
+          }
+        : m
+    ),
+  }));
+}
+
+function dismissDiscoveryBriefProposal(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  proposalId: string
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  if (!run || !meta) return;
+
+  const updatedProposals = (meta.pendingProposals ?? []).map((p) =>
+    p.id === proposalId ? { ...p, status: "dismissed" as const } : p
+  );
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(meta, { pendingProposals: updatedProposals }),
+  });
+}
+
+function applyExecutiveDecisionToMission(
+  missionId: string,
+  decision: ExecutiveDecisionStatus,
+  options?: { validationReason?: string; latestApprovedBriefVersion?: number }
+) {
+  const now = new Date().toISOString();
+  useMissionStore.setState((state) => ({
+    missions: state.missions.map((m) =>
+      m.id === missionId
+        ? {
+            ...m,
+            executiveDecision: decision,
+            projectPipelineStage: pipelineStageAfterExecutiveDecision(decision),
+            status: decision === "hold" ? ("on_hold" as const) : decision === "approved" ? ("active" as const) : m.status,
+            validationReason: options?.validationReason ?? m.validationReason,
+            validationRequestedAt:
+              decision === "needs_validation" ? now : m.validationRequestedAt,
+            ceoApprovedAt: decision === "approved" ? now : m.ceoApprovedAt,
+            latestApprovedBriefVersion:
+              options?.latestApprovedBriefVersion ?? m.latestApprovedBriefVersion,
+            summary:
+              decision === "approved"
+                ? `CEO approved architecture — ${m.name} ready for Architect Agent.`
+                : decision === "needs_validation"
+                  ? `CEO requested more validation for ${m.name}.`
+                  : decision === "hold"
+                    ? `CEO placed ${m.name} on hold.`
+                    : m.summary,
+            recentActivity:
+              decision === "approved"
+                ? "CEO approved architecture phase"
+                : decision === "needs_validation"
+                  ? "CEO requested more validation"
+                  : decision === "hold"
+                    ? "CEO placed project on hold"
+                    : m.recentActivity,
+            progress:
+              decision === "approved"
+                ? Math.max(m.progress, 32)
+                : decision === "hold"
+                  ? Math.min(m.progress, 25)
+                  : m.progress,
+            updatedAt: "Just now",
+          }
+        : m
+    ),
+  }));
+}
+
 async function completePlannerBrief(
   set: AgentRunsSet,
   get: AgentRunsGet,
@@ -617,6 +1415,22 @@ async function completePlannerBrief(
     briefPmf.psf = Math.max(briefPmf.psf, priorMeta.psfReport.psfScore);
   }
 
+  const { report: cooReviewReport, cooReviewHistory } = await ensureCooReview(get, {
+    missionId: ctx.missionId,
+    providerInput: ctx.providerInput,
+    run: finalRun,
+    brief: output.brief,
+    briefAudit: successAudit,
+  });
+
+  const briefVersioning = seedInitialBriefVersion({
+    brief: output.brief,
+    opportunityBrief: priorMeta?.opportunityBrief,
+    cpfReport: priorMeta?.cpfReport,
+    psfReport: priorMeta?.psfReport,
+    psfMvpScope: priorMeta?.psfMvpScope,
+  });
+
   persistPlannerRun(set, ctx.key, {
     status: "completed",
     input: ctx.providerInput,
@@ -639,6 +1453,10 @@ async function completePlannerBrief(
       psfMvpScope: priorMeta?.psfMvpScope,
       pmfReadiness: briefPmf,
       currentPmfStage: inferCurrentPmfStage(briefPmf),
+      cooReviewReport,
+      cooReviewHistory,
+      executiveDecision: "awaiting_ceo_approval" as const,
+      ...briefVersioning,
     },
   });
 
@@ -649,6 +1467,12 @@ async function completePlannerBrief(
       inferCurrentPmfStage(briefPmf),
       priorMeta?.discoveryMode ?? ctx.run.input.discoveryMode ?? "quick"
     );
+    applyCooReviewToMission(ctx.missionId, cooReviewReport);
+    useMissionStore.setState((state) => ({
+      missions: state.missions.map((m) =>
+        m.id === ctx.missionId ? { ...m, briefVersion: briefVersioning.briefVersion } : m
+      ),
+    }));
   });
 
   queueMicrotask(() => {
@@ -664,15 +1488,19 @@ async function completePlannerBrief(
 
     const mission = useMissionStore.getState().missions.find((m) => m.id === ctx.missionId);
     if (mission) {
+      const feedCopy = organizationFeedMessageForCooReviewComplete(
+        mission.name,
+        cooReviewReport.recommendation
+      );
       useOrganizationStore.getState().addFeedItemWithSync({
         type: "coordination",
         author: "COO",
         authorName: "Nova",
         missionId: ctx.missionId,
         missionName: mission.name,
-        message: `Product Planner completed the Product Brief for "${mission.name}" — review reasoning on the project page.`,
+        message: feedCopy.message,
         status: "active",
-        requiresCeoApproval: false,
+        requiresCeoApproval: feedCopy.requiresCeoApproval,
       });
     }
   });
@@ -739,11 +1567,22 @@ interface AgentRunsState {
   generatePlannerForMission: (missionId: string) => Promise<void>;
   /** Resume opportunity → cpf → psf → brief after reload or interrupted pipeline. */
   resumePlannerPipeline: (missionId: string) => Promise<void>;
+  /** Backfill COO Review for completed briefs created before Phase 21.5. */
+  ensureCooReviewForMission: (missionId: string) => Promise<void>;
+  submitExecutiveDecision: (
+    missionId: string,
+    action: "approve" | "needs_validation" | "hold",
+    validationReason?: string
+  ) => Promise<void>;
   submitPlannerClarification: (
     missionId: string,
     answers: Record<string, string>
   ) => Promise<void>;
   retryPlannerGeneration: (missionId: string) => Promise<void>;
+  sendDiscoveryDiscussionMessage: (missionId: string, userMessage: string) => Promise<void>;
+  applyDiscoveryBriefProposal: (missionId: string, proposalId: string) => void;
+  dismissDiscoveryBriefProposal: (missionId: string, proposalId: string) => void;
+  clearBriefApplyFeedback: (missionId: string) => void;
 }
 
 function isLegacyPlannerRun(value: unknown): value is {
@@ -1254,6 +2093,171 @@ export const useAgentRunsStore = create<AgentRunsState>()(
           },
         }));
         await get().generatePlannerForMission(missionId);
+      },
+
+      sendDiscoveryDiscussionMessage: async (missionId, userMessage) => {
+        await sendDiscoveryDiscussionMessage(set, get, missionId, userMessage);
+      },
+
+      applyDiscoveryBriefProposal: (missionId, proposalId) => {
+        applyDiscoveryBriefProposal(set, get, missionId, proposalId);
+      },
+
+      dismissDiscoveryBriefProposal: (missionId, proposalId) => {
+        dismissDiscoveryBriefProposal(set, get, missionId, proposalId);
+      },
+
+      clearBriefApplyFeedback: (missionId) => {
+        const key = plannerStorageKey(missionId);
+        const run = getStoredPlannerRun(get, missionId);
+        if (!run?.plannerMeta) return;
+        persistPlannerRun(set, key, {
+          plannerMeta: mergePlannerMeta(run.plannerMeta, { lastBriefApplyFeedback: undefined }),
+        });
+      },
+
+      ensureCooReviewForMission: async (missionId) => {
+        const key = plannerStorageKey(missionId);
+        const run = getStoredPlannerRun(get, missionId);
+        const brief = run?.audit?.output?.brief as ProductBriefSections | undefined;
+        const hasReview =
+          run?.plannerMeta?.cooReviewReport ??
+          migrateLegacyReviewReport(run?.plannerMeta?.ceoReviewReport);
+        if (!run || !brief || hasReview) return;
+        if (plannerGenerationInFlight.has(missionId)) return;
+
+        plannerGenerationInFlight.add(missionId);
+        const projectName = projectNameFromIdea(run.input.idea);
+        const round = run.plannerMeta?.clarificationRound ?? 0;
+
+        try {
+          const { report: cooReviewReport, cooReviewHistory } = await ensureCooReview(get, {
+            missionId,
+            providerInput: {
+              ...run.input,
+              projectName,
+              missionId,
+              clarificationRound: round,
+            },
+            run,
+            brief,
+            briefAudit: run.audit as AgentAuditRecord<
+              ProjectCreationInput,
+              PlannerGenerationResult
+            >,
+          });
+
+          persistPlannerRun(set, key, {
+            plannerMeta: mergePlannerMeta(run.plannerMeta, {
+              cooReviewReport,
+              cooReviewHistory,
+              executiveDecision: "awaiting_ceo_approval",
+            }),
+          });
+
+          applyCooReviewToMission(missionId, cooReviewReport);
+
+          const mission = useMissionStore.getState().missions.find((m) => m.id === missionId);
+          if (mission) {
+            const feedCopy = organizationFeedMessageForCooReviewComplete(
+              mission.name,
+              cooReviewReport.recommendation
+            );
+            useOrganizationStore.getState().addFeedItemWithSync({
+              type: "coordination",
+              author: "COO",
+              authorName: "Nova",
+              missionId,
+              missionName: mission.name,
+              message: feedCopy.message,
+              status: "active",
+              requiresCeoApproval: feedCopy.requiresCeoApproval,
+            });
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "COO review failed";
+          get().appendPlannerActivity(missionId, message);
+        } finally {
+          plannerGenerationInFlight.delete(missionId);
+        }
+      },
+
+      submitExecutiveDecision: async (missionId, action, validationReason) => {
+        const key = plannerStorageKey(missionId);
+        const run = getStoredPlannerRun(get, missionId);
+        if (!run?.plannerMeta?.cooReviewReport && !run?.plannerMeta?.ceoReviewReport) return;
+
+        const decision: ExecutiveDecisionStatus =
+          action === "approve"
+            ? "approved"
+            : action === "needs_validation"
+              ? "needs_validation"
+              : "hold";
+
+        const activities = [
+          decision === "approved"
+            ? ceoApprovedArchitectureActivity(missionId)
+            : decision === "needs_validation"
+              ? ceoRequestedValidationActivity(missionId)
+              : ceoPlacedOnHoldActivity(missionId),
+          ...(decision === "approved" ? [ceoApprovalCompletedTimelineActivity(missionId)] : []),
+        ];
+
+        useProjectCreationStore.setState((state) => ({
+          activities: [...activities, ...state.activities].slice(0, 120),
+        }));
+
+        const approvedBriefVersion =
+          decision === "approved"
+            ? (run.plannerMeta?.briefVersion ?? 1)
+            : undefined;
+
+        persistPlannerRun(set, key, {
+          plannerMeta: mergePlannerMeta(run.plannerMeta, {
+            executiveDecision: decision,
+            validationReason:
+              decision === "needs_validation" ? validationReason : undefined,
+            validationRequestedAt:
+              decision === "needs_validation" ? new Date().toISOString() : undefined,
+            ceoApprovedAt: decision === "approved" ? new Date().toISOString() : undefined,
+            latestApprovedBriefVersion: approvedBriefVersion,
+          }),
+        });
+
+        applyExecutiveDecisionToMission(missionId, decision, {
+          validationReason,
+          latestApprovedBriefVersion: approvedBriefVersion,
+        });
+
+        get().appendAudit(humanCeoDecisionAudit(missionId, decision, validationReason));
+
+        if (decision === "needs_validation" && validationReason?.trim()) {
+          get().appendAudit(validationRequestedAudit(missionId, validationReason));
+        }
+
+        const mission = useMissionStore.getState().missions.find((m) => m.id === missionId);
+        if (mission) {
+          const message =
+            decision === "approved"
+              ? `CEO approved architecture for "${mission.name}" — Architect phase unlocked.`
+              : decision === "needs_validation"
+                ? `CEO requested additional validation for "${mission.name}".`
+                : `CEO placed "${mission.name}" on hold.`;
+          useOrganizationStore.getState().addFeedItemWithSync({
+            type: "coordination",
+            author: "CEO",
+            authorName: "Executive",
+            missionId,
+            missionName: mission.name,
+            message,
+            status: "active",
+            requiresCeoApproval: decision === "needs_validation",
+          });
+        }
+
+        if (decision === "needs_validation") {
+          void runPlannerRevalidationForMission(set, get, missionId, validationReason ?? "");
+        }
       },
     }),
     {

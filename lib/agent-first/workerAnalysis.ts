@@ -19,6 +19,10 @@ import type {
 } from "@/lib/agent-first/aiWorkers";
 import { aiWorkerDefinitions, projectStageLabels } from "@/lib/agent-first/aiWorkers";
 import { workspaceHrefForRole } from "@/lib/ceo-command/ceoCommandCenterWorkspace";
+import {
+  inferProjectPipelineStage,
+} from "@/lib/coo-review/projectPipelineStage";
+import type { ProjectPipelineStage } from "@/lib/coo-review/cooReviewTypes";
 
 export interface AiWorkerExplainability {
   workSummary: string;
@@ -49,13 +53,25 @@ export interface ProjectDashboardCard {
   activeWorkerTitle: string;
 }
 
+const pipelineToDashboardStage: Record<ProjectPipelineStage, ProjectStageLabel> = {
+  planning: "Planning",
+  coo_review: "COO Review",
+  discovery_discussion: "Discovery Discussion",
+  ceo_approval: "CEO Approval",
+  validation_refinement: "Needs Validation",
+  architecture: "Architecture",
+  build: "Build",
+  qa: "QA",
+  release: "Release",
+};
+
 const lifecycleToProjectStage: Record<string, ProjectStageLabel> = {
   idea: "Planning",
   planning: "Planning",
-  direction: "Planning",
+  direction: "COO Review",
   architecture: "Architecture",
-  design: "Design",
-  development: "Development",
+  design: "Build",
+  development: "Build",
   qa: "QA",
   release: "Release",
   outcome: "Release",
@@ -181,7 +197,12 @@ export function buildProjectDashboardCard(input: {
     releases: input.releases,
     signalCount: 0,
   });
-  const currentStage = lifecycleToProjectStage[lifecycleStage] ?? "Planning";
+  const pipelineStage =
+    input.mission.projectPipelineStage ?? inferProjectPipelineStage(input.mission);
+  const currentStage =
+    pipelineToDashboardStage[pipelineStage] ??
+    lifecycleToProjectStage[lifecycleStage] ??
+    "Planning";
   const stageIndex = projectStageLabels.indexOf(currentStage);
   const completionPercent = Math.min(100, Math.max(0, input.mission.progress));
 

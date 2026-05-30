@@ -1,5 +1,100 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 24.6 Discussion Workspace Layout Optimization
+
+### Implemented
+
+- Taller scrollable discussion viewport (400px mobile / 600px+ desktop, 65vh preferred)
+- Input + Send directly under conversation; notifications below reply
+- Simplified Brief Updated card (summary bullets + View Changes only)
+- Soft scroll highlight on Brief Change Review; de-emphasized timeline/diff sections
+- `docs/PHASE24_6_DISCUSSION_WORKSPACE_LAYOUT_OPTIMIZATION.md`
+
+## 2026-05-30 — Phase 24.5 Discussion Readability & Conversational UX
+
+### Implemented
+
+- Short conversational Planner/COO replies (summary + expandable detail)
+- `react-markdown` rendering in Discovery Discussion
+- Persona labels: プロダクト責任者 / 事業責任者; 結論→理由→質問 structure
+- Apply feedback under Suggested Change card with inline diff preview
+- Scroll-to-diff with 2s highlight on **差分を見る**
+- `docs/PHASE24_5_DISCUSSION_READABILITY_AND_CONVERSATIONAL_UX.md`
+
+## 2026-05-30 — Phase 24 Brief Diff & Change Review
+
+### Implemented
+
+- `lib/brief-diff/` — section diff, change summary, version audit records
+- Apply success banner + View Changes + BriefDiffViewer
+- Version timeline labels with discussion context
+- Latest Changes Since Last Review on CEO Decision card
+- Activity: Brief version created, diff generated, Planner applied change
+- `docs/PHASE24_BRIEF_DIFF_AND_CHANGE_REVIEW.md`
+
+## 2026-05-30 — Phase 23 Strategic Discussion Agents
+
+### Implemented
+
+- `buildDiscussionContext()` — full mission + discovery + discussion history
+- Planner & COO persona prompts with quality guardrails
+- LLM responses (OpenAI/Anthropic) + context-rich heuristic fallback
+- Suggested Change v2 (reason, impact, affectedSections)
+- Activity labels for strategic discussion workflow
+- `docs/PHASE23_STRATEGIC_DISCUSSION_AGENTS.md`
+
+## 2026-05-30 — Phase 22 Discovery Discussion Workspace
+
+### Implemented
+
+- Discovery Discussion card between COO Review and CEO Decision on Project Hub
+- CEO ↔ Planner ↔ COO threaded discussion (`POST /api/discussion/respond`)
+- Brief change proposals with Apply / Dismiss only (no auto-mutation)
+- Brief versioning (`briefVersions`, v1 initial, v2+ from discussion)
+- `latestApprovedBriefVersion` for Architect handoff after CEO approval
+- Activity + audit trail for discussion workflow
+- `docs/PHASE22_DISCOVERY_DISCUSSION_WORKSPACE.md`
+
+## 2026-05-30 — Phase 21.6 CEO Validation Loop & Activity Labels
+
+### Implemented
+
+- Activity feed normalizes legacy "CEO Review" labels to COO / CEO Decision
+- Request More Validation triggers Planner re-validation + COO rerun
+- CEO Decision UI copy and "Planner is reviewing…" state
+- Append-only `cooReviewHistory` and executive workflow audits
+- `docs/PHASE21_6_CEO_VALIDATION_LOOP.md`
+
+## 2026-05-30 — Phase 21.5 COO Review + Human CEO Approval
+
+### Objective
+
+AI acts as COO (recommendation only); human CEO makes the final architecture authorization decision.
+
+### Implemented
+
+- Renamed CEO Review → **COO Review** (`coo_reviewer`, `CooReviewReport.recommendation`)
+- **CEO Decision** card with Approve / Request Validation / Hold buttons
+- `ExecutiveDecisionStatus` — Architect unlocks only on `approved`
+- Legacy Phase 21 PROCEED → `awaiting_ceo_approval` (no auto-approve)
+- Dashboard: Planning → COO Review → CEO Approval → Architecture …
+- `docs/PHASE21_5_COO_REVIEW_AND_HUMAN_CEO_APPROVAL.md`
+
+## 2026-05-30 — Phase 21 CEO Review Gate
+
+### Objective
+
+Executive review after Product Brief — PROCEED / VALIDATE MORE / HOLD before Architect Agent.
+
+### Implemented
+
+- `CEOReviewReport` + heuristic `ceo_reviewer` agent (`POST /api/agents/planner/ceo-review`)
+- Pipeline hook after Product Brief in `completePlannerBrief`
+- `CeoReviewCard` on Project Hub; Architect lock until PROCEED
+- Activity feed + organization feed + audit trail
+- Dashboard pipeline stages include CEO Review
+- `docs/PHASE21_CEO_REVIEW_GATE.md`
+
 ## 2026-05-30 — Phase 21A PMF Readiness UX Correction
 
 ### Objective

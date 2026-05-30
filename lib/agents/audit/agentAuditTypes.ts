@@ -1,5 +1,7 @@
 export type AgentId =
   | "product_planner"
+  | "coo_reviewer"
+  | "ceo_reviewer"
   | "architect"
   | "designer"
   | "developer"
@@ -59,6 +61,12 @@ export interface AgentAuditRecord<TInput = unknown, TOutput = unknown> {
   validationRisks?: string[];
   validationAssumptions?: string[];
   mvpFeatures?: string[];
+  /** Phase 21 — legacy CEO Review Gate */
+  ceoReviewDecision?: "PROCEED" | "VALIDATE MORE" | "HOLD";
+  ceoReviewOverallScore?: number;
+  /** Phase 21.5 — COO Review recommendation */
+  cooReviewRecommendation?: "PROCEED" | "VALIDATE MORE" | "HOLD";
+  cooReviewOverallScore?: number;
 }
 
 export interface AgentRun<TInput = unknown, TOutput = unknown> {

@@ -8,6 +8,16 @@ import type { ProblemSolutionFitReport } from "@/lib/psf/psfTypes";
 import type { OpportunityBrief } from "@/lib/opportunity/opportunityTypes";
 import type { PmfReadiness, PmfStage } from "@/lib/pmf/pmfJourney";
 import type { PmfMeasurementStatus } from "@/lib/pmf/pmfStatus";
+import type { CooReviewReport, ExecutiveDecisionStatus } from "@/lib/coo-review/cooReviewTypes";
+import type {
+  BriefApplyFeedback,
+  BriefVersionAuditRecord,
+} from "@/lib/brief-diff/briefDiffTypes";
+import type {
+  BriefChangeProposal,
+  BriefVersionRecord,
+  DiscussionMessage,
+} from "@/lib/discussion/discussionTypes";
 import type { DiscoveryMode, ProjectCreationInput } from "@/lib/project-creation/projectCreationTypes";
 
 export const PLANNER_PROMPT_VERSION = "planner-v6";
@@ -60,6 +70,14 @@ export interface PlannerAgentRun {
   /** Pre-launch readiness aggregate — NOT achieved PMF (Phase 21A). */
   pmfReadinessScore?: number;
   pmfMeasurementStatus?: PmfMeasurementStatus;
+  cooReviewReport?: CooReviewReport;
+  /** @deprecated legacy storage key */
+  ceoReviewReport?: CooReviewReport;
+  executiveDecision?: ExecutiveDecisionStatus;
+  validationReason?: string;
+  validationRequestedAt?: string;
+  ceoApprovedAt?: string;
+  plannerRevalidationInFlight?: boolean;
   strengths?: string[];
   gaps?: string[];
   nextActions?: string[];
@@ -73,6 +91,14 @@ export interface PlannerAgentRun {
   validationAssumptions?: string[];
   validationRisks?: string[];
   mvpScope?: string[];
+  /** Phase 22 — Discovery Discussion */
+  discussionMessages?: DiscussionMessage[];
+  pendingProposals?: BriefChangeProposal[];
+  briefVersions?: BriefVersionRecord[];
+  briefVersion?: number;
+  latestApprovedBriefVersion?: number;
+  briefVersionAudits?: BriefVersionAuditRecord[];
+  lastBriefApplyFeedback?: BriefApplyFeedback;
 }
 
 export type PlannerAgentRunRecord = PlannerStoredRun;
@@ -108,6 +134,16 @@ export interface PlannerRunMeta {
   /** Pre-launch readiness aggregate — NOT achieved PMF (Phase 21A). */
   pmfReadinessScore?: number;
   pmfMeasurementStatus?: PmfMeasurementStatus;
+  cooReviewReport?: CooReviewReport;
+  /** @deprecated legacy storage key */
+  ceoReviewReport?: CooReviewReport;
+  executiveDecision?: ExecutiveDecisionStatus;
+  validationReason?: string;
+  validationRequestedAt?: string;
+  ceoApprovedAt?: string;
+  cooReviewHistory?: CooReviewReport[];
+  plannerRevalidationInFlight?: boolean;
+  validationRequests?: Array<{ reason: string; requestedAt: string }>;
   opportunityBrief?: OpportunityBrief;
   cpfReport?: CustomerProblemFitReport;
   cpfPainPoints?: string[];
@@ -116,6 +152,13 @@ export interface PlannerRunMeta {
   psfValidationAssumptions?: string[];
   psfValidationRisks?: string[];
   psfMvpScope?: string[];
+  discussionMessages?: DiscussionMessage[];
+  pendingProposals?: BriefChangeProposal[];
+  briefVersions?: BriefVersionRecord[];
+  briefVersion?: number;
+  latestApprovedBriefVersion?: number;
+  briefVersionAudits?: BriefVersionAuditRecord[];
+  lastBriefApplyFeedback?: BriefApplyFeedback;
 }
 
 export type PlannerStoredRun = AgentRun<ProjectCreationInput, PlannerGenerationResult> & {

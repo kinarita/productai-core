@@ -76,9 +76,12 @@ export const aiWorkerDefinitions: AiWorkerDefinition[] = [
 
 export const projectStageLabels = [
   "Planning",
+  "COO Review",
+  "Discovery Discussion",
+  "CEO Approval",
+  "Needs Validation",
   "Architecture",
-  "Design",
-  "Development",
+  "Build",
   "QA",
   "Release",
 ] as const;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import type { AiWorkerMissionStatus } from "@/lib/agent-first/workerAnalysis";
 import { briefPreviewFromRun } from "@/lib/agents/planner/plannerWorkerOverlay";
+import { isArchitectUnlocked } from "@/lib/coo-review/architectGate";
 import { usePlannerAgentStore } from "@/lib/store/plannerAgentStore";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,8 @@ export function AiWorkerDetailPanel({
   );
   const retryGeneration = usePlannerAgentStore((s) => s.retryGeneration);
   const isPlanner = worker.id === "product_planner";
+  const isArchitect = worker.id === "architect";
+  const architectUnlocked = isArchitectUnlocked(mission, plannerRun);
   const isFailed = isPlanner && plannerRunStatus === "failed";
   const isWorking = isPlanner && plannerRunStatus === "working";
 
@@ -124,12 +127,19 @@ export function AiWorkerDetailPanel({
               </pre>
             </section>
           ) : null}
-          <Link
-            href={entry.workspaceHref}
-            className="inline-block text-xs text-accent hover:underline"
-          >
-            詳細ワークスペースを開く（上級者向け）
-          </Link>
+          {isArchitect && !architectUnlocked ? (
+            <p className="text-sm text-muted">
+              Architect Workspace is locked until the CEO approves architecture.
+            </p>
+          ) : null}
+          {!(isArchitect && !architectUnlocked) ? (
+            <Link
+              href={entry.workspaceHref}
+              className="inline-block text-xs text-accent hover:underline"
+            >
+              詳細ワークスペースを開く（上級者向け）
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>

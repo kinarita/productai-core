@@ -1,8 +1,13 @@
+import { getBriefAtVersion } from "@/lib/discussion/briefVersioning";
 import { inferCurrentPmfStage } from "@/lib/pmf/pmfJourney";
 import {
   computeAggregatePmfReadinessScore,
   inferPmfMeasurementStatus,
 } from "@/lib/pmf/pmfStatus";
+import {
+  defaultExecutiveDecisionForReport,
+  migrateLegacyReviewReport,
+} from "@/lib/coo-review/cooReviewMigration";
 import type { PlannerStoredRun } from "@/lib/agents/planner/plannerTypes";
 import type {
   PlannerAgentRun,
@@ -16,8 +21,10 @@ export function toPlannerAgentRun(run: PlannerStoredRun | undefined): PlannerAge
   if (!run) return undefined;
 
   const output = run.audit?.output;
-  const brief = output?.brief as ProductBriefSections | undefined;
   const meta = run.plannerMeta;
+  const brief =
+    getBriefAtVersion(meta?.briefVersions, meta?.briefVersion)?.brief ??
+    (output?.brief as ProductBriefSections | undefined);
   const assessment = meta?.lastAssessment;
   const pmfReadiness = meta?.pmfReadiness ?? assessment?.pmfReadiness;
   const pmfMeasurementStatus =
@@ -28,6 +35,11 @@ export function toPlannerAgentRun(run: PlannerStoredRun | undefined): PlannerAge
   const currentPmfStage = pmfReadiness
     ? inferCurrentPmfStage(pmfReadiness, { pmfMeasurementStatus })
     : (meta?.currentPmfStage ?? "idea_validation");
+
+  const cooReviewReport =
+    meta?.cooReviewReport ?? migrateLegacyReviewReport(meta?.ceoReviewReport);
+  const executiveDecision =
+    meta?.executiveDecision ?? defaultExecutiveDecisionForReport(cooReviewReport);
 
   return {
     missionId: run.missionId,
@@ -48,6 +60,12 @@ export function toPlannerAgentRun(run: PlannerStoredRun | undefined): PlannerAge
     currentPmfStage,
     pmfReadinessScore,
     pmfMeasurementStatus,
+    cooReviewReport,
+    executiveDecision,
+    validationReason: meta?.validationReason,
+    validationRequestedAt: meta?.validationRequestedAt,
+    ceoApprovedAt: meta?.ceoApprovedAt,
+    plannerRevalidationInFlight: meta?.plannerRevalidationInFlight,
     strengths: assessment?.strengths ?? run.audit?.strengths,
     gaps: assessment?.gaps ?? run.audit?.gaps,
     nextActions: assessment?.nextActions ?? run.audit?.nextActions,
@@ -62,5 +80,12 @@ export function toPlannerAgentRun(run: PlannerStoredRun | undefined): PlannerAge
       meta?.psfValidationAssumptions ?? assessment?.validationAssumptions,
     validationRisks: meta?.psfValidationRisks ?? assessment?.validationRisks,
     mvpScope: meta?.psfMvpScope ?? assessment?.mvpScope,
+    discussionMessages: meta?.discussionMessages,
+    pendingProposals: meta?.pendingProposals,
+    briefVersions: meta?.briefVersions,
+    briefVersion: meta?.briefVersion,
+    latestApprovedBriefVersion: meta?.latestApprovedBriefVersion,
+    briefVersionAudits: meta?.briefVersionAudits,
+    lastBriefApplyFeedback: meta?.lastBriefApplyFeedback,
   };
 }

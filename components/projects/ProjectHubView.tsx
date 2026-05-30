@@ -10,6 +10,9 @@ import { ProjectActivityFeed } from "@/components/projects/ProjectActivityFeed";
 import { ProjectHubPlannerEffect } from "@/components/projects/ProjectHubPlannerEffect";
 import { ProjectAuditSummaryCard } from "@/components/projects/ProjectAuditSummaryCard";
 import { CustomerProblemFitCard } from "@/components/projects/CustomerProblemFitCard";
+import { CooReviewCard } from "@/components/projects/CooReviewCard";
+import { DiscoveryDiscussionCard } from "@/components/projects/DiscoveryDiscussionCard";
+import { CeoDecisionCard } from "@/components/projects/CeoDecisionCard";
 import { ProblemSolutionFitCard } from "@/components/projects/ProblemSolutionFitCard";
 import { OpportunityBriefCard } from "@/components/projects/OpportunityBriefCard";
 import { PMFJourneyPanel } from "@/components/projects/PMFJourneyPanel";
@@ -19,10 +22,37 @@ import { mergePlannerIntoWorkerStatuses } from "@/lib/agents/planner/plannerWork
 import { buildAiWorkerStatusesForMission } from "@/lib/agent-first/workerAnalysis";
 import { buildProjectTimeline } from "@/lib/project-creation/projectTimeline";
 import { usePlannerRunForMission } from "@/lib/agents/planner/usePlannerRunForMission";
+import { isArchitectUnlocked, architectLockReason } from "@/lib/coo-review/architectGate";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useProjectCreationStore } from "@/lib/store/projectCreationStore";
+import type { PlannerRunStatus } from "@/lib/agents/planner/plannerTypes";
+import { cn } from "@/lib/utils";
 import { releases } from "@/data/mockData";
 import { ArrowRight, Loader2 } from "lucide-react";
+
+function plannerHubStatusMessage(
+  status: PlannerRunStatus | undefined,
+  options: { briefReady: boolean; errorMessage?: string }
+): string {
+  switch (status) {
+    case "assessing":
+      return "Planner is assessing requirements…";
+    case "awaiting_clarification":
+      return "Planner needs clarification — answer questions below.";
+    case "working":
+      return "Planner is creating Product Brief…";
+    case "failed":
+      return options.errorMessage ?? "Unable to generate Product Brief";
+    case "completed":
+      return options.briefReady
+        ? "Product Brief ready — review COO recommendation and approve as CEO."
+        : "Planning in progress.";
+    default:
+      return options.briefReady
+        ? "Product Brief ready — review COO recommendation and approve as CEO."
+        : "Planning in progress.";
+  }
+}
 
 export function ProjectHubView({ missionId }: { missionId: string }) {
   const mission = useMissionStore((s) => s.missions.find((m) => m.id === missionId));
@@ -34,10 +64,15 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
   const workers = useMemo(
     () =>
       mission
-        ? mergePlannerIntoWorkerStatuses(buildAiWorkerStatusesForMission(mission), plannerRun)
+        ? mergePlannerIntoWorkerStatuses(
+            buildAiWorkerStatusesForMission(mission),
+            plannerRun,
+            mission
+          )
         : [],
     [mission, plannerRun]
   );
+  const architectUnlocked = isArchitectUnlocked(mission, plannerRun);
 
   if (!mission) {
     return (
@@ -56,12 +91,15 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
     pmfStage: plannerRun?.currentPmfStage ?? mission.currentPmfStage,
   });
   const planner = workers.find((w) => w.worker.id === "product_planner");
+  const plannerStatus = plannerRun?.status;
+  const plannerStatusMessage = plannerHubStatusMessage(plannerStatus, {
+    briefReady: Boolean(meta?.productBriefGenerated),
+    errorMessage: plannerRun?.errorMessage,
+  });
+  const showPlannerSpinner = plannerStatus === "working";
 
   return (
-    <AppShell
-      title={mission.name}
-      description={mission.summary}
-    >
+    <AppShell title={mission.name} description={mission.summary}>
       <div className="space-y-8">
         <ProjectHubPlannerEffect missionId={missionId} />
         <Card title="Planning Timeline">
@@ -84,6 +122,12 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
           missionBrief={mission.requirementsSummary}
         />
 
+        <CooReviewCard mission={mission} run={plannerRun} />
+
+        <DiscoveryDiscussionCard mission={mission} run={plannerRun} missionId={missionId} />
+
+        <CeoDecisionCard mission={mission} run={plannerRun} missionId={missionId} />
+
         <ProjectAuditSummaryCard audit={plannerRun?.audit} />
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -95,20 +139,18 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
                     {planner.worker.emoji} {planner.worker.title} — {planner.statusLabel}
                   </p>
                   <p className="mt-1 flex items-center gap-2 text-xs text-muted">
-                    {plannerRun?.status === "working" ? (
-                      <Loader2 className="h-3 w-3 animate-spin text-accent" aria-hidden />
-                    ) : null}
-                    {plannerRun?.status === "assessing"
-                      ? "Planner is assessing requirements…"
-                      : plannerRun?.status === "awaiting_clarification"
-                        ? "Planner needs clarification — answer questions below."
-                        : plannerRun?.status === "working"
-                      ? "Planner is creating Product Brief…"
-                      : plannerRun?.status === "failed"
-                        ? (plannerRun.errorMessage ?? "Unable to generate Product Brief")
-                        : meta?.productBriefGenerated
-                          ? "Product Brief ready — review reasoning above."
-                          : "Planning in progress."}
+                    <span
+                      className="inline-flex h-3 w-3 shrink-0 items-center justify-center"
+                      aria-hidden
+                    >
+                      <Loader2
+                        className={cn(
+                          "h-3 w-3 text-accent",
+                          showPlannerSpinner ? "animate-spin opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </span>
+                    <span>{plannerStatusMessage}</span>
                   </p>
                 </div>
               ) : null}
@@ -117,11 +159,29 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
                   <li key={w.worker.id} className="flex justify-between gap-2">
                     <span>
                       {w.worker.emoji} {w.worker.title}
+                      {w.worker.id === "architect" && !architectUnlocked ? (
+                        <span className="ml-1 text-[10px] text-warning">(locked)</span>
+                      ) : null}
                     </span>
                     <span className="text-foreground">{w.statusLabel}</span>
                   </li>
                 ))}
               </ul>
+              {!architectUnlocked ? (
+                <p className="mt-3 text-xs text-muted">{architectLockReason(mission, plannerRun)}</p>
+              ) : null}
+              {architectUnlocked ? (
+                <Link
+                  href={`/architect-workspace?mission=${missionId}`}
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+                >
+                  Open Architect Workspace
+                </Link>
+              ) : (
+                <p className="mt-3 text-xs font-medium text-muted">
+                  Architect Workspace — unavailable until CEO approves architecture
+                </p>
+              )}
             </div>
             <Link
               href={`/ai-team?mission=${missionId}`}

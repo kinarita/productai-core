@@ -1,6 +1,11 @@
 import type { PmfReadiness, PmfStage } from "@/lib/pmf/pmfJourney";
 import type { PmfMeasurementStatus } from "@/lib/pmf/pmfStatus";
 import type {
+  CooReviewReport,
+  ExecutiveDecisionStatus,
+  ProjectPipelineStage,
+} from "@/lib/coo-review/cooReviewTypes";
+import type {
   AdvisoryLevel,
   ContinuityCategory,
   GovernanceCategory,
@@ -118,6 +123,21 @@ export interface Mission {
   pmfReadinessScore?: number;
   /** Whether PMF has been measured with real users (Phase 21A). */
   pmfMeasurementStatus?: PmfMeasurementStatus;
+  /** Phase 21.5 — COO Review recommendation (AI advisory, not final decision). */
+  cooReviewReport?: CooReviewReport;
+  /** @deprecated legacy storage — migrated on read */
+  ceoReviewReport?: CooReviewReport;
+  /** Human CEO decision after COO review. */
+  executiveDecision?: ExecutiveDecisionStatus;
+  validationReason?: string;
+  validationRequestedAt?: string;
+  ceoApprovedAt?: string;
+  plannerRevalidationInFlight?: boolean;
+  /** Phase 22 — current brief version from Discovery Discussion. */
+  briefVersion?: number;
+  latestApprovedBriefVersion?: number;
+  /** Dashboard pipeline stage (Planning → COO Review → CEO Approval …). */
+  projectPipelineStage?: ProjectPipelineStage;
 }
 
 export interface Task {

@@ -300,9 +300,8 @@ function PlannerBriefBody({
   return (
     <div className="relative min-h-[5rem]">
       {hasBrief ? (
-        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-surface p-3 text-xs text-muted">
-          {briefText.slice(0, 2400)}
-          {briefText.length > 2400 ? "…" : ""}
+        <pre className="whitespace-pre-wrap rounded-lg border border-border bg-surface p-3 text-xs leading-relaxed text-muted">
+          {briefText}
         </pre>
       ) : (
         <p className="text-sm text-muted">

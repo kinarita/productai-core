@@ -4,6 +4,52 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-30
 
+### Added (Phase 24.6 Discussion Workspace Layout Optimization)
+
+- Discovery Discussion layout: taller thread, input under conversation, simplified Brief Updated.
+- Documentation: `docs/PHASE24_6_DISCUSSION_WORKSPACE_LAYOUT_OPTIMIZATION.md`.
+
+### Added (Phase 24.5 Discussion Readability & Conversational UX)
+
+- Short Planner/COO discussion replies with expandable detailed analysis.
+- Markdown rendering, inline Apply feedback, and diff scroll highlight.
+- Documentation: `docs/PHASE24_5_DISCUSSION_READABILITY_AND_CONVERSATIONAL_UX.md`.
+
+### Added (Phase 24 Brief Diff & Change Review)
+
+- Brief diff engine, change summaries, apply feedback UI, and CEO approval change preview.
+- Documentation: `docs/PHASE24_BRIEF_DIFF_AND_CHANGE_REVIEW.md`.
+
+### Added (Phase 23 Strategic Discussion Agents)
+
+- Context-aware Planner/COO discussion via LLM; heuristic fallback without API keys.
+- Suggested Change v2 and updated activity labels.
+- Documentation: `docs/PHASE23_STRATEGIC_DISCUSSION_AGENTS.md`.
+
+### Added (Phase 22 Discovery Discussion Workspace)
+
+- Collaborative Discovery Discussion (CEO, Planner, COO) before CEO approval.
+- Brief versioning and explicit Apply-to-Brief change proposals.
+- Documentation: `docs/PHASE22_DISCOVERY_DISCUSSION_WORKSPACE.md`.
+
+### Added (Phase 21.6 CEO Validation Loop)
+
+- Activity label normalization; Planner re-validation loop on CEO validation request.
+- Documentation: `docs/PHASE21_6_CEO_VALIDATION_LOOP.md`.
+
+### Added (Phase 21.5 COO Review + Human CEO Approval)
+
+- COO Review replaces autonomous CEO Review; human CEO approval required for Architect.
+- CEO Decision card with approve / validate / hold actions.
+- Documentation: `docs/PHASE21_5_COO_REVIEW_AND_HUMAN_CEO_APPROVAL.md`.
+
+### Added (Phase 21 CEO Review Gate)
+
+- CEO Review after Product Brief with PROCEED / VALIDATE MORE / HOLD decisions.
+- Architect Agent locked until CEO approves architecture phase.
+- Dashboard pipeline includes CEO Review stage.
+- Documentation: `docs/PHASE21_CEO_REVIEW_GATE.md`.
+
 ### Added (Phase 21A PMF Readiness UX)
 
 - PMF row shows **Not Yet Measurable** instead of misleading low percentages pre-launch.
