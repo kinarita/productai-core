@@ -1,9 +1,14 @@
-export type ProjectWizardStep = 1 | 2 | 3 | 4;
+export type ProjectWizardStep = 1 | 2 | 3;
+
+export type DiscoveryMode = "quick" | "guided";
 
 export interface ProjectCreationInput {
   idea: string;
   targetUsers: string;
   successGoal: string;
+  discoveryMode: DiscoveryMode;
+  /** Accumulated CEO clarification answers (Phase 16). */
+  clarifications?: string;
 }
 
 export interface CreatedProjectMeta {
@@ -11,6 +16,7 @@ export interface CreatedProjectMeta {
   idea: string;
   targetUsers: string;
   successGoal: string;
+  discoveryMode: DiscoveryMode;
   createdAt: string;
   plannerStatus: "pending" | "planning_started";
   productBriefGenerated: boolean;
@@ -18,7 +24,14 @@ export interface CreatedProjectMeta {
 
 export type ProjectTimelineStageId =
   | "idea"
+  | "opportunity"
+  | "discovery"
+  | "clarification"
+  | "cpf"
+  | "psf"
+  | "mvp"
   | "planning"
+  | "review"
   | "architecture"
   | "design"
   | "build"

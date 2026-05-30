@@ -1,3 +1,4 @@
+import { buildHeuristicClarificationAssessment } from "@/lib/agents/planner/plannerClarification";
 import type { PlannerProvider } from "@/lib/agents/planner/plannerProvider";
 import type { PlannerProviderInput } from "@/lib/agents/planner/plannerTypes";
 
@@ -5,6 +6,34 @@ import type { PlannerProviderInput } from "@/lib/agents/planner/plannerTypes";
 export class MockPlannerProvider implements PlannerProvider {
   readonly id = "mock";
   readonly model = "productai-planner-local-v1";
+
+  async assessRequirements(input: PlannerProviderInput) {
+    const assessment = buildHeuristicClarificationAssessment({
+      input: {
+        idea: input.idea,
+        targetUsers: input.targetUsers,
+        successGoal: input.successGoal,
+        clarifications: input.clarifications,
+        discoveryMode: input.discoveryMode ?? "quick",
+      },
+      clarificationRound: input.clarificationRound ?? 0,
+      clarificationNotes: input.clarifications,
+    });
+
+    return {
+      analysis: `Mock PM reviewed "${input.projectName}" for completeness (${assessment.completenessScore}/100).`,
+      decisions: assessment.needsClarification
+        ? ["Ask focused clarification questions before writing the Product Brief"]
+        : ["Information is sufficient to draft the Product Brief"],
+      reasoning: assessment.needsClarification
+        ? assessment.questions.map((q) => `WHY: ${q.reason}`)
+        : [
+            "WHY: Core user, platform, and success signals are clear enough for v1 scoping.",
+            "WHY: Proceeding to Product Brief respects the CEO's time while staying transparent.",
+          ],
+      assessment,
+    };
+  }
 
   async generateProductBrief(input: PlannerProviderInput) {
     const name = input.projectName;

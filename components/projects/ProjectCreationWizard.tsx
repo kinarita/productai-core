@@ -1,65 +1,89 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import type { ProjectWizardStep } from "@/lib/project-creation/projectCreationTypes";
+import type { DiscoveryMode, ProjectWizardStep } from "@/lib/project-creation/projectCreationTypes";
+import { discoveryModeDisplayTitle } from "@/lib/project-creation/discoveryModeLabels";
 import { usePlannerAgentStore } from "@/lib/store/plannerAgentStore";
 import { useProjectCreationStore } from "@/lib/store/projectCreationStore";
 import { cn } from "@/lib/utils";
 
 const stepTitles: Record<ProjectWizardStep, string> = {
-  1: "Project Idea",
-  2: "Target Users",
-  3: "Success Goal",
-  4: "Create Project",
+  1: "誰のためのプロダクトか",
+  2: "成功のイメージ",
+  3: "内容の確認",
 };
+
+const WIZARD_STEPS: ProjectWizardStep[] = [1, 2, 3];
 
 export function ProjectCreationWizard({
   initialIdea,
+  initialDiscoveryMode,
   open,
   onClose,
 }: {
   initialIdea: string;
+  initialDiscoveryMode: DiscoveryMode;
   open: boolean;
   onClose: () => void;
 }) {
   const router = useRouter();
   const createProject = useProjectCreationStore((s) => s.createProject);
   const [step, setStep] = useState<ProjectWizardStep>(1);
-  const [idea, setIdea] = useState(initialIdea);
   const [targetUsers, setTargetUsers] = useState("");
   const [successGoal, setSuccessGoal] = useState("");
   const [creating, setCreating] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (open) {
-      setIdea(initialIdea);
       setStep(1);
       setTargetUsers("");
       setSuccessGoal("");
       setCreating(false);
     }
-  }, [open, initialIdea]);
+  }, [open, initialIdea, initialDiscoveryMode]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
+  if (!open || !mounted) return null;
+
+  const idea = initialIdea.trim();
+  const discoveryMode = initialDiscoveryMode;
 
   const canNext =
-    (step === 1 && idea.trim().length > 0) ||
-    (step === 2 && targetUsers.trim().length > 0) ||
-    (step === 3 && successGoal.trim().length > 0) ||
-    step === 4;
+    (step === 1 && targetUsers.trim().length > 0) ||
+    (step === 2 && successGoal.trim().length > 0) ||
+    step === 3;
 
   const handleCreate = async () => {
     setCreating(true);
-    const missionId = createProject({ idea, targetUsers, successGoal });
+    const missionId = createProject({
+      idea,
+      targetUsers,
+      successGoal,
+      discoveryMode,
+    });
     void usePlannerAgentStore.getState().generateForMission(missionId);
     onClose();
     router.push(`/projects/${missionId}`);
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="wizard-title"
@@ -74,12 +98,12 @@ export function ProjectCreationWizard({
             onClick={onClose}
             className="text-sm text-muted hover:text-foreground"
           >
-            Close
+            閉じる
           </button>
         </div>
 
         <div className="mb-6 flex gap-1">
-          {([1, 2, 3, 4] as ProjectWizardStep[]).map((s) => (
+          {WIZARD_STEPS.map((s) => (
             <div
               key={s}
               className={cn(
@@ -91,52 +115,55 @@ export function ProjectCreationWizard({
         </div>
 
         {step === 1 ? (
-          <textarea
-            value={idea}
-            onChange={(e) => setIdea(e.target.value)}
-            rows={5}
-            className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-            placeholder="Describe what you want to build…"
-          />
+          <div className="space-y-4">
+            <p className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
+              <span className="font-medium text-foreground">アイデア:</span> {idea}
+              <br />
+              <span className="font-medium text-foreground">はじめ方:</span>{" "}
+              {discoveryModeDisplayTitle(discoveryMode)}
+            </p>
+            <textarea
+              value={targetUsers}
+              onChange={(e) => setTargetUsers(e.target.value)}
+              rows={4}
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+              placeholder="誰が使いますか？（例：家族、学生、小規模チーム…）"
+              autoFocus
+            />
+          </div>
         ) : null}
 
         {step === 2 ? (
-          <textarea
-            value={targetUsers}
-            onChange={(e) => setTargetUsers(e.target.value)}
-            rows={4}
-            className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-            placeholder="Who will use this? (e.g. small business owners, parents, students…)"
-          />
-        ) : null}
-
-        {step === 3 ? (
           <textarea
             value={successGoal}
             onChange={(e) => setSuccessGoal(e.target.value)}
             rows={4}
             className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-            placeholder="What does success look like in 3 months?"
+            placeholder="3ヶ月後、どうなっていたら成功ですか？"
+            autoFocus
           />
         ) : null}
 
-        {step === 4 ? (
+        {step === 3 ? (
           <div className="space-y-3 rounded-lg border border-border bg-surface p-4 text-sm">
             <p>
-              <span className="font-medium text-foreground">Idea:</span>{" "}
+              <span className="font-medium text-foreground">アイデア:</span>{" "}
               <span className="text-muted">{idea}</span>
             </p>
             <p>
-              <span className="font-medium text-foreground">Users:</span>{" "}
+              <span className="font-medium text-foreground">はじめ方:</span>{" "}
+              <span className="text-muted">{discoveryModeDisplayTitle(discoveryMode)}</span>
+            </p>
+            <p>
+              <span className="font-medium text-foreground">ユーザー:</span>{" "}
               <span className="text-muted">{targetUsers}</span>
             </p>
             <p>
-              <span className="font-medium text-foreground">Success:</span>{" "}
+              <span className="font-medium text-foreground">成功:</span>{" "}
               <span className="text-muted">{successGoal}</span>
             </p>
             <p className="text-xs text-muted">
-              Product Planner will be assigned immediately and will generate your first Product
-              Brief. No code ships automatically.
+              Plannerが作る価値を整理し、必要な質問だけ行ったあと、Product Briefを作成します。
             </p>
           </div>
         ) : null}
@@ -148,16 +175,16 @@ export function ProjectCreationWizard({
             onClick={() => setStep((s) => (s > 1 ? ((s - 1) as ProjectWizardStep) : s))}
             className="rounded-lg border border-border px-4 py-2 text-sm text-muted disabled:opacity-40"
           >
-            Back
+            戻る
           </button>
-          {step < 4 ? (
+          {step < 3 ? (
             <button
               type="button"
               disabled={!canNext}
-              onClick={() => setStep((s) => (s < 4 ? ((s + 1) as ProjectWizardStep) : s))}
+              onClick={() => setStep((s) => (s < 3 ? ((s + 1) as ProjectWizardStep) : s))}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              Next
+              次へ
             </button>
           ) : (
             <button
@@ -166,11 +193,12 @@ export function ProjectCreationWizard({
               onClick={handleCreate}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              {creating ? "Starting…" : "Start AI Team"}
+              {creating ? "開始中…" : "AIチームに依頼する"}
             </button>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

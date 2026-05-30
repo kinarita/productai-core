@@ -9,6 +9,7 @@ export async function POST(request: Request) {
       successGoal?: string;
       projectName?: string;
       missionId?: string;
+      discoveryMode?: "quick" | "guided";
     };
 
     if (!body.idea?.trim() || !body.targetUsers?.trim() || !body.successGoal?.trim()) {
@@ -24,11 +25,12 @@ export async function POST(request: Request) {
       successGoal: body.successGoal.trim(),
       projectName: body.projectName?.trim() || body.idea.trim().split("\n")[0].slice(0, 48),
       missionId: body.missionId?.trim(),
+      discoveryMode: body.discoveryMode === "guided" ? "guided" : "quick",
     });
 
-    if (result.error || !result.output) {
+    if (!result.output) {
       return NextResponse.json(
-        { error: result.error ?? "Unable to generate Product Brief", audit: result.audit },
+        { error: "Unable to generate Product Brief", audit: result.audit },
         { status: 500 }
       );
     }

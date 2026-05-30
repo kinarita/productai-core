@@ -2,13 +2,14 @@ import type { PlannerProviderInput } from "@/lib/agents/planner/plannerTypes";
 import { PLANNER_PROMPT_VERSION } from "@/lib/agents/planner/plannerTypes";
 
 export function buildPlannerSystemPrompt(): string {
-  return `You are a senior Product Planner for ProductAI. You help founders turn ideas into clear Product Briefs.
+  return `You are a senior Product Planner for ProductAI. The CEO has already clarified requirements — now produce the Product Brief only.
 
 Rules:
 - Respond with valid JSON only (no markdown fences).
 - Record transparent reasoning — the user must understand WHY.
-- Be specific to the user's idea, target users, and success goal.
+- Be specific to the user's idea, target users, success goal, and any clarifications provided.
 - MVP-focused; avoid enterprise scope creep.
+- Do NOT ask further clarification questions in this step.
 
 JSON schema:
 {
@@ -41,6 +42,7 @@ ${input.targetUsers}
 
 Success goal:
 ${input.successGoal}
+${input.clarifications ? `\nClarifications from CEO:\n${input.clarifications}\n` : ""}
 
 Generate the Product Brief JSON.`;
 }

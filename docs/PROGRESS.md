@@ -1,5 +1,96 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 20 Problem Solution Fit (PSF) Engine
+
+### Objective
+
+After CPF, validate solution hypothesis, MVP scope (MoSCoW), and validation plan before Product Brief.
+
+### Implemented
+
+- `ProblemSolutionFitReport` + heuristic builder (`lib/psf/`)
+- `POST /api/agents/planner/psf` — after CPF, before Product Brief
+- MVP Must / Should / Could / Won't Have; PSF score and recommendation
+- Discovery insights: `validationAssumptions`, `validationRisks`, `mvpScope`
+- Audit fields; PSF activity feed events
+- `ProblemSolutionFitCard` + MVP Scope panel on project hub
+- Planner `planner-v6`; `inferCurrentPmfStage` uses `psf` stage correctly
+- `docs/PHASE20_PROBLEM_SOLUTION_FIT_ENGINE.md`
+
+## 2026-05-30 — Phase 19 Customer Problem Fit (CPF) Engine
+
+### Objective
+
+After Opportunity Discovery, validate **who** the customer is, **what** pain they feel, and **how severe** it is before Product Brief.
+
+### Implemented
+
+- `CustomerProblemFitReport` + heuristic builder (`lib/cpf/`)
+- `POST /api/agents/planner/cpf` — runs after Opportunity, before Product Brief
+- Guided CPF clarification questions; quick mode uses assumptions
+- Discovery insights: `painPoints`, `burningNeeds`
+- Audit: `cpfScore`, `burningNeedScore`, `topPain`, `personaSummary`, `recommendation`
+- `CustomerProblemFitCard` on project hub; CPF activity feed events
+- Planner `planner-v5` assess prompt
+- `docs/PHASE19_CUSTOMER_PROBLEM_FIT_ENGINE.md`
+
+## 2026-05-30 — Phase 18 Opportunity Discovery Engine
+
+### Objective
+
+Evolve Product Planner into an Opportunity Discovery Agent: validate market opportunity, customer pain, alternatives, and PMF potential **before** Product Brief and Architect handoff.
+
+### Implemented
+
+- `OpportunityBrief` artifact and heuristic builder (`lib/opportunity/`)
+- `POST /api/agents/planner/opportunity` — runs before Product Brief generation
+- PMF stage `opportunity_discovery` + `opportunityDiscovery` readiness score
+- Discovery insights: `opportunities`, `threats` alongside strengths/gaps/nextActions
+- Audit: `opportunityScore`, `customerPainConfidence`, `evidenceLevel`, `recommendedAction`
+- UI: `OpportunityBriefCard` (project hub), `ShouldWeBuildCard` (projects dashboard)
+- Planner `planner-v4` assess prompt; timeline stage `opportunity`
+- `docs/PHASE18_OPPORTUNITY_DISCOVERY_ENGINE.md`
+
+### Scope boundaries (kept)
+
+- Hypothesis-based only — no web search, market research agent, or Architect execution
+
+## 2026-05-30 — Phase 17 Discovery Mode & PMF Journey
+
+### Objective
+
+Extend Idea → Brief into Idea → Discovery → PMF Journey → Brief: Quick/Guided discovery modes, PMF readiness scores, gap analysis (strengths/gaps/next actions), assumption-first clarification, auditable PMF progression.
+
+### Implemented
+
+- `DiscoveryMode` (`quick` | `guided`) in project wizard step 2 and mission metadata
+- `lib/pmf/pmfJourney.ts` — stages, readiness 0–100, human labels, question caps
+- Planner `planner-v3`: PMF readiness, strengths/gaps/nextActions, confirmation questions
+- `PMFJourneyPanel`, `PmfJourneyDashboardCard`, Discovery insights on project hub
+- Timeline: Discovery → CPF → PSF → MVP; audit fields `pmfStage`, `pmfScore`, `discoveryMode`
+- Documentation: `docs/PHASE17_DISCOVERY_MODE_AND_PMF_JOURNEY.md`
+
+### Scope boundaries (kept)
+
+- Discovery and Planner only — no Architect, approval automation, GitHub, or deploy
+
+## 2026-05-30 — Phase 16 Planner Clarification Questions
+
+### Objective
+
+Product Planner assesses requirement completeness before generating a Product Brief; asks PM-style clarification questions (max 3 rounds); all cycles audited.
+
+### Implemented
+
+- `lib/agents/planner/plannerClarification.ts`, assess/clarify APIs, `planner-v2` prompts
+- States: assessing, awaiting_clarification; `ProjectPlannerQuestionsPanel`
+- Timeline: Clarification + Review stages; activity feed entries
+- Documentation: `docs/PHASE16_PLANNER_CLARIFICATION.md`
+
+### Scope boundaries (kept)
+
+- Clarification only — no Architect, human approval, or auto-missions
+
 ## 2026-05-30 — Phase 15 Agent Audit Framework
 
 ### Objective

@@ -10,7 +10,9 @@ function projectNameFromIdea(idea: string): string {
 
 const plannerStatusLabels: Record<PlannerAgentRun["status"], string> = {
   idle: "Idle",
-  working: "Working",
+  assessing: "Assessing Requirements",
+  awaiting_clarification: "Awaiting Clarification",
+  working: "Creating Brief",
   completed: "Completed",
   failed: "Failed",
 };
@@ -28,15 +30,31 @@ export function mergePlannerIntoWorkerStatuses(
     const status =
       run.status === "completed"
         ? "completed"
-        : run.status === "working"
+        : run.status === "assessing" || run.status === "working"
           ? "in_progress"
           : run.status === "failed"
             ? "in_progress"
-            : "waiting";
+            : run.status === "awaiting_clarification"
+              ? "waiting"
+              : "waiting";
 
     let explainability = { ...entry.explainability };
 
-    if (run.status === "working") {
+    if (run.status === "assessing") {
+      explainability = {
+        ...explainability,
+        workSummary: "Discovery in progress — should we build this?",
+        outputSummary: "PMF assessment running",
+      };
+    } else if (run.status === "awaiting_clarification") {
+      explainability = {
+        ...explainability,
+        workSummary: "Planner needs additional information before drafting the Product Brief.",
+        outputSummary: `${run.pendingQuestions?.length ?? 0} clarification question(s) pending`,
+        whyReasons:
+          run.pendingQuestions?.map((q) => `WHY: ${q.reason}`) ?? explainability.whyReasons,
+      };
+    } else if (run.status === "working") {
       explainability = {
         ...explainability,
         workSummary: "Planner is creating Product Brief…",
@@ -52,7 +70,7 @@ export function mergePlannerIntoWorkerStatuses(
       const name = projectNameFromIdea(run.input.idea);
       explainability = {
         workSummary: run.analysis ?? explainability.workSummary,
-        inputSummary: `CEO input: idea, target users (${run.input.targetUsers}), success goal.`,
+        inputSummary: `CEO input plus ${run.clarificationHistory?.length ?? 0} clarification round(s).`,
         outputSummary: run.brief.projectSummary.slice(0, 220),
         whyReasons:
           run.reasoning.length > 0
@@ -62,7 +80,7 @@ export function mergePlannerIntoWorkerStatuses(
     } else if (run.status === "idle") {
       explainability = {
         ...explainability,
-        workSummary: "Planner is queued — analysis will start momentarily.",
+        workSummary: "Planner is queued — assessment will start momentarily.",
         inputSummary: `Idea: ${run.input.idea.slice(0, 160)}`,
       };
     }

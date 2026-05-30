@@ -1,10 +1,19 @@
 import type { AgentAuditRecord, AgentRun } from "@/lib/agents/audit/agentAuditTypes";
-import type { ProjectCreationInput } from "@/lib/project-creation/projectCreationTypes";
+import type {
+  PlannerClarificationAssessment,
+  PlannerQuestion,
+} from "@/lib/agents/planner/plannerClarification";
+import type { CustomerProblemFitReport } from "@/lib/cpf/cpfTypes";
+import type { ProblemSolutionFitReport } from "@/lib/psf/psfTypes";
+import type { OpportunityBrief } from "@/lib/opportunity/opportunityTypes";
+import type { PmfReadiness, PmfStage } from "@/lib/pmf/pmfJourney";
+import type { DiscoveryMode, ProjectCreationInput } from "@/lib/project-creation/projectCreationTypes";
 
-export const PLANNER_PROMPT_VERSION = "planner-v1";
+export const PLANNER_PROMPT_VERSION = "planner-v6";
 
-/** @deprecated Use AgentRunStatus — kept for Phase 14 UI compatibility */
-export type PlannerRunStatus = "idle" | "working" | "completed" | "failed";
+import type { AgentRunStatus } from "@/lib/agents/audit/agentAuditTypes";
+
+export type PlannerRunStatus = AgentRunStatus;
 
 export interface ProductBriefSections {
   projectSummary: string;
@@ -40,11 +49,68 @@ export interface PlannerAgentRun {
   brief?: ProductBriefSections;
   audit?: PlannerAuditRecord;
   errorMessage?: string;
+  clarificationRound?: number;
+  lastAssessment?: PlannerClarificationAssessment;
+  pendingQuestions?: PlannerQuestion[];
+  clarificationHistory?: PlannerRunMeta["clarificationHistory"];
+  discoveryMode?: DiscoveryMode;
+  pmfReadiness?: PmfReadiness;
+  currentPmfStage?: PmfStage;
+  strengths?: string[];
+  gaps?: string[];
+  nextActions?: string[];
+  opportunities?: string[];
+  threats?: string[];
+  opportunityBrief?: OpportunityBrief;
+  cpfReport?: CustomerProblemFitReport;
+  painPoints?: string[];
+  burningNeeds?: string[];
+  psfReport?: ProblemSolutionFitReport;
+  validationAssumptions?: string[];
+  validationRisks?: string[];
+  mvpScope?: string[];
 }
 
-export type PlannerAgentRunRecord = AgentRun<ProjectCreationInput, PlannerGenerationResult>;
+export type PlannerAgentRunRecord = PlannerStoredRun;
 
 export interface PlannerProviderInput extends ProjectCreationInput {
   projectName: string;
   missionId?: string;
+  clarificationRound?: number;
+  /** Phase 17 — questions already asked (quick/guided caps). */
+  questionsAskedSoFar?: number;
 }
+
+export interface PlannerAssessResult {
+  analysis: string;
+  decisions: string[];
+  reasoning: string[];
+  assessment: PlannerClarificationAssessment;
+}
+
+/** Stored on planner AgentRun (Phase 16). */
+export interface PlannerRunMeta {
+  discoveryMode: DiscoveryMode;
+  clarificationRound: number;
+  clarificationHistory: Array<{
+    round: number;
+    questions: PlannerQuestion[];
+    answers: Record<string, string>;
+  }>;
+  lastAssessment?: PlannerClarificationAssessment;
+  pendingQuestions?: PlannerQuestion[];
+  pmfReadiness?: PmfReadiness;
+  currentPmfStage?: PmfStage;
+  opportunityBrief?: OpportunityBrief;
+  cpfReport?: CustomerProblemFitReport;
+  cpfPainPoints?: string[];
+  cpfBurningNeeds?: string[];
+  psfReport?: ProblemSolutionFitReport;
+  psfValidationAssumptions?: string[];
+  psfValidationRisks?: string[];
+  psfMvpScope?: string[];
+}
+
+export type PlannerStoredRun = AgentRun<ProjectCreationInput, PlannerGenerationResult> & {
+  plannerMeta?: PlannerRunMeta;
+};

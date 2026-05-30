@@ -7,20 +7,31 @@ import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { ProjectCreationHero } from "@/components/projects/ProjectCreationHero";
 import { ProjectCreationWizard } from "@/components/projects/ProjectCreationWizard";
+import { ShouldWeBuildCard } from "@/components/projects/ShouldWeBuildCard";
 import { buildProjectDashboardCards } from "@/lib/agent-first/workerAnalysis";
 import { useMissionStore } from "@/lib/store/missionStore";
+import { useAgentRunsStore } from "@/lib/store/agentRunsStore";
+import { useShallow } from "zustand/react/shallow";
 import { useTaskStore } from "@/lib/store/taskStore";
 import { releases } from "@/data/mockData";
+import type { DiscoveryMode } from "@/lib/project-creation/projectCreationTypes";
+import { recommendDiscoveryMode } from "@/lib/project-creation/discoveryModeLabels";
 import { cn } from "@/lib/utils";
 
 export function ProjectDashboardView() {
   const missions = useMissionStore((s) => s.missions);
   const tasks = useTaskStore((s) => s.tasks);
   const [heroIdea, setHeroIdea] = useState("");
+  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>("quick");
+  const [discoveryModeManuallySet, setDiscoveryModeManuallySet] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
 
   const cards = buildProjectDashboardCards({ missions, tasks, releases });
   const featured = cards[0];
+  const featuredMissionId = featured?.missionId;
+  const featuredPlannerRun = useAgentRunsStore(
+    useShallow((s) => (featuredMissionId ? s.getPlannerRun(featuredMissionId) : undefined))
+  );
 
   return (
     <AppShell
@@ -30,12 +41,26 @@ export function ProjectDashboardView() {
       <div className="space-y-8">
         <ProjectCreationHero
           idea={heroIdea}
-          onIdeaChange={setHeroIdea}
+          onIdeaChange={(value) => {
+            setHeroIdea(value);
+            if (!value.trim()) {
+              setDiscoveryModeManuallySet(false);
+            }
+            if (!wizardOpen && !discoveryModeManuallySet) {
+              setDiscoveryMode(recommendDiscoveryMode(value));
+            }
+          }}
+          discoveryMode={discoveryMode}
+          onDiscoveryModeChange={(mode) => {
+            setDiscoveryMode(mode);
+            setDiscoveryModeManuallySet(true);
+          }}
           onStart={() => setWizardOpen(true)}
         />
 
         <ProjectCreationWizard
           initialIdea={heroIdea}
+          initialDiscoveryMode={discoveryMode}
           open={wizardOpen}
           onClose={() => setWizardOpen(false)}
         />
@@ -84,6 +109,10 @@ export function ProjectDashboardView() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <ShouldWeBuildCard
+                  missionId={featured.missionId}
+                  run={featuredPlannerRun}
+                />
                 <div className="rounded-lg border border-border bg-surface p-3">
                   <p className="text-xs font-medium uppercase text-muted">AI workers</p>
                   <p className="mt-1 text-sm text-foreground">{featured.workerSummary}</p>

@@ -9,13 +9,17 @@ import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectActivityFeed } from "@/components/projects/ProjectActivityFeed";
 import { ProjectHubPlannerEffect } from "@/components/projects/ProjectHubPlannerEffect";
 import { ProjectAuditSummaryCard } from "@/components/projects/ProjectAuditSummaryCard";
+import { CustomerProblemFitCard } from "@/components/projects/CustomerProblemFitCard";
+import { ProblemSolutionFitCard } from "@/components/projects/ProblemSolutionFitCard";
+import { OpportunityBriefCard } from "@/components/projects/OpportunityBriefCard";
+import { PMFJourneyPanel } from "@/components/projects/PMFJourneyPanel";
+import { ProjectPlannerQuestionsPanel } from "@/components/projects/ProjectPlannerQuestionsPanel";
 import { ProjectPlannerSections } from "@/components/projects/ProjectPlannerSections";
 import { mergePlannerIntoWorkerStatuses } from "@/lib/agents/planner/plannerWorkerOverlay";
 import { buildAiWorkerStatusesForMission } from "@/lib/agent-first/workerAnalysis";
 import { buildProjectTimeline } from "@/lib/project-creation/projectTimeline";
+import { usePlannerRunForMission } from "@/lib/agents/planner/usePlannerRunForMission";
 import { useMissionStore } from "@/lib/store/missionStore";
-import { usePlannerAgentStore } from "@/lib/store/plannerAgentStore";
-import { useAgentRunsStore } from "@/lib/store/agentRunsStore";
 import { useProjectCreationStore } from "@/lib/store/projectCreationStore";
 import { releases } from "@/data/mockData";
 import { ArrowRight, Loader2 } from "lucide-react";
@@ -26,9 +30,7 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
   const activities = useProjectCreationStore(
     useShallow((s) => s.getActivitiesForMission(missionId))
   );
-  const plannerRun = useAgentRunsStore(
-    useShallow((s) => s.getPlannerRun(missionId))
-  );
+  const plannerRun = usePlannerRunForMission(missionId);
   const workers = useMemo(
     () =>
       mission
@@ -47,7 +49,12 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
     );
   }
 
-  const timeline = buildProjectTimeline({ mission, releases });
+  const timeline = buildProjectTimeline({
+    mission,
+    releases,
+    plannerStatus: plannerRun?.status,
+    pmfStage: plannerRun?.currentPmfStage ?? mission.currentPmfStage,
+  });
   const planner = workers.find((w) => w.worker.id === "product_planner");
 
   return (
@@ -60,6 +67,16 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
         <Card title="Planning Timeline">
           <ProjectTimeline stages={timeline} />
         </Card>
+
+        <PMFJourneyPanel run={plannerRun} />
+
+        <OpportunityBriefCard run={plannerRun} />
+
+        <CustomerProblemFitCard run={plannerRun} />
+
+        <ProblemSolutionFitCard run={plannerRun} />
+
+        <ProjectPlannerQuestionsPanel missionId={missionId} run={plannerRun} />
 
         <ProjectPlannerSections
           missionId={missionId}
@@ -81,7 +98,11 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
                     {plannerRun?.status === "working" ? (
                       <Loader2 className="h-3 w-3 animate-spin text-accent" aria-hidden />
                     ) : null}
-                    {plannerRun?.status === "working"
+                    {plannerRun?.status === "assessing"
+                      ? "Planner is assessing requirements…"
+                      : plannerRun?.status === "awaiting_clarification"
+                        ? "Planner needs clarification — answer questions below."
+                        : plannerRun?.status === "working"
                       ? "Planner is creating Product Brief…"
                       : plannerRun?.status === "failed"
                         ? (plannerRun.errorMessage ?? "Unable to generate Product Brief")

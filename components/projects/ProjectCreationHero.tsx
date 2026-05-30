@@ -1,14 +1,20 @@
 "use client";
 
+import type { DiscoveryMode } from "@/lib/project-creation/projectCreationTypes";
 import { projectCreationExamples } from "@/lib/project-creation/projectCreationTypes";
+import { DiscoveryModeSelector } from "@/components/projects/DiscoveryModeSelector";
 
 export function ProjectCreationHero({
   idea,
   onIdeaChange,
+  discoveryMode,
+  onDiscoveryModeChange,
   onStart,
 }: {
   idea: string;
   onIdeaChange: (value: string) => void;
+  discoveryMode: DiscoveryMode;
+  onDiscoveryModeChange: (mode: DiscoveryMode) => void;
   onStart: () => void;
 }) {
   return (
@@ -20,21 +26,28 @@ export function ProjectCreationHero({
         What would you like to build?
       </h2>
       <p className="mx-auto mt-2 max-w-lg text-center text-sm text-muted">
-        Describe your app in plain language. Your AI team will plan, design, and prepare the build—
-        you stay in control.
+        アイデアを書くだけで、Plannerが「作るべきか」を整理し、企画案まで進めます。コードは自動では出ません。
       </p>
 
-      <div className="mx-auto mt-6 max-w-xl">
-        <label htmlFor="project-idea-input" className="sr-only">
-          Project idea
-        </label>
-        <textarea
-          id="project-idea-input"
-          value={idea}
-          onChange={(e) => onIdeaChange(e.target.value)}
-          rows={3}
-          placeholder="e.g. A mobile app that helps families track shared expenses…"
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+      <div className="mx-auto mt-6 max-w-xl space-y-5">
+        <div>
+          <label htmlFor="project-idea-input" className="sr-only">
+            Project idea
+          </label>
+          <textarea
+            id="project-idea-input"
+            value={idea}
+            onChange={(e) => onIdeaChange(e.target.value)}
+            rows={3}
+            placeholder="例：家族向けの家計簿アプリを作りたい…"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        </div>
+
+        <DiscoveryModeSelector
+          discoveryMode={discoveryMode}
+          onDiscoveryModeChange={onDiscoveryModeChange}
+          idea={idea}
         />
       </div>
 
@@ -51,15 +64,18 @@ export function ProjectCreationHero({
         ))}
       </div>
 
-      <div className="mt-6 flex justify-center">
+      <div className="mt-6 flex flex-col items-center gap-1">
         <button
           type="button"
           onClick={onStart}
           disabled={!idea.trim()}
           className="rounded-xl bg-accent px-8 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Start AI Team
+          AIチームに依頼する
         </button>
+        <p className="max-w-md text-center text-xs text-muted">
+          Plannerがアイデアを整理し、必要なら質問します。
+        </p>
       </div>
     </section>
   );

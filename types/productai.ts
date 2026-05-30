@@ -1,3 +1,4 @@
+import type { PmfReadiness, PmfStage } from "@/lib/pmf/pmfJourney";
 import type {
   AdvisoryLevel,
   ContinuityCategory,
@@ -105,6 +106,10 @@ export interface Mission {
   decisionIds: string[];
   taskIds: string[];
   activityIds: string[];
+  /** Phase 17 — PMF journey */
+  discoveryMode?: "quick" | "guided";
+  currentPmfStage?: PmfStage;
+  pmfReadiness?: PmfReadiness;
 }
 
 export interface Task {

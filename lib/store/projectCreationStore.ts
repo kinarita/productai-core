@@ -60,7 +60,7 @@ export const useProjectCreationStore = create<ProjectCreationState>()(
             missionId,
             workerEmoji: "🧠",
             workerName: "Product Planner",
-            message: "assigned — analysis will begin",
+            message: "Discovery started",
             timestamp,
           },
         ];
@@ -70,6 +70,7 @@ export const useProjectCreationStore = create<ProjectCreationState>()(
           idea: input.idea,
           targetUsers: input.targetUsers,
           successGoal: input.successGoal,
+          discoveryMode: input.discoveryMode,
           createdAt: new Date().toISOString(),
           plannerStatus: "pending",
           productBriefGenerated: false,
@@ -86,7 +87,7 @@ export const useProjectCreationStore = create<ProjectCreationState>()(
           authorName: "Nova",
           missionId,
           missionName: mission.name,
-          message: `AI team started for "${mission.name}" — Product Planner is analyzing your input.`,
+          message: `Discovery started for "${mission.name}" — Product Planner is assessing fit before the brief.`,
           status: "active",
           requiresCeoApproval: false,
         });

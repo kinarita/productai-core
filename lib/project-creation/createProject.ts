@@ -1,4 +1,5 @@
 import type { Mission } from "@/types/productai";
+import { defaultPmfReadiness } from "@/lib/pmf/pmfJourney";
 import type { ProjectCreationInput } from "@/lib/project-creation/projectCreationTypes";
 
 function slugId(): string {
@@ -31,14 +32,17 @@ export function buildMissionFromProjectInput(input: ProjectCreationInput): Missi
     id,
     name,
     description: input.idea.trim(),
-    summary: `Planning started — Product Planner is drafting the Product Brief for ${name}.`,
+    summary: `Discovery started — Product Planner is evaluating whether to build ${name}.`,
     status: "planning",
     lifecycle: "Idea",
-    progress: 18,
+    progress: 12,
+    discoveryMode: input.discoveryMode,
+    currentPmfStage: "opportunity_discovery",
+    pmfReadiness: defaultPmfReadiness(),
     health: "stable",
     assignedAgents: ["COO"],
     blockers: [],
-    recentActivity: "Product Planner assigned — Planning Started",
+    recentActivity: "Discovery started — PMF assessment pending",
     createdAt: "Just now",
     updatedAt: "Just now",
     requirementsSummary: brief,
