@@ -8,18 +8,31 @@ import { MissionFilterBanner } from "@/components/MissionFilterBanner";
 import { TaskStatusActions } from "@/components/tasks/TaskStatusActions";
 import { useMissionFilterFromUrl } from "@/lib/hooks/useMissionFilterFromUrl";
 import Link from "next/link";
+import { AgentAvatar } from "@/components/AgentAvatar";
+import {
+  humanAgentRoleLabel,
+  humanWorkerStatusForTask,
+} from "@/lib/human-first/terminology";
 import { useTaskStore } from "@/lib/store/taskStore";
-import type { Task, TaskEvent } from "@/types/productai";
+import type { AgentRole, Task, TaskEvent } from "@/types/productai";
 
 const allowedStatus = ["todo", "active", "in_review", "blocked", "completed"] as const;
 type TaskQueryStatus = (typeof allowedStatus)[number];
 
 const columns = [
-  { key: "active" as const, label: "Active" },
-  { key: "in_review" as const, label: "In Review" },
+  { key: "active" as const, label: "In progress" },
+  { key: "in_review" as const, label: "Needs review" },
   { key: "blocked" as const, label: "Blocked" },
-  { key: "completed" as const, label: "Completed" },
+  { key: "completed" as const, label: "Done" },
 ];
+
+function avatarStatus(
+  status: Task["status"]
+): "active" | "idle" | "analyzing" | "reviewing" {
+  if (status === "in_review") return "reviewing";
+  if (status === "active") return "active";
+  return "idle";
+}
 
 function latestEvent(task: Task): TaskEvent | undefined {
   const events = task.events ?? [];
@@ -56,8 +69,8 @@ export function TasksView({ missionFilter, statusFilter }: TasksViewProps) {
 
   return (
     <AppShell
-      title="Tasks & Execution"
-      description="Operational implementation tracking across missions"
+      title="Tasks"
+      description="What your AI team is doing right now—who owns each step"
     >
       {missionFilter && (
         <MissionFilterBanner missionId={missionFilter} basePath="/tasks" />
@@ -119,7 +132,15 @@ export function TasksView({ missionFilter, statusFilter }: TasksViewProps) {
                     </div>
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="accent">{task.assignedTo}</Badge>
+                        <AgentAvatar
+                          role={task.assignedTo as AgentRole}
+                          showStatus
+                          status={avatarStatus(task.status)}
+                        />
+                        <span className="text-xs text-muted">
+                          {humanAgentRoleLabel(task.assignedTo as AgentRole)} ·{" "}
+                          {humanWorkerStatusForTask(task.status)}
+                        </span>
                         {task.createdFrom === "materialization" &&
                         task.provenance?.executionReadiness === "execution_ready" ? (
                           <Badge variant="success">execution ready</Badge>

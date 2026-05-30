@@ -11,7 +11,7 @@ export function TeamOwnershipPanel({ rows }: { rows: TeamOwnershipRow[] }) {
           <span className="text-muted">→ {row.ownerRoleLabel}</span>
         </li>
       ))}
-      <p className="text-[10px] text-muted">Ownership is for accountability reading—not automatic delegation.</p>
+      <p className="text-[10px] text-muted">Who on the AI team is responsible—for your understanding only.</p>
     </ul>
   );
 }

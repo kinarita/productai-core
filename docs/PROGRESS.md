@@ -1,5 +1,24 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 12 Human-First Simplification
+
+### Objective
+
+Replace enterprise UI wording with human-friendly labels; simplify Reviews and Releases surfaces; finalize Phase 12 navigation (Knowledge, Decision Trail in Advanced).
+
+### Implemented
+
+- Team Knowledge labels on `/memory`; Decision Trail on `/artifact-lineage`
+- Human review status cards at `/review-workspace`
+- Human release project cards at `/releases`
+- Tasks: Builder/Coordinator labels, avatars, simplified columns
+- Nav: Projects, Tasks, AI Team, Knowledge, Releases + Advanced Decision Trail
+- `lib/human-first/*`, `docs/PHASE12_HUMAN_FIRST_SIMPLIFICATION.md`
+
+### Scope boundaries (kept)
+
+- No data model or store schema changes; presentation and navigation only
+
 ## 2026-05-30 — Phase 11 Agent-First UI (Phase 1)
 
 ### Objective

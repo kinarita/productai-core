@@ -95,12 +95,15 @@ export function ProjectDashboardView() {
                   <p className="text-xs font-medium uppercase text-muted">AIワーカー</p>
                   <p className="mt-1 text-sm text-foreground">{featured.workerSummary}</p>
                 </div>
-                <div className="rounded-lg border border-border bg-surface p-3">
-                  <p className="text-xs font-medium uppercase text-muted">最新レビュー</p>
+                <Link
+                  href="/review-workspace"
+                  className="rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-surface/80"
+                >
+                  <p className="text-xs font-medium uppercase text-muted">Latest review</p>
                   <p className="mt-1 text-sm text-foreground">{featured.latestReview}</p>
-                </div>
+                </Link>
                 <div className="rounded-lg border border-border bg-surface p-3">
-                  <p className="text-xs font-medium uppercase text-muted">最新成果物</p>
+                  <p className="text-xs font-medium uppercase text-muted">Latest deliverable</p>
                   <p className="mt-1 text-sm text-foreground">{featured.latestArtifact}</p>
                 </div>
               </div>
@@ -110,19 +113,26 @@ export function ProjectDashboardView() {
                   href={`/ai-team?mission=${featured.missionId}`}
                   className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-accent hover:bg-surface"
                 >
-                  AI Team 詳細
+                  AI Team
                 </Link>
                 <Link
-                  href={`/product-lifecycle?mission=${featured.missionId}`}
+                  href="/review-workspace"
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-surface"
+                >
+                  Reviews
+                </Link>
+                <Link
+                  href="/releases"
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-surface"
+                >
+                  Releases
+                </Link>
+                <Link
+                  href={`/artifact-lineage?mission=${featured.missionId}`}
                   className="rounded-lg border border-border px-3 py-2 text-xs text-muted hover:bg-surface"
                 >
-                  ライフサイクル（詳細）
+                  Decision Trail
                 </Link>
-                <MissionLink
-                  missionId={featured.missionId}
-                  missionName={featured.missionName}
-                  variant="link"
-                />
               </div>
             </div>
           </Card>

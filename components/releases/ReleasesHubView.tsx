@@ -2,75 +2,84 @@
 
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
-import { Card } from "@/components/Card";
-import { useReleaseWorkspace } from "@/lib/hooks/useReleaseWorkspace";
-import { useOutcomeWorkspace } from "@/lib/hooks/useOutcomeWorkspace";
+import { buildHumanReleaseCards } from "@/lib/human-first/releaseCards";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useTaskStore } from "@/lib/store/taskStore";
-import { memories, pullRequests, releases } from "@/data/mockData";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
-import { ArrowRight } from "lucide-react";
+import { pullRequests, releases } from "@/data/mockData";
+import { cn } from "@/lib/utils";
 
 export function ReleasesHubView() {
   const missions = useMissionStore((s) => s.missions);
   const tasks = useTaskStore((s) => s.tasks);
   const feedItems = useOrganizationStore((s) => s.organizationFeedItems);
-  const missionId = missions.find((m) => m.status === "active")?.id;
 
-  const release = useReleaseWorkspace({
+  const cards = buildHumanReleaseCards({
     missions,
     tasks,
-    releases,
     pullRequests,
-    missionId: missionId ?? null,
-  });
-
-  const outcome = useOutcomeWorkspace({
-    missions,
-    tasks,
-    memories,
+    releases,
     feedItems,
-    releases,
-    pullRequests,
-    missionId: missionId ?? null,
   });
 
   return (
     <AppShell
       title="Releases"
-      description="Release readiness and outcomes—no automatic deployment"
+      description="What has shipped and what is on the way—at a glance"
     >
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card
-          title="Release readiness"
-          description="Checklists, risks, and validation before ship"
-        >
-          <p className="text-sm text-muted">
-            {release.overview?.advisoryNote ??
-              "Review release readiness across active missions."}
-          </p>
-          <Link
-            href="/release-workspace"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
-          >
-            Open release readiness
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Card>
+      <p className="mb-6 max-w-2xl text-sm text-muted">
+        Each card is a project. Green means live, blue is preparing, yellow is staging, white means
+        not released yet.
+      </p>
 
-        <Card title="Release outcomes" description="Post-release signals and follow-ups">
-          <p className="text-sm text-muted">
-            {outcome.overview?.advisoryNote ?? "Observe outcomes after release."}
-          </p>
-          <Link
-            href="/code-release-workspace"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {cards.map((card) => (
+          <li
+            key={card.missionId}
+            className="rounded-lg border border-border bg-surface p-5"
           >
-            Open code & release
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Card>
-      </div>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-lg font-semibold text-foreground">{card.projectName}</h2>
+              <span className="shrink-0 text-sm font-medium" title={card.releaseStatusLabel}>
+                {card.releaseStatusEmoji} {card.releaseStatusLabel}
+              </span>
+            </div>
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between gap-2 text-muted">
+                <dt>Release date</dt>
+                <dd className={cn("text-foreground", card.releaseDate === "—" && "text-muted")}>
+                  {card.releaseDate}
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-3 text-sm leading-relaxed text-muted">{card.outcomeSummary}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href={`/release-workspace?mission=${card.missionId}`}
+                className="text-xs text-accent hover:underline"
+              >
+                Pre-release details
+              </Link>
+              <Link
+                href={`/code-release-workspace?mission=${card.missionId}`}
+                className="text-xs text-muted hover:text-accent hover:underline"
+              >
+                After release
+              </Link>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {cards.length === 0 ? (
+        <p className="text-sm text-muted">No projects yet.</p>
+      ) : null}
+
+      <p className="mt-8 text-xs text-muted">
+        <Link href="/" className="text-accent hover:underline">
+          ← Back to Projects
+        </Link>
+      </p>
     </AppShell>
   );
 }

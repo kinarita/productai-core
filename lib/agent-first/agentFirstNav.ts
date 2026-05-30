@@ -3,11 +3,11 @@ import {
   FolderKanban,
   ListTodo,
   Users,
-  ClipboardCheck,
   Rocket,
   BookOpen,
   Link2,
 } from "lucide-react";
+import { decisionTrailTitle } from "@/lib/human-first/terminology";
 
 export interface AgentFirstNavItem {
   href: string;
@@ -16,7 +16,7 @@ export interface AgentFirstNavItem {
   description?: string;
 }
 
-/** Phase 1 primary navigation — user-centric, not org-centric. */
+/** Phase 12 navigation — human-friendly labels only. */
 export const agentFirstNavItems: AgentFirstNavItem[] = [
   {
     href: "/",
@@ -26,20 +26,24 @@ export const agentFirstNavItems: AgentFirstNavItem[] = [
   },
   { href: "/tasks", label: "Tasks", icon: ListTodo },
   { href: "/ai-team", label: "AI Team", icon: Users },
-  { href: "/review-workspace", label: "Reviews", icon: ClipboardCheck },
+  {
+    href: "/memory",
+    label: "Knowledge",
+    icon: BookOpen,
+    description: "Lessons and patterns from past work",
+  },
   { href: "/releases", label: "Releases", icon: Rocket },
-  { href: "/memory", label: "Memory", icon: BookOpen },
 ];
 
-/** Advanced / power-user routes — internal workspaces remain reachable. */
+/** Advanced — explainability power tools. */
 export const agentFirstAdvancedNavItems: AgentFirstNavItem[] = [
   {
     href: "/artifact-lineage",
-    label: "Artifact Lineage",
+    label: decisionTrailTitle,
     icon: Link2,
-    description: "Trace why each artifact exists",
+    description: "How an idea became software",
   },
 ];
 
 export const agentFirstAdvisoryNote =
-  "Assign work to your AI team—every step records input, reasoning, and output. No black-box automation.";
+  "Tell us what you want to build—your AI team records every step so you always know why.";

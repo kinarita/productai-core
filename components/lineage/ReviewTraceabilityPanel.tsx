@@ -8,7 +8,7 @@ export function ReviewTraceabilityPanel({ view }: { view: ReviewTraceabilityView
     <div className="space-y-4 text-sm">
       <p className="text-xs text-muted">{view.advisoryNote}</p>
       <div className="rounded-lg border border-border px-3 py-2">
-        <p className="text-[10px] uppercase text-muted">Artifact Review Status</p>
+        <p className="text-[10px] uppercase text-muted">Deliverable review status</p>
         <p className="text-sm font-medium">{view.artifactReviewStatus}</p>
       </div>
       <div>

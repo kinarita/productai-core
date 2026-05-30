@@ -16,16 +16,17 @@ import { ReviewTraceabilityPanel } from "@/components/lineage/ReviewTraceability
 import { TeamOwnershipPanel } from "@/components/lineage/TeamOwnershipPanel";
 import { ArtifactLineageSummary } from "@/components/lineage/ArtifactLineageSummary";
 import type { LineageChainNode } from "@/lib/lineage/artifactChain";
+import { decisionTrailDescription, lineageViewLabels } from "@/lib/human-first/terminology";
 
 const views: { id: ArtifactLineageViewId; label: string }[] = [
-  { id: "overview", label: "Overview" },
-  { id: "chain", label: "Artifact Chain" },
-  { id: "inspector", label: "Inspector" },
-  { id: "dependency", label: "Dependencies" },
-  { id: "review_trace", label: "Review Trace" },
-  { id: "ownership", label: "Ownership" },
-  { id: "summary", label: "Summary" },
-  { id: "context", label: "Full Context" },
+  { id: "overview", label: lineageViewLabels.overview },
+  { id: "chain", label: lineageViewLabels.chain },
+  { id: "inspector", label: lineageViewLabels.inspector },
+  { id: "dependency", label: lineageViewLabels.dependency },
+  { id: "review_trace", label: lineageViewLabels.review_trace },
+  { id: "ownership", label: lineageViewLabels.ownership },
+  { id: "summary", label: lineageViewLabels.summary },
+  { id: "context", label: lineageViewLabels.context },
 ];
 
 export function ArtifactLineageWorkspace({
@@ -77,11 +78,10 @@ export function ArtifactLineageWorkspace({
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted">{overview.advisoryNote}</p>
+      <p className="text-sm text-muted">{decisionTrailDescription}</p>
 
       <div className="rounded-lg border border-border bg-muted/5 px-4 py-3 text-xs text-muted">
-        Idea → Product Brief → Mission Plan → Technical Specification → Design Specification →
-        Implementation Plan → Test Plan
+        Your idea → plan → design → build → test → release—each step saved so you can see why.
       </div>
 
       {progressNote ? <p className="text-xs text-muted">{progressNote}</p> : null}
