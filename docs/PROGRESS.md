@@ -1,5 +1,42 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 15 Agent Audit Framework
+
+### Objective
+
+Elevate Phase 14 Planner audits into a shared **Explainable AI Company OS** foundation: generic `AgentAuditRecord`, unified `agentRunsStore`, append-only `auditTrail`, failure auditing, SHA-256 `promptHash`, Decision Trail–ready selectors.
+
+### Implemented
+
+- `lib/agents/audit/*`, `lib/store/agentRunsStore.ts` (`productai-agent-runs`)
+- Planner migration + `plannerAgentStore` compatibility facade
+- Failure audits on every Planner run; `promptHash` on server and client
+- `ProjectAuditSummaryCard`, `AgentAuditTrailPanel` on Decision Trail
+- Documentation: `docs/PHASE15_AGENT_AUDIT_FRAMEWORK.md`
+
+### Scope boundaries (kept)
+
+- Infrastructure only—no Architect/Designer/Developer/QA execution
+
+## 2026-05-30 — Phase 14 Product Planner Agent
+
+### Objective
+
+First real AI worker: Product Planner generates a structured Product Brief from wizard input with visible analysis, decisions, and WHY reasoning—provider-swappable, auditable, no black-box output.
+
+### Implemented
+
+- `PlannerProvider` + OpenAI / Anthropic / Mock implementations
+- `POST /api/agents/planner/generate`, `plannerAgentStore` (persisted runs + audit)
+- Project hub: Input, Planner Reasoning, Generated Brief, Retry on failure
+- AI Team: Planner Idle / Working / Completed / Failed + spinner + brief preview
+- Activity feed entries for planner milestones
+- Documentation: `docs/PHASE14_PRODUCT_PLANNER_AGENT.md`
+
+### Scope boundaries (kept)
+
+- Planner only; no execution, GitHub, MCP, or auto-approval
+
 ## 2026-05-30 — Phase 13 Project Creation Flow
 
 ### Objective

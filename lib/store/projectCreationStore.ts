@@ -10,6 +10,7 @@ import type {
 import { buildMissionFromProjectInput } from "@/lib/project-creation/createProject";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useOrganizationStore } from "@/lib/store/organizationStore";
+import { usePlannerAgentStore } from "@/lib/store/plannerAgentStore";
 
 function activityId(): string {
   return `act-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
@@ -43,6 +44,8 @@ export const useProjectCreationStore = create<ProjectCreationState>()(
           selectedMissionId: missionId,
         }));
 
+        usePlannerAgentStore.getState().initRun(missionId, input);
+
         const seedActivities: ProjectActivityItem[] = [
           {
             id: activityId(),
@@ -57,15 +60,7 @@ export const useProjectCreationStore = create<ProjectCreationState>()(
             missionId,
             workerEmoji: "🧠",
             workerName: "Product Planner",
-            message: "Assigned — Planning Started",
-            timestamp,
-          },
-          {
-            id: activityId(),
-            missionId,
-            workerEmoji: "🧠",
-            workerName: "Product Planner",
-            message: "Created Product Brief",
+            message: "assigned — analysis will begin",
             timestamp,
           },
         ];
@@ -76,8 +71,8 @@ export const useProjectCreationStore = create<ProjectCreationState>()(
           targetUsers: input.targetUsers,
           successGoal: input.successGoal,
           createdAt: new Date().toISOString(),
-          plannerStatus: "planning_started",
-          productBriefGenerated: true,
+          plannerStatus: "pending",
+          productBriefGenerated: false,
         };
 
         set((state) => ({
@@ -91,7 +86,7 @@ export const useProjectCreationStore = create<ProjectCreationState>()(
           authorName: "Nova",
           missionId,
           missionName: mission.name,
-          message: `AI team started planning for "${mission.name}" — Product Brief draft ready for your reading.`,
+          message: `AI team started for "${mission.name}" — Product Planner is analyzing your input.`,
           status: "active",
           requiresCeoApproval: false,
         });

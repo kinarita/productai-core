@@ -10,6 +10,7 @@ import {
 import { inferMissionWorkflowStage } from "@/lib/mission-team/missionWorkflow";
 import { inferProductLifecycleStage } from "@/lib/lifecycle/lifecycleAnalysis";
 import type { ReleaseItem, Task } from "@/types/productai";
+import type { PlannerRunStatus } from "@/lib/agents/planner/plannerTypes";
 import type {
   AiWorkerDefinition,
   AiWorkerId,
@@ -32,6 +33,8 @@ export interface AiWorkerMissionStatus {
   statusLabel: string;
   explainability: AiWorkerExplainability;
   workspaceHref: string;
+  /** Set when Product Planner agent run is tracked (Phase 14). */
+  plannerRunStatus?: PlannerRunStatus;
 }
 
 export interface ProjectDashboardCard {

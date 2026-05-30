@@ -12,7 +12,7 @@ export interface CreatedProjectMeta {
   targetUsers: string;
   successGoal: string;
   createdAt: string;
-  plannerStatus: "planning_started";
+  plannerStatus: "pending" | "planning_started";
   productBriefGenerated: boolean;
 }
 

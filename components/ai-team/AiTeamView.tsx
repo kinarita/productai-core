@@ -6,7 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { agentFirstAdvisoryNote } from "@/lib/agent-first/agentFirstNav";
+import { mergePlannerIntoWorkerStatuses } from "@/lib/agents/planner/plannerWorkerOverlay";
 import { buildAiWorkerStatusesForMission } from "@/lib/agent-first/workerAnalysis";
+import { usePlannerAgentStore } from "@/lib/store/plannerAgentStore";
 import { AiWorkerDetailPanel } from "@/components/ai-team/AiWorkerDetailPanel";
 import { useMissionStore } from "@/lib/store/missionStore";
 import type { AiWorkerId } from "@/lib/agent-first/aiWorkers";
@@ -20,9 +22,19 @@ export function AiTeamView() {
   const selectedMissionId = missionIdParam ?? activeMissions[0]?.id ?? null;
   const selectedMission = missions.find((m) => m.id === selectedMissionId) ?? activeMissions[0];
 
+  const plannerRun = usePlannerAgentStore((s) =>
+    selectedMission ? s.getRun(selectedMission.id) : undefined
+  );
+
   const workers = useMemo(
-    () => (selectedMission ? buildAiWorkerStatusesForMission(selectedMission) : []),
-    [selectedMission]
+    () =>
+      selectedMission
+        ? mergePlannerIntoWorkerStatuses(
+            buildAiWorkerStatusesForMission(selectedMission),
+            plannerRun
+          )
+        : [],
+    [selectedMission, plannerRun]
   );
 
   const defaultWorkerId =
@@ -70,6 +82,7 @@ export function AiTeamView() {
                   <li key={entry.worker.id}>
                     <AiWorkerDetailPanel
                       entry={entry}
+                      missionId={selectedMission.id}
                       selected={effectiveWorkerId === entry.worker.id}
                       onSelect={() => setSelectedWorkerId(entry.worker.id)}
                     />

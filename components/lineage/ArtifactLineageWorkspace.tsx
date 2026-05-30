@@ -14,6 +14,7 @@ import { ArtifactInspectorPanel } from "@/components/lineage/ArtifactInspectorPa
 import { DependencyContextPanel } from "@/components/lineage/DependencyContextPanel";
 import { ReviewTraceabilityPanel } from "@/components/lineage/ReviewTraceabilityPanel";
 import { TeamOwnershipPanel } from "@/components/lineage/TeamOwnershipPanel";
+import { AgentAuditTrailPanel } from "@/components/lineage/AgentAuditTrailPanel";
 import { ArtifactLineageSummary } from "@/components/lineage/ArtifactLineageSummary";
 import type { LineageChainNode } from "@/lib/lineage/artifactChain";
 import { decisionTrailDescription, lineageViewLabels } from "@/lib/human-first/terminology";
@@ -180,6 +181,8 @@ export function ArtifactLineageWorkspace({
           <TeamOwnershipPanel rows={context?.ownership ?? []} />
         </Card>
       )}
+
+      {filterMissionId ? <AgentAuditTrailPanel missionId={filterMissionId} /> : null}
 
       <Card title="Workspace Links" description="Trace lineage across ProductAI">
         <div className="grid gap-2 sm:grid-cols-2">

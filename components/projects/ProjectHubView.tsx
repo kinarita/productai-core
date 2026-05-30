@@ -1,21 +1,41 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectActivityFeed } from "@/components/projects/ProjectActivityFeed";
+import { ProjectHubPlannerEffect } from "@/components/projects/ProjectHubPlannerEffect";
+import { ProjectAuditSummaryCard } from "@/components/projects/ProjectAuditSummaryCard";
+import { ProjectPlannerSections } from "@/components/projects/ProjectPlannerSections";
+import { mergePlannerIntoWorkerStatuses } from "@/lib/agents/planner/plannerWorkerOverlay";
 import { buildAiWorkerStatusesForMission } from "@/lib/agent-first/workerAnalysis";
 import { buildProjectTimeline } from "@/lib/project-creation/projectTimeline";
 import { useMissionStore } from "@/lib/store/missionStore";
+import { usePlannerAgentStore } from "@/lib/store/plannerAgentStore";
+import { useAgentRunsStore } from "@/lib/store/agentRunsStore";
 import { useProjectCreationStore } from "@/lib/store/projectCreationStore";
 import { releases } from "@/data/mockData";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 
 export function ProjectHubView({ missionId }: { missionId: string }) {
   const mission = useMissionStore((s) => s.missions.find((m) => m.id === missionId));
   const meta = useProjectCreationStore((s) => s.getMetaForMission(missionId));
-  const activities = useProjectCreationStore((s) => s.getActivitiesForMission(missionId));
+  const activities = useProjectCreationStore(
+    useShallow((s) => s.getActivitiesForMission(missionId))
+  );
+  const plannerRun = useAgentRunsStore(
+    useShallow((s) => s.getPlannerRun(missionId))
+  );
+  const workers = useMemo(
+    () =>
+      mission
+        ? mergePlannerIntoWorkerStatuses(buildAiWorkerStatusesForMission(mission), plannerRun)
+        : [],
+    [mission, plannerRun]
+  );
 
   if (!mission) {
     return (
@@ -28,7 +48,6 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
   }
 
   const timeline = buildProjectTimeline({ mission, releases });
-  const workers = buildAiWorkerStatusesForMission(mission);
   const planner = workers.find((w) => w.worker.id === "product_planner");
 
   return (
@@ -37,7 +56,18 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
       description={mission.summary}
     >
       <div className="space-y-8">
-        <ProjectTimeline stages={timeline} />
+        <ProjectHubPlannerEffect missionId={missionId} />
+        <Card title="Planning Timeline">
+          <ProjectTimeline stages={timeline} />
+        </Card>
+
+        <ProjectPlannerSections
+          missionId={missionId}
+          meta={meta}
+          missionBrief={mission.requirementsSummary}
+        />
+
+        <ProjectAuditSummaryCard audit={plannerRun?.audit} />
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card title="AI Team">
@@ -47,10 +77,17 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
                   <p className="text-sm font-medium text-foreground">
                     {planner.worker.emoji} {planner.worker.title} — {planner.statusLabel}
                   </p>
-                  <p className="mt-1 text-xs text-muted">
-                    {meta?.productBriefGenerated
-                      ? "Initial Product Brief generated — open Knowledge & Reviews when ready."
-                      : "Planning in progress."}
+                  <p className="mt-1 flex items-center gap-2 text-xs text-muted">
+                    {plannerRun?.status === "working" ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-accent" aria-hidden />
+                    ) : null}
+                    {plannerRun?.status === "working"
+                      ? "Planner is creating Product Brief…"
+                      : plannerRun?.status === "failed"
+                        ? (plannerRun.errorMessage ?? "Unable to generate Product Brief")
+                        : meta?.productBriefGenerated
+                          ? "Product Brief ready — review reasoning above."
+                          : "Planning in progress."}
                   </p>
                 </div>
               ) : null}
@@ -74,17 +111,22 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
             </Link>
           </Card>
 
-          <Card title="Product Brief preview">
-            <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-surface p-3 text-xs text-muted">
-              {mission.requirementsSummary.slice(0, 1200)}
-              {mission.requirementsSummary.length > 1200 ? "…" : ""}
-            </pre>
-            <Link
-              href={`/product-brief?mission=${missionId}`}
-              className="mt-3 inline-block text-xs text-accent hover:underline"
-            >
-              Open full brief workspace
-            </Link>
+          <Card title="Quick links">
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href={`/ai-team?mission=${missionId}`} className="text-accent hover:underline">
+                  AI Team — Planner status & WHY
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={`/product-brief?mission=${missionId}`}
+                  className="text-accent hover:underline"
+                >
+                  Full brief workspace (advanced)
+                </Link>
+              </li>
+            </ul>
           </Card>
         </div>
 

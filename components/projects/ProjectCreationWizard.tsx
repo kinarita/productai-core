@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProjectWizardStep } from "@/lib/project-creation/projectCreationTypes";
+import { usePlannerAgentStore } from "@/lib/store/plannerAgentStore";
 import { useProjectCreationStore } from "@/lib/store/projectCreationStore";
 import { cn } from "@/lib/utils";
 
@@ -48,9 +49,10 @@ export function ProjectCreationWizard({
     (step === 3 && successGoal.trim().length > 0) ||
     step === 4;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setCreating(true);
     const missionId = createProject({ idea, targetUsers, successGoal });
+    void usePlannerAgentStore.getState().generateForMission(missionId);
     onClose();
     router.push(`/projects/${missionId}`);
   };
@@ -164,7 +166,7 @@ export function ProjectCreationWizard({
               onClick={handleCreate}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              {creating ? "Creating…" : "Create Project"}
+              {creating ? "Starting…" : "Start AI Team"}
             </button>
           )}
         </div>

@@ -11,33 +11,21 @@ function projectNameFromIdea(idea: string): string {
   return `${firstLine.slice(0, 45)}…`;
 }
 
-export function buildInitialProductBriefText(input: ProjectCreationInput): string {
-  const name = projectNameFromIdea(input.idea);
+export function buildPlanningPlaceholderBrief(name: string): string {
   return [
     `# Product Brief — ${name}`,
     "",
-    "## Vision",
-    input.idea.trim(),
+    "_Product Planner is analyzing your input. Reasoning and the full brief will appear here when generation completes._",
     "",
-    "## Target users",
-    input.targetUsers.trim(),
-    "",
-    "## Success goal",
-    input.successGoal.trim(),
-    "",
-    "## MVP direction",
-    `Deliver a focused first version of ${name} that proves the success goal with clear boundaries. Product Planner organized this brief for your review—no automatic approval or deployment.`,
-    "",
-    "## Open questions",
-    "- What is the single most important user journey for v1?",
-    "- Which integrations can wait until after launch?",
+    "## Your input (pending synthesis)",
+    "The Planner will turn your idea, target users, and success goal into a structured Product Brief.",
   ].join("\n");
 }
 
 export function buildMissionFromProjectInput(input: ProjectCreationInput): Mission {
   const id = slugId();
   const name = projectNameFromIdea(input.idea);
-  const brief = buildInitialProductBriefText(input);
+  const brief = buildPlanningPlaceholderBrief(name);
 
   return {
     id,
