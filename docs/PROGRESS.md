@@ -1,5 +1,22 @@
 # ProductAI Development Progress
 
+## 2026-05-30 — Phase 13 Project Creation Flow
+
+### Objective
+
+Active project creation on the home page: hero, 4-step wizard, auto Planner assignment with Product Brief, project hub with timeline and activity feed.
+
+### Implemented
+
+- `ProjectCreationHero`, `ProjectCreationWizard`, `ProjectHubView`
+- `/projects/[missionId]` project hub
+- `lib/project-creation/*`, `projectCreationStore` (localStorage)
+- Documentation: `docs/PHASE13_PROJECT_CREATION_FLOW.md`
+
+### Scope boundaries (kept)
+
+- Template-based brief from wizard inputs; no new execution or GitHub integration
+
 ## 2026-05-30 — Phase 12 Human-First Simplification
 
 ### Objective

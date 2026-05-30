@@ -1,21 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
-import { MissionLink } from "@/components/MissionLink";
-import { agentFirstAdvisoryNote } from "@/lib/agent-first/agentFirstNav";
+import { ProjectCreationHero } from "@/components/projects/ProjectCreationHero";
+import { ProjectCreationWizard } from "@/components/projects/ProjectCreationWizard";
 import { buildProjectDashboardCards } from "@/lib/agent-first/workerAnalysis";
 import { useMissionStore } from "@/lib/store/missionStore";
 import { useTaskStore } from "@/lib/store/taskStore";
 import { releases } from "@/data/mockData";
-import { ArrowRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ProjectDashboardView() {
   const missions = useMissionStore((s) => s.missions);
   const tasks = useTaskStore((s) => s.tasks);
+  const [heroIdea, setHeroIdea] = useState("");
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const cards = buildProjectDashboardCards({ missions, tasks, releases });
   const featured = cards[0];
@@ -23,45 +25,36 @@ export function ProjectDashboardView() {
   return (
     <AppShell
       title="Projects"
-      description="What your AI team is building—progress, reviews, and deliverables in one place"
+      description="Start building with your AI team in minutes"
     >
       <div className="space-y-8">
-        <div className="rounded-lg border border-accent/20 bg-indigo-50/40 px-4 py-3 text-sm text-foreground">
-          <p className="font-medium">何を作りたいですか？</p>
-          <p className="mt-1 text-muted">{agentFirstAdvisoryNote}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              href="/idea-workspace"
-              className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              新しいプロジェクトを始める
-            </Link>
-            <Link
-              href="/ai-team"
-              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface"
-            >
-              AI Team を見る
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
+        <ProjectCreationHero
+          idea={heroIdea}
+          onIdeaChange={setHeroIdea}
+          onStart={() => setWizardOpen(true)}
+        />
+
+        <ProjectCreationWizard
+          initialIdea={heroIdea}
+          open={wizardOpen}
+          onClose={() => setWizardOpen(false)}
+        />
 
         {featured ? (
           <Card
             title={featured.missionName}
             description={
               <span>
-                現在のステージ: <strong className="text-foreground">{featured.currentStage}</strong>
+                Current stage: <strong className="text-foreground">{featured.currentStage}</strong>
                 {" · "}
-                完了率 {featured.completionPercent}%
+                {featured.completionPercent}% complete
               </span>
             }
           >
             <div className="space-y-6">
               <div>
                 <div className="mb-2 flex justify-between text-xs text-muted">
-                  <span>Planning → Release</span>
+                  <span>Idea → Release</span>
                   <span>{featured.completionPercent}%</span>
                 </div>
                 <div className="flex gap-1">
@@ -92,7 +85,7 @@ export function ProjectDashboardView() {
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="rounded-lg border border-border bg-surface p-3">
-                  <p className="text-xs font-medium uppercase text-muted">AIワーカー</p>
+                  <p className="text-xs font-medium uppercase text-muted">AI workers</p>
                   <p className="mt-1 text-sm text-foreground">{featured.workerSummary}</p>
                 </div>
                 <Link
@@ -110,6 +103,12 @@ export function ProjectDashboardView() {
 
               <div className="flex flex-wrap gap-2">
                 <Link
+                  href={`/projects/${featured.missionId}`}
+                  className="rounded-lg bg-accent px-3 py-2 text-xs font-medium text-white hover:opacity-90"
+                >
+                  Open project
+                </Link>
+                <Link
                   href={`/ai-team?mission=${featured.missionId}`}
                   className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-accent hover:bg-surface"
                 >
@@ -117,37 +116,25 @@ export function ProjectDashboardView() {
                 </Link>
                 <Link
                   href="/review-workspace"
-                  className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-surface"
+                  className="rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-surface"
                 >
                   Reviews
                 </Link>
                 <Link
                   href="/releases"
-                  className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-surface"
+                  className="rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-surface"
                 >
                   Releases
-                </Link>
-                <Link
-                  href={`/artifact-lineage?mission=${featured.missionId}`}
-                  className="rounded-lg border border-border px-3 py-2 text-xs text-muted hover:bg-surface"
-                >
-                  Decision Trail
                 </Link>
               </div>
             </div>
           </Card>
-        ) : (
-          <Card title="プロジェクトがありません">
-            <p className="text-sm text-muted">
-              最初のプロジェクトを作成して、AIチームに仕事を依頼しましょう。
-            </p>
-          </Card>
-        )}
+        ) : null}
 
-        {cards.length > 1 ? (
+        {cards.length > 0 ? (
           <div>
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
-              すべてのプロジェクト
+              All projects
             </p>
             <ul className="space-y-3">
               {cards.map((card) => (
@@ -164,8 +151,8 @@ export function ProjectDashboardView() {
                   <div className="flex items-center gap-2">
                     <Badge variant="info">{card.currentStage}</Badge>
                     <Link
-                      href={`/ai-team?mission=${card.missionId}`}
-                      className="text-xs text-accent hover:underline"
+                      href={`/projects/${card.missionId}`}
+                      className="text-xs font-medium text-accent hover:underline"
                     >
                       Open
                     </Link>
