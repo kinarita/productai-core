@@ -1,5 +1,14 @@
 # ProductAI Development Progress
 
+## 2026-05-31 — Phase 27 Directed Discussion & Activity Stream Cleanup
+
+### Implemented
+
+- Audience selector (all / Product Planner / COO) with directed API responses
+- CEO messages show `To:` label; @mention resolution in `resolveDiscussionAudience`
+- Activity feed: 7 initial, Show More (+20), Collapse, dynamic `Activity (n of total)` title
+- `docs/PHASE27_DIRECTED_DISCUSSION_AND_ACTIVITY_STREAM.md`
+
 ## 2026-05-31 — Phase 26.3 Executive Strategy Room Cleanup & UX Polish
 
 ### Implemented
@@ -1470,6 +1479,30 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Completed Organization Feed attention chip filters with URL-synced governanceAttention lifecycle filtering.
 - Propagated governanceAttention replay query context across CEO, Runtime, Mission, and Judgment views.
 - Added decision attention metadata verification script and persistence documentation.
+
+## 2026-05-30 (Phase 28.5.1 — Decision intent escalation hotfix)
+
+- CEO 明示依頼（入れてください / ブリーフに反映 / MVPに含めて 等）を `decision` intent に分類し Stage 2 へ。
+- 省略発言は `resolveDecisionCandidateTitle` で直近トピックから Candidate タイトルを生成。
+- `decision` intent 時は Discussion Signal のみで止めず Decision Candidate を生成・表示。
+
+## 2026-05-30 (Phase 28.5 — Natural conversation & candidate escalation)
+
+- `DiscussionIntent` classification (greeting → decision) per CEO turn.
+- Persona memory (hypotheses, concerns, unresolved/adopted topics) persisted on `PlannerRunMeta`.
+- Two-stage escalation: discussion signal (Stage 1) vs Decision Candidate (Stage 2).
+- Natural agent replies without 結論/理由/質問 templates; Planner/COO divergence enforced.
+- `hold` vote + auto rationales on candidates; Meeting Minutes Decision Journey with `topic`.
+- See `docs/PHASE28_5_NATURAL_CONVERSATION.md`.
+
+## 2026-05-30 (Phase 28 — Conversational grounding & decision candidate discipline)
+
+- Grounded Planner/COO prompts on fixed Brief context; distinguish Brief facts vs CEO hypotheses.
+- Adaptive response styles (small question / discussion / deep) without forced 結論→理由→質問.
+- `candidateConfidence` threshold (70+) for Decision Candidate auto-creation; stricter intent classification.
+- Escalation UI: ⚠ Decision Candidate Suggested on agent messages when both flag decision need.
+- Meeting Minutes `decisionJourney` section for traceable discussion → vote → CEO → Brief outcome.
+- See `docs/PHASE28_CONVERSATIONAL_GROUNDING.md`.
 
 ## 2026-05-28 (Phase 7-2 decision attention feed traceability)
 

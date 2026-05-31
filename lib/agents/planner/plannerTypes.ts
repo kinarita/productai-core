@@ -105,6 +105,8 @@ export interface PlannerAgentRun {
   mvpScope?: string[];
   /** Phase 22 — Discovery Discussion */
   discussionMessages?: DiscussionMessage[];
+  /** Phase 28.5 — executive room persona memory */
+  discussionPersonaMemory?: import("@/lib/discussion/discussionTypes").DiscussionPersonaMemory;
   pendingProposals?: BriefChangeProposal[];
   briefVersions?: BriefVersionRecord[];
   briefVersion?: number;
@@ -174,6 +176,8 @@ export interface PlannerRunMeta {
   psfValidationRisks?: string[];
   psfMvpScope?: string[];
   discussionMessages?: DiscussionMessage[];
+  /** Phase 28.5 — executive room persona memory */
+  discussionPersonaMemory?: import("@/lib/discussion/discussionTypes").DiscussionPersonaMemory;
   pendingProposals?: BriefChangeProposal[];
   briefVersions?: BriefVersionRecord[];
   briefVersion?: number;

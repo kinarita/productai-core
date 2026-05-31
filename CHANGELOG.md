@@ -4,6 +4,11 @@ All notable changes to ProductAI are documented here.
 
 ## 2026-05-31
 
+### Changed (Phase 27 Directed Discussion & Activity Stream)
+
+- CEO can direct discussion to Product Planner, COO, or all; activity feed shows 7 items with expand/collapse.
+- Documentation: `docs/PHASE27_DIRECTED_DISCUSSION_AND_ACTIVITY_STREAM.md`.
+
 ### Changed (Phase 26.3 Executive Strategy Room Cleanup)
 
 - Product Planner naming, pending banner placement, view-only meeting minutes, handoff blocked copy.

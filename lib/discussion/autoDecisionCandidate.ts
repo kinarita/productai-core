@@ -5,6 +5,11 @@ import {
 } from "@/lib/discussion/createDecisionFromProposal";
 import type { AgentVote, DecisionItem } from "@/lib/discussion/decisionGovernanceTypes";
 import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
+import { shouldAutoCreateDecisionCandidate } from "@/lib/discussion/decisionCandidateDiscipline";
+import { resolveDecisionCandidateTitle } from "@/lib/discussion/discussionTopic";
+import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
+import type { DiscussionPersonaMemory } from "@/lib/discussion/discussionTypes";
+import { classifyDiscussionIntent } from "@/lib/discussion/discussionIntent";
 
 function decisionId(): string {
   return `dec-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -24,46 +29,75 @@ export function extractRationaleFromAgentText(text: string): string {
   return (lines[1] ?? lines[0] ?? text).replace(/\*\*/g, "").slice(0, 280);
 }
 
-export function shouldAutoCreateDecisionCandidate(input: {
-  ceoMessage: string;
-  plannerSummary?: string;
-  cooSummary?: string;
-  plannerVote?: AgentVote;
-  cooVote?: AgentVote;
-  hasNewProposals: boolean;
-}): boolean {
-  if (input.hasNewProposals) return true;
-
-  const ceo = input.ceoMessage;
-  if (/\?|？|どうすべき|決めて|判断|should we|approve/i.test(ceo)) return true;
-
-  const pVote = input.plannerVote ?? "neutral";
-  const cVote = input.cooVote ?? "neutral";
-  if (
-    (pVote === "approve" && cVote === "reject") ||
-    (pVote === "reject" && cVote === "approve")
-  ) {
-    return true;
-  }
-
-  if (/重要|論点|懸念|リスク|mvp|グラフ|ターゲット/i.test(ceo) && pVote !== cVote) return true;
-
-  return false;
-}
+export {
+  CANDIDATE_CONFIDENCE_THRESHOLD,
+  agentsSuggestEscalation,
+  classifyCeoIntent,
+  computeCandidateConfidence,
+  shouldAutoCreateDecisionCandidate,
+} from "@/lib/discussion/decisionCandidateDiscipline";
 
 export function inferVotesFromDiscussionTurn(
   plannerSummary?: string,
   cooSummary?: string
 ): { plannerVote: AgentVote; cooVote: AgentVote } {
-  const p = (plannerSummary ?? "").toLowerCase();
-  const c = (cooSummary ?? "").toLowerCase();
+  const p = plannerSummary ?? "";
+  const c = cooSummary ?? "";
+  const pl = p.toLowerCase();
+  const cl = c.toLowerCase();
   let plannerVote: AgentVote = "neutral";
   let cooVote: AgentVote = "neutral";
-  if (/賛成|support|recommend|should|価値|価値が|add|include/i.test(p)) plannerVote = "approve";
-  if (/反対|defer|懸念|risk|却下|見送/i.test(p)) plannerVote = "reject";
+  if (/賛成|support|recommend|必要だと|価値が高|approve|👍/i.test(p)) plannerVote = "approve";
+  if (/反対|却下|見送|不要/i.test(p)) plannerVote = "reject";
   if (/賛成|support|recommend|align/i.test(c)) cooVote = "approve";
-  if (/反対|defer|懸念|cost|scope|遅延|却下|見送|リスク/i.test(c)) cooVote = "reject";
+  if (/反対|却下|見送/i.test(c)) cooVote = "reject";
+  if (/慎重|hold|保留|コスト不明|運用コスト|様子見|プライバシー|実現性/i.test(c)) {
+    cooVote = "hold";
+  }
+  if (/簡易版|段階|should have/i.test(pl) && cooVote === "neutral") cooVote = "hold";
   return { plannerVote, cooVote };
+}
+
+/** Phase 28.5 — votes + short reasons for Decision Candidate cards. */
+export function inferDecisionVotesWithReasons(
+  plannerSummary?: string,
+  cooSummary?: string,
+  ceoMessage?: string
+): {
+  plannerVote: AgentVote;
+  cooVote: AgentVote;
+  plannerRationale: string;
+  cooRationale: string;
+} {
+  const votes = inferVotesFromDiscussionTurn(plannerSummary, cooSummary);
+  const p = plannerSummary ?? "";
+  const c = cooSummary ?? "";
+
+  let plannerRationale = extractRationaleFromAgentText(p);
+  let cooRationale = extractRationaleFromAgentText(c);
+
+  if (!plannerRationale || plannerRationale.length < 8) {
+    if (votes.plannerVote === "approve") plannerRationale = "ユーザー価値・UX の観点で前向きです。";
+    else if (votes.plannerVote === "reject") plannerRationale = "MVP 焦点を守るため見送りを推奨します。";
+    else plannerRationale = "追加情報があれば判断できます。";
+  }
+  if (!cooRationale || cooRationale.length < 8) {
+    if (votes.cooVote === "hold") cooRationale = "実現コスト・運用負荷が未確定のため慎重です。";
+    else if (votes.cooVote === "approve") cooRationale = "事業・実行の観点で問題ありません。";
+    else if (votes.cooVote === "reject") cooRationale = "初期開発・運用コストが見合いません。";
+    else cooRationale = "コストとリスクの精査が必要です。";
+  }
+
+  if (/ライブ|カメラ/i.test(ceoMessage ?? "")) {
+    if (votes.plannerVote === "approve" && plannerRationale.length < 40) {
+      plannerRationale = "入力負荷削減とデータ鮮度の観点でメリットがあります。";
+    }
+    if (votes.cooVote === "hold") {
+      cooRationale = "実現コスト・運用体制が不明なため Hold です。";
+    }
+  }
+
+  return { ...votes, plannerRationale, cooRationale };
 }
 
 export function createDecisionFromDiscussionTurn(input: {
@@ -74,13 +108,24 @@ export function createDecisionFromDiscussionTurn(input: {
   plannerDetail?: string;
   cooDetail?: string;
   titleHint?: string;
+  personaMemory?: DiscussionPersonaMemory;
+  discussionMessages?: DiscussionMessage[];
 }): DecisionItem {
-  const votes = inferVotesFromDiscussionTurn(input.plannerSummary, input.cooSummary);
+  const votes = inferDecisionVotesWithReasons(
+    input.plannerSummary,
+    input.cooSummary,
+    input.ceoMessage
+  );
 
   const now = new Date().toISOString();
   const title =
     input.titleHint?.trim() ||
-    input.ceoMessage.trim().slice(0, 72) ||
+    (classifyDiscussionIntent(input.ceoMessage) === "decision"
+      ? resolveDecisionCandidateTitle(input.ceoMessage, {
+          personaMemory: input.personaMemory,
+          messages: input.discussionMessages,
+        })
+      : input.ceoMessage.trim().slice(0, 72)) ||
     "Discussion decision point";
 
   return {
@@ -90,8 +135,8 @@ export function createDecisionFromDiscussionTurn(input: {
     sourceDiscussionId: input.sourceDiscussionId,
     plannerVote: votes.plannerVote,
     cooVote: votes.cooVote,
-    plannerRationale: extractRationaleFromAgentText(input.plannerSummary ?? ""),
-    cooRationale: extractRationaleFromAgentText(input.cooSummary ?? ""),
+    plannerRationale: votes.plannerRationale,
+    cooRationale: votes.cooRationale,
     status: "pending",
     createdAt: now,
     updatedAt: now,
@@ -116,7 +161,13 @@ export function registerAutoDecisionsFromProposals(
   existing: DecisionItem[],
   proposals: BriefChangeProposal[],
   sourceDiscussionId: string,
-  opts: { ceoMessage: string; plannerSummary?: string; cooSummary?: string }
+  opts: {
+    ceoMessage: string;
+    plannerSummary?: string;
+    cooSummary?: string;
+    plannerSuggestsDecision?: boolean;
+    cooSuggestsDecision?: boolean;
+  }
 ): { decisionItems: DecisionItem[]; proposals: BriefChangeProposal[] } {
   const decisionItems = [...existing];
   const updatedProposals = proposals.map((p) => {
@@ -132,6 +183,9 @@ export function registerAutoDecisionsFromProposals(
       plannerVote: votes.plannerVote,
       cooVote: votes.cooVote,
       hasNewProposals: true,
+      proposalConfidences: [p.confidence],
+      plannerSuggestsDecision: opts.plannerSuggestsDecision,
+      cooSuggestsDecision: opts.cooSuggestsDecision,
     });
 
     if (!shouldCreate) {

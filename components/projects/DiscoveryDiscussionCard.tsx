@@ -8,6 +8,7 @@ import { BriefDiffViewer } from "@/components/projects/BriefDiffViewer";
 import { BriefHistoryPanel } from "@/components/projects/BriefHistoryPanel";
 import { ArchitectHandoffModal } from "@/components/projects/ArchitectHandoffModal";
 import { DecisionCandidatesList } from "@/components/projects/DecisionCandidateCard";
+import { DiscussionAudienceSelector } from "@/components/projects/DiscussionAudienceSelector";
 import { DiscussionMessageBubble } from "@/components/projects/DiscussionMessageBubble";
 import { MeetingMinutesModal } from "@/components/projects/MeetingMinutesModal";
 import type { BriefApplyFeedback } from "@/lib/brief-diff/briefDiffTypes";
@@ -17,6 +18,7 @@ import {
   getPendingDecisionCandidateCount,
 } from "@/lib/coo-review/architectGate";
 import { PRODUCT_PLANNER_DISPLAY_NAME } from "@/lib/discussion/executiveRoomLabels";
+import type { DiscussionTargetAudience } from "@/lib/discussion/discussionTypes";
 import { EXAMPLE_DISCUSSION_PROMPTS } from "@/lib/discussion/discussionTypes";
 import { useAgentRunsStore } from "@/lib/store/agentRunsStore";
 import type { PlannerAgentRun } from "@/lib/agents/planner/plannerTypes";
@@ -92,6 +94,8 @@ export function DiscoveryDiscussionCard({
   const clearApplyFeedback = useAgentRunsStore((s) => s.clearBriefApplyFeedback);
 
   const [draft, setDraft] = useState("");
+  const [targetAudience, setTargetAudience] =
+    useState<DiscussionTargetAudience>("all");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewDiffVersion, setViewDiffVersion] = useState<number | undefined>();
@@ -148,7 +152,7 @@ export function DiscoveryDiscussionCard({
     setBusy(true);
     setError(null);
     try {
-      await sendMessage(missionId, message);
+      await sendMessage(missionId, message, targetAudience);
       setDraft("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send message");
@@ -206,6 +210,11 @@ export function DiscoveryDiscussionCard({
         </div>
 
         <div className="space-y-2 rounded-xl border border-accent/20 bg-background p-3 shadow-sm">
+          <DiscussionAudienceSelector
+            value={targetAudience}
+            onChange={setTargetAudience}
+            disabled={busy}
+          />
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}

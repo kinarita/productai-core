@@ -7,7 +7,7 @@ export type { DecisionCandidateStatus };
 /** @deprecated Alias for DecisionCandidateStatus */
 export type DecisionStatus = DecisionCandidateStatus;
 
-export type AgentVote = "approve" | "reject" | "neutral";
+export type AgentVote = "approve" | "reject" | "neutral" | "hold";
 
 export interface DecisionItem {
   id: string;
@@ -51,9 +51,22 @@ export interface MeetingMinutesDecisionEntry {
   impact: string;
 }
 
+/** Phase 28 / 28.5 — traceable path from discussion to outcome. */
+export interface MeetingMinutesDecisionJourneyEntry {
+  topic: string;
+  discussion: string;
+  planner: string;
+  coo: string;
+  ceo: string;
+  reason: string;
+  result: string;
+}
+
 export interface MeetingMinutes {
   id: string;
   discussionTopics: string[];
+  /** Phase 28 — discussion → votes → CEO → Brief outcome */
+  decisionJourney?: MeetingMinutesDecisionJourneyEntry[];
   decisionsMade: MeetingMinutesDecisionEntry[];
   pendingDecisions?: string[];
   rejectedIdeas: string[];
@@ -77,10 +90,12 @@ export const AGENT_VOTE_LABELS: Record<AgentVote, string> = {
   approve: "Approve",
   reject: "Reject",
   neutral: "Neutral",
+  hold: "Hold",
 };
 
 export function voteEmoji(vote: AgentVote): string {
   if (vote === "approve") return "👍";
   if (vote === "reject") return "👎";
+  if (vote === "hold") return "⚠";
   return "➖";
 }

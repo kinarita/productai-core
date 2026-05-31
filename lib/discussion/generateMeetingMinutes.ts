@@ -1,3 +1,4 @@
+import { buildDecisionJourney } from "@/lib/discussion/buildDecisionJourney";
 import type { BriefChangeProposal, DiscussionMessage } from "@/lib/discussion/discussionTypes";
 import {
   normalizeDecisionStatus,
@@ -35,6 +36,7 @@ export function generateMeetingMinutes(input: {
   briefChangeCandidates: BriefChangeCandidate[];
   appliedProposals: BriefChangeProposal[];
   openQuestionSignals?: string[];
+  briefVersion?: number;
 }): MeetingMinutes {
   const ceoTurns = input.messages.filter((m) => m.participant === "ceo").length;
   const topics = input.messages
@@ -89,9 +91,17 @@ export function generateMeetingMinutes(input: {
     "Votes (Planner / COO / CEO) are preserved in Meeting Minutes for organizational memory.",
   ];
 
+  const decisionJourney = buildDecisionJourney({
+    decisionItems: input.decisionItems,
+    messages: input.messages,
+    appliedProposals: input.appliedProposals,
+    briefVersionLabel: input.briefVersion ? `v${input.briefVersion}` : undefined,
+  });
+
   return {
     id: `minutes-${Date.now()}`,
     discussionTopics: topics.length ? topics : [`${input.projectName} 経営会議`],
+    decisionJourney: decisionJourney.length ? decisionJourney : undefined,
     decisionsMade,
     pendingDecisions,
     rejectedIdeas,

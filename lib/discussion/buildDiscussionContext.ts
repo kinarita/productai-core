@@ -13,7 +13,13 @@ import {
   formatBriefVersionHistory,
   type DiscussionMode,
 } from "@/lib/discussion/strategyRoomTypes";
+import {
+  normalizeDecisionStatus,
+} from "@/lib/discussion/decisionCandidateStatus";
 import type { DecisionItem } from "@/lib/discussion/decisionGovernanceTypes";
+import { GROUNDING_RULES } from "@/lib/discussion/groundingRules";
+import { formatPersonaMemoryBlock } from "@/lib/discussion/personaMemory";
+import type { DiscussionPersonaMemory } from "@/lib/discussion/discussionTypes";
 
 export interface DiscussionContextInput {
   missionId: string;
@@ -36,6 +42,7 @@ export interface DiscussionContextInput {
   briefVersions?: BriefVersionRecord[];
   pendingProposals?: BriefChangeProposal[];
   decisionItems?: DecisionItem[];
+  discussionPersonaMemory?: DiscussionPersonaMemory;
 }
 
 export interface DiscussionContext {
@@ -128,6 +135,17 @@ function formatCooReview(review: CooReviewReport): string {
   ].join("\n");
 }
 
+function buildCeoDiscussionHistory(messages: DiscussionMessage[] | undefined): string {
+  const ceoOnly = (messages ?? []).filter((m) => m.participant === "ceo");
+  if (!ceoOnly.length) return "(No prior CEO messages.)";
+  return ceoOnly
+    .map((m) => {
+      const section = m.relatedSection ? ` [${m.relatedSection}]` : "";
+      return `CEO${section}: ${m.message}`;
+    })
+    .join("\n\n");
+}
+
 function buildHistoryBlock(messages: DiscussionMessage[] | undefined): string {
   if (!messages?.length) return "(No prior discussion — this is the opening thread.)";
 
@@ -163,31 +181,65 @@ export function inferRelatedSectionFromMessage(message: string): DiscussionRelat
 }
 
 export function buildDiscussionContext(input: DiscussionContextInput): DiscussionContext {
+  const messages = input.discussionMessages ?? [];
+  const decisions = input.decisionItems ?? [];
+  const approvedDecisions = decisions.filter((d) => {
+    const s = normalizeDecisionStatus(d);
+    return s === "approved" || s === "applied_to_brief";
+  });
+  const pendingDecisions = decisions.filter(
+    (d) => normalizeDecisionStatus(d) === "pending"
+  );
+
   const sections: string[] = [
     `# Product: ${input.projectName}`,
     `Mission ID: ${input.missionId}`,
-    input.missionSummary ? `Mission summary: ${input.missionSummary}` : "",
     "",
-    "## CEO inputs",
-    `Idea: ${input.idea}`,
-    `Target users: ${input.targetUsers}`,
-    `Success goal: ${input.successGoal}`,
+    "## Fixed context (always ground replies here)",
+    GROUNDING_RULES,
+    "",
+    "### Mission",
+    input.missionSummary ? input.missionSummary : `Idea: ${input.idea}`,
+    `Target users (CEO input): ${input.targetUsers}`,
+    `Success goal (CEO input): ${input.successGoal}`,
   ];
 
   if (input.brief) {
-    sections.push("", `## Product Brief (v${input.briefVersion ?? 1})`, formatBrief(input.brief));
+    sections.push(
+      "",
+      `## Product Brief — latest (v${input.briefVersion ?? 1})`,
+      formatBrief(input.brief)
+    );
   }
   if (input.opportunityBrief) {
-    sections.push("", "## Opportunity Brief", formatOpportunity(input.opportunityBrief));
+    sections.push("", "## Opportunity (CPF upstream)", formatOpportunity(input.opportunityBrief));
   }
   if (input.cpfReport) {
-    sections.push("", "## Customer Problem Fit", formatCpf(input.cpfReport));
+    sections.push("", "## Customer Problem Fit (CPF)", formatCpf(input.cpfReport));
   }
   if (input.psfReport) {
-    sections.push("", "## Problem Solution Fit", formatPsf(input.psfReport, input.psfMvpScope));
+    sections.push("", "## Problem Solution Fit (PSF)", formatPsf(input.psfReport, input.psfMvpScope));
   }
   if (input.cooReview) {
     sections.push("", "## COO Review (AI recommendation)", formatCooReview(input.cooReview));
+  }
+
+  if (approvedDecisions.length) {
+    sections.push(
+      "",
+      "## Approved decisions",
+      approvedDecisions.map((d) => `- ${d.title}`).join("\n")
+    );
+  } else {
+    sections.push("", "## Approved decisions", "(None yet.)");
+  }
+
+  if (pendingDecisions.length) {
+    sections.push(
+      "",
+      "## Pending decisions (awaiting CEO)",
+      pendingDecisions.map((d) => `- ${d.title}`).join("\n")
+    );
   }
 
   const validationHistoryBlock =
@@ -198,10 +250,10 @@ export function buildDiscussionContext(input: DiscussionContextInput): Discussio
     : "(No prior CEO validation requests.)";
 
   const historyBlock = buildHistoryBlock(input.discussionMessages);
-  const messages = input.discussionMessages ?? [];
   const lastCeo = [...messages].reverse().find((m) => m.participant === "ceo");
 
-  sections.push("", "## Full discussion history", historyBlock);
+  sections.push("", "## CEO discussion history", buildCeoDiscussionHistory(messages));
+  sections.push("", "## Full discussion history (all participants)", historyBlock);
 
   if (input.briefVersions?.length) {
     sections.push("", "## Brief version history", formatBriefVersionHistory(input.briefVersions));
@@ -216,17 +268,14 @@ export function buildDiscussionContext(input: DiscussionContextInput): Discussio
     );
   }
 
-  const decisions = input.decisionItems?.length
-    ? input.decisionItems
-    : [];
   if (decisions.length) {
     sections.push(
       "",
-      "## Decision register (governance)",
+      "## Decision register (full)",
       decisions
         .map(
           (d) =>
-            `${d.title} [CEO: ${d.status ?? d.ceoDecision ?? "pending"}] Planner:${d.plannerVote} COO:${d.cooVote} — ${d.rationale.slice(0, 100)}`
+            `${d.title} [CEO: ${normalizeDecisionStatus(d)}] Planner:${d.plannerVote} COO:${d.cooVote} — ${d.rationale.slice(0, 100)}`
         )
         .join("\n")
     );
@@ -235,6 +284,12 @@ export function buildDiscussionContext(input: DiscussionContextInput): Discussio
   if (input.discussionMode) {
     sections.push("", "## Discussion mode this session", input.discussionMode);
   }
+
+  sections.push(
+    "",
+    "## Persona memory (CEO hypotheses, concerns, unresolved topics)",
+    formatPersonaMemoryBlock(input.discussionPersonaMemory)
+  );
 
   return {
     missionId: input.missionId,

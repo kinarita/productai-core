@@ -95,6 +95,16 @@ import {
   registerAutoDecisionsFromProposals,
   shouldAutoCreateDecisionCandidate,
 } from "@/lib/discussion/autoDecisionCandidate";
+import { shouldShowDiscussionDecisionSignal } from "@/lib/discussion/decisionCandidateDiscipline";
+import { classifyDiscussionIntent } from "@/lib/discussion/discussionIntent";
+import {
+  updatePersonaMemory,
+} from "@/lib/discussion/personaMemory";
+import {
+  audienceIncludesCoo,
+  audienceIncludesPlanner,
+  resolveDiscussionAudience,
+} from "@/lib/discussion/resolveDiscussionAudience";
 import { generateMeetingMinutes } from "@/lib/discussion/generateMeetingMinutes";
 import { buildDecisionGovernanceAuditRecord } from "@/lib/discussion/decisionGovernanceAudit";
 import {
@@ -119,7 +129,11 @@ import {
   plannerChallengedAssumptionActivity,
 } from "@/lib/discussion/strategyRoomActivity";
 import { buildStrategyRoomAuditRecord } from "@/lib/discussion/strategyRoomAudit";
-import type { BriefChangeProposal, DiscussionMessage } from "@/lib/discussion/discussionTypes";
+import type {
+  BriefChangeProposal,
+  DiscussionMessage,
+  DiscussionTargetAudience,
+} from "@/lib/discussion/discussionTypes";
 import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 import type {
   PlannerAgentRun,
@@ -224,6 +238,8 @@ function mergePlannerMeta(
       patch.plannerRevalidationInFlight ?? base?.plannerRevalidationInFlight,
     validationRequests: patch.validationRequests ?? base?.validationRequests,
     discussionMessages: patch.discussionMessages ?? base?.discussionMessages,
+    discussionPersonaMemory:
+      patch.discussionPersonaMemory ?? base?.discussionPersonaMemory,
     pendingProposals: patch.pendingProposals ?? base?.pendingProposals,
     briefVersions: patch.briefVersions ?? base?.briefVersions,
     briefVersion: patch.briefVersion ?? base?.briefVersion,
@@ -1105,6 +1121,7 @@ function generateMeetingMinutesForMission(
     briefChangeCandidates: meta.briefChangeCandidates ?? [],
     appliedProposals: meta.pendingProposals ?? [],
     openQuestionSignals: openFromSignals,
+    briefVersion: meta.briefVersion,
   });
 
   const nextMeta = mergePlannerMeta(meta, { meetingMinutes: minutes });
@@ -1286,7 +1303,8 @@ async function sendDiscoveryDiscussionMessage(
   set: AgentRunsSet,
   get: AgentRunsGet,
   missionId: string,
-  userMessage: string
+  userMessage: string,
+  targetAudienceInput: DiscussionTargetAudience = "all"
 ) {
   const key = plannerStorageKey(missionId);
   const run = getStoredPlannerRun(get, missionId);
@@ -1297,6 +1315,12 @@ async function sendDiscoveryDiscussionMessage(
   const cooReview =
     meta.cooReviewReport ?? migrateLegacyReviewReport(meta.ceoReviewReport);
   const discussionMode = inferInternalDiscussionMode(userMessage);
+  const targetAudience = resolveDiscussionAudience({
+    targetAudience: targetAudienceInput,
+    userMessage,
+  });
+  const wantPlanner = audienceIncludesPlanner(targetAudience);
+  const wantCoo = audienceIncludesCoo(targetAudience);
   const priorMessages = meta.discussionMessages ?? [];
   const isFirst = !priorMessages.length;
   const ceoMsg: DiscussionMessage = {
@@ -1305,6 +1329,7 @@ async function sendDiscoveryDiscussionMessage(
     participant: "ceo",
     message: userMessage.trim(),
     createdAt: new Date().toISOString(),
+    targetAudience,
   };
 
   const activities: ProjectActivityItem[] = [];
@@ -1321,11 +1346,6 @@ async function sendDiscoveryDiscussionMessage(
       })
     );
   }
-  activities.push(
-    plannerRespondedToDiscussionActivity(missionId),
-    cooRespondedToDiscussionActivity(missionId)
-  );
-
   let decisionItems = [...(meta.decisionItems ?? [])];
 
   const newSignals = detectStrategySignals({
@@ -1348,12 +1368,19 @@ async function sendDiscoveryDiscussionMessage(
     );
   }
 
+  const personaMemory = updatePersonaMemory(
+    meta.discussionPersonaMemory,
+    userMessage,
+    decisionItems
+  );
+
   persistPlannerRun(set, key, {
     plannerMeta: mergePlannerMeta(meta, {
       discussionMessages: [...priorMessages, ceoMsg],
       decisionItems,
       strategySignals,
       discussionMode,
+      discussionPersonaMemory: personaMemory,
     }),
   });
 
@@ -1390,13 +1417,16 @@ async function sendDiscoveryDiscussionMessage(
       validationRequests: meta.validationRequests,
       discussionMessages: [...priorMessages, ceoMsg],
       discussionMode,
+      targetAudience,
       briefVersions: meta.briefVersions,
       pendingProposals: meta.pendingProposals,
       decisionItems: meta.decisionItems,
+      discussionPersonaMemory: personaMemory,
     }),
   });
 
   const data = (await response.json()) as {
+    targetAudience?: DiscussionTargetAudience;
     plannerResponse?: string;
     plannerSummary?: string;
     plannerDetail?: string;
@@ -1407,33 +1437,64 @@ async function sendDiscoveryDiscussionMessage(
     relatedSection?: DiscussionMessage["relatedSection"];
     plannerChallenged?: boolean;
     cooRaisedConcern?: boolean;
+    plannerSuggestsDecision?: boolean;
+    cooSuggestsDecision?: boolean;
+    discussionSignal?: boolean;
     error?: string;
   };
 
-  if (!response.ok || !data.plannerResponse || !data.cooResponse) {
+  const plannerText = (data.plannerSummary ?? data.plannerResponse ?? "").trim();
+  const cooText = (data.cooSummary ?? data.cooResponse ?? "").trim();
+  if (!response.ok) {
     throw new Error(data.error ?? "Discussion response failed");
   }
+  if (wantPlanner && !plannerText) {
+    throw new Error("Product Planner did not respond");
+  }
+  if (wantCoo && !cooText) {
+    throw new Error("COO did not respond");
+  }
 
-  const plannerMsg: DiscussionMessage = {
-    id: discussionMessageId(),
-    missionId,
-    participant: "planner",
-    message: data.plannerSummary ?? data.plannerResponse,
-    summary: data.plannerSummary ?? data.plannerResponse,
-    detail: data.plannerDetail,
-    createdAt: new Date().toISOString(),
-    relatedSection: data.relatedSection,
-  };
-  const cooMsg: DiscussionMessage = {
-    id: discussionMessageId(),
-    missionId,
-    participant: "coo",
-    message: data.cooSummary ?? data.cooResponse,
-    summary: data.cooSummary ?? data.cooResponse,
-    detail: data.cooDetail,
-    createdAt: new Date().toISOString(),
-    relatedSection: data.relatedSection,
-  };
+  const ceoDecisionIntent = classifyDiscussionIntent(userMessage) === "decision";
+  const stage2Candidate =
+    ceoDecisionIntent ||
+    (data.plannerSuggestsDecision === true && data.cooSuggestsDecision === true);
+  const stage1Signal =
+    !stage2Candidate &&
+    (data.discussionSignal === true ||
+      shouldShowDiscussionDecisionSignal(userMessage));
+
+  const newMessages: DiscussionMessage[] = [];
+  if (wantPlanner && plannerText) {
+    activities.push(plannerRespondedToDiscussionActivity(missionId));
+    newMessages.push({
+      id: discussionMessageId(),
+      missionId,
+      participant: "planner",
+      message: plannerText,
+      summary: plannerText,
+      detail: data.plannerDetail,
+      createdAt: new Date().toISOString(),
+      relatedSection: data.relatedSection,
+      discussionDecisionSignal: stage1Signal,
+      suggestsDecisionCandidate: stage2Candidate,
+    });
+  }
+  if (wantCoo && cooText) {
+    activities.push(cooRespondedToDiscussionActivity(missionId));
+    newMessages.push({
+      id: discussionMessageId(),
+      missionId,
+      participant: "coo",
+      message: cooText,
+      summary: cooText,
+      detail: data.cooDetail,
+      createdAt: new Date().toISOString(),
+      relatedSection: data.relatedSection,
+      discussionDecisionSignal: stage1Signal,
+      suggestsDecisionCandidate: stage2Candidate,
+    });
+  }
 
   const postSignals = detectStrategySignals({
     ceoMessage: userMessage,
@@ -1464,6 +1525,8 @@ async function sendDiscoveryDiscussionMessage(
       ceoMessage: userMessage,
       plannerSummary: data.plannerSummary,
       cooSummary: data.cooSummary,
+      plannerSuggestsDecision: data.plannerSuggestsDecision,
+      cooSuggestsDecision: data.cooSuggestsDecision,
     }
   );
   decisionItems = registered.decisionItems;
@@ -1482,6 +1545,8 @@ async function sendDiscoveryDiscussionMessage(
         plannerVote: turnVotes.plannerVote,
         cooVote: turnVotes.cooVote,
         hasNewProposals: false,
+        plannerSuggestsDecision: data.plannerSuggestsDecision,
+        cooSuggestsDecision: data.cooSuggestsDecision,
       })
     ) {
       const turnDecision = createDecisionFromDiscussionTurn({
@@ -1491,6 +1556,12 @@ async function sendDiscoveryDiscussionMessage(
         cooSummary: data.cooSummary,
         plannerDetail: data.plannerDetail,
         cooDetail: data.cooDetail,
+        personaMemory,
+        discussionMessages: [
+          ...(priorMessages ?? []),
+          ceoMsg,
+          ...newMessages,
+        ],
       });
       decisionItems = [...decisionItems, turnDecision];
     }
@@ -1498,16 +1569,22 @@ async function sendDiscoveryDiscussionMessage(
 
   const pendingWithStatus = [...priorPending, ...registered.proposals];
 
+  const updatedMemory = updatePersonaMemory(
+    latest.plannerMeta?.discussionPersonaMemory ?? personaMemory,
+    userMessage,
+    decisionItems
+  );
+
   const mergedMeta = mergePlannerMeta(latest.plannerMeta, {
     discussionMode,
     discussionMessages: [
       ...(latest.plannerMeta?.discussionMessages ?? []),
-      plannerMsg,
-      cooMsg,
+      ...newMessages,
     ],
     pendingProposals: pendingWithStatus,
     strategySignals: allSignals,
     decisionItems,
+    discussionPersonaMemory: updatedMemory,
   });
   const handoff = refreshArchitectHandoffForRun(
     { ...latest, plannerMeta: mergedMeta },
@@ -1522,10 +1599,10 @@ async function sendDiscoveryDiscussionMessage(
     buildDiscussionAuditRecord({
       missionId,
       eventType: "discussion_response",
-      summary: "Planner and COO responded in Executive Strategy Room.",
+      summary: `Executive discussion response (audience: ${data.targetAudience ?? targetAudience}).`,
       reasoning: [
-        `WHY: Planner — ${data.plannerResponse.slice(0, 80)}`,
-        `WHY: COO — ${data.cooResponse.slice(0, 80)}`,
+        ...(plannerText ? [`WHY: Planner — ${plannerText.slice(0, 80)}`] : []),
+        ...(cooText ? [`WHY: COO — ${cooText.slice(0, 80)}`] : []),
       ],
       runInput: run.input,
     })
@@ -1538,8 +1615,8 @@ async function sendDiscoveryDiscussionMessage(
         eventType: "decision_created",
         summary: `Decision candidate(s) auto-created (${decisionItems.length - priorCount}).`,
         reasoning: [
-          `WHY: Planner — ${data.plannerResponse.slice(0, 80)}`,
-          `WHY: COO — ${data.cooResponse.slice(0, 80)}`,
+          ...(plannerText ? [`WHY: Planner — ${plannerText.slice(0, 80)}`] : []),
+          ...(cooText ? [`WHY: COO — ${cooText.slice(0, 80)}`] : []),
         ],
         decisionItems,
         architectHandoffPreview: handoff,
@@ -2185,7 +2262,11 @@ interface AgentRunsState {
     answers: Record<string, string>
   ) => Promise<void>;
   retryPlannerGeneration: (missionId: string) => Promise<void>;
-  sendDiscoveryDiscussionMessage: (missionId: string, userMessage: string) => Promise<void>;
+  sendDiscoveryDiscussionMessage: (
+    missionId: string,
+    userMessage: string,
+    targetAudience?: DiscussionTargetAudience
+  ) => Promise<void>;
   setDiscussionMode: (missionId: string, mode: DiscussionMode) => void;
   createDecisionFromMessage: (
     missionId: string,
@@ -2720,8 +2801,14 @@ export const useAgentRunsStore = create<AgentRunsState>()(
         await get().generatePlannerForMission(missionId);
       },
 
-      sendDiscoveryDiscussionMessage: async (missionId, userMessage) => {
-        await sendDiscoveryDiscussionMessage(set, get, missionId, userMessage);
+      sendDiscoveryDiscussionMessage: async (missionId, userMessage, targetAudience) => {
+        await sendDiscoveryDiscussionMessage(
+          set,
+          get,
+          missionId,
+          userMessage,
+          targetAudience
+        );
       },
 
       setDiscussionMode: (missionId, mode) => {

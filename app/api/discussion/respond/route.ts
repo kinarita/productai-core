@@ -3,7 +3,11 @@ import {
   runDiscussionRespond,
   type DiscussionContextInput,
 } from "@/lib/discussion/runDiscussionRespond";
-import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
+import type {
+  DiscussionMessage,
+  DiscussionPersonaMemory,
+  DiscussionTargetAudience,
+} from "@/lib/discussion/discussionTypes";
 import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 import type { ProductBriefSections } from "@/lib/agents/planner/plannerTypes";
 import type { CooReviewReport } from "@/lib/coo-review/cooReviewTypes";
@@ -17,6 +21,8 @@ export async function POST(request: Request) {
       userMessage?: string;
       discussionMessages?: DiscussionMessage[];
       discussionMode?: DiscussionMode;
+      targetAudience?: DiscussionTargetAudience;
+      discussionPersonaMemory?: DiscussionPersonaMemory;
     };
 
     if (!body.missionId?.trim() || !body.userMessage?.trim()) {
@@ -46,10 +52,16 @@ export async function POST(request: Request) {
       briefVersions: body.briefVersions,
       pendingProposals: body.pendingProposals,
       decisionItems: body.decisionItems,
+      discussionPersonaMemory: body.discussionPersonaMemory,
       userMessage: body.userMessage.trim(),
+      targetAudience: body.targetAudience,
     });
 
     return NextResponse.json({
+      targetAudience: result.targetAudience,
+      discussionSignal: result.discussionSignal,
+      plannerSuggestsDecision: result.plannerSuggestsDecision,
+      cooSuggestsDecision: result.cooSuggestsDecision,
       plannerResponse: result.plannerResponse,
       plannerSummary: result.plannerSummary,
       plannerDetail: result.plannerDetail,

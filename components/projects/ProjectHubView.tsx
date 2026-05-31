@@ -6,7 +6,7 @@ import { useShallow } from "zustand/react/shallow";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/Card";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
-import { ProjectActivityFeed } from "@/components/projects/ProjectActivityFeed";
+import { ProjectActivitySection } from "@/components/projects/ProjectActivitySection";
 import { ProjectHubPlannerEffect } from "@/components/projects/ProjectHubPlannerEffect";
 import { ProjectAuditSummaryCard } from "@/components/projects/ProjectAuditSummaryCard";
 import { CustomerProblemFitCard } from "@/components/projects/CustomerProblemFitCard";
@@ -211,9 +211,7 @@ export function ProjectHubView({ missionId }: { missionId: string }) {
           </Card>
         </div>
 
-        <Card title="Activity">
-          <ProjectActivityFeed items={activities} />
-        </Card>
+        <ProjectActivitySection items={activities} />
 
         <div className="flex flex-wrap gap-2">
           <Link

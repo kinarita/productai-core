@@ -7,6 +7,7 @@ import {
   DECISION_STATUS_LABELS,
   voteEmoji,
   type MeetingMinutes,
+  type MeetingMinutesDecisionJourneyEntry,
 } from "@/lib/discussion/decisionGovernanceTypes";
 
 export function MeetingMinutesModal({
@@ -62,6 +63,7 @@ export function MeetingMinutesModal({
         ) : (
           <div className="mt-4 space-y-4 text-xs">
             <Section title="Discussion Topics" items={minutes.discussionTopics} />
+            <DecisionJourneySection entries={minutes.decisionJourney ?? []} />
             <Section
               title="Pending Decisions"
               items={minutes.pendingDecisions ?? []}
@@ -100,6 +102,43 @@ function Section({
       ) : (
         <p className="mt-1 text-muted">{emptyLabel}</p>
       )}
+    </section>
+  );
+}
+
+function DecisionJourneySection({
+  entries,
+}: {
+  entries: MeetingMinutesDecisionJourneyEntry[];
+}) {
+  if (!entries.length) return null;
+  return (
+    <section>
+      <p className="font-medium text-foreground">Decision Journey</p>
+      <ul className="mt-2 space-y-3">
+        {entries.map((j) => (
+          <li
+            key={`${j.discussion}-${j.result}`}
+            className="rounded border border-border bg-surface/60 px-2 py-2 text-muted"
+          >
+            <p>
+              <span className="text-foreground">Topic:</span> {j.topic}
+            </p>
+            <p>
+              <span className="text-foreground">Discussion:</span> {j.discussion}
+            </p>
+            <p>
+              {PRODUCT_PLANNER_DISPLAY_NAME}: {j.planner} · COO: {j.coo} · CEO: {j.ceo}
+            </p>
+            <p>
+              <span className="text-foreground">Reason:</span> {j.reason}
+            </p>
+            <p>
+              <span className="text-foreground">Result:</span> {j.result}
+            </p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

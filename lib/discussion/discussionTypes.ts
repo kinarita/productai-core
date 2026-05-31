@@ -9,6 +9,9 @@ import type { OpportunityBrief } from "@/lib/opportunity/opportunityTypes";
 
 export type DiscussionParticipant = "ceo" | "planner" | "coo";
 
+/** Phase 27 — who should respond to this CEO turn. */
+export type DiscussionTargetAudience = "all" | "planner" | "coo";
+
 export type DiscussionRelatedSection = "opportunity" | "cpf" | "psf" | "brief" | "mvp";
 
 export interface DiscussionMessage {
@@ -22,6 +25,21 @@ export interface DiscussionMessage {
   detail?: string;
   createdAt: string;
   relatedSection?: DiscussionRelatedSection;
+  /** CEO turn only — Phase 27 directed discussion */
+  targetAudience?: DiscussionTargetAudience;
+  /** Phase 28 — Stage 2: formal Decision Candidate suggested */
+  suggestsDecisionCandidate?: boolean;
+  /** Phase 28.5 — Stage 1: product decision may emerge (no Candidate yet) */
+  discussionDecisionSignal?: boolean;
+}
+
+/** Phase 28.5 — cross-turn CEO & topic memory for Planner/COO */
+export interface DiscussionPersonaMemory {
+  ceoHypotheses: string[];
+  ceoConcerns: string[];
+  ceoValues: string[];
+  unresolvedTopics: string[];
+  adoptedTopics: string[];
 }
 
 export interface BriefChangeProposal {

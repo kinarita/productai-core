@@ -1,8 +1,20 @@
 /** Phase 26.3 — unified executive room role labels. */
 
+import type { DiscussionTargetAudience } from "@/lib/discussion/discussionTypes";
+
 export const PRODUCT_PLANNER_DISPLAY_NAME = "Product Planner";
 
 export const PRODUCT_PLANNER_EMOJI = "🧠";
+
+export const DISCUSSION_TARGET_AUDIENCE_LABELS: Record<DiscussionTargetAudience, string> = {
+  all: "All",
+  planner: "Product Planner",
+  coo: "COO",
+};
+
+export function discussionTargetLabel(audience: DiscussionTargetAudience): string {
+  return DISCUSSION_TARGET_AUDIENCE_LABELS[audience];
+}
 
 export function pendingDecisionsBannerMessage(count: number): string | null {
   if (count <= 0) return null;

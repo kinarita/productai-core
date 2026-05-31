@@ -3,6 +3,10 @@
 export interface StructuredDiscussionResponse {
   summary: string;
   detail: string;
+  /** Phase 28.5 Stage 1 — may lead to product decision */
+  discussionSignal?: boolean;
+  /** Phase 28 Stage 2 — formal candidate */
+  suggestsDecisionCandidate?: boolean;
 }
 
 const SUMMARY_MARKERS = [/^\s*SUMMARY\s*:?\s*/im, /^\s*要約\s*:?\s*/im];
@@ -15,11 +19,18 @@ export function parseStructuredDiscussionResponse(raw: string): StructuredDiscus
   }
 
   try {
-    const parsed = JSON.parse(trimmed) as { summary?: string; detail?: string };
+    const parsed = JSON.parse(trimmed) as {
+      summary?: string;
+      detail?: string;
+      discussionSignal?: boolean;
+      suggestsDecisionCandidate?: boolean;
+    };
     if (typeof parsed.summary === "string") {
       return {
         summary: parsed.summary.trim(),
         detail: (parsed.detail ?? "").trim(),
+        discussionSignal: parsed.discussionSignal === true,
+        suggestsDecisionCandidate: parsed.suggestsDecisionCandidate === true,
       };
     }
   } catch {

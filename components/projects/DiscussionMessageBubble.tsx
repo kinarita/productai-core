@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DiscussionMarkdown } from "@/components/projects/DiscussionMarkdown";
 import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
 import {
+  discussionTargetLabel,
   PRODUCT_PLANNER_DISPLAY_NAME,
   PRODUCT_PLANNER_EMOJI,
 } from "@/lib/discussion/executiveRoomLabels";
@@ -40,6 +41,16 @@ export function DiscussionMessageBubble({ msg }: { msg: DiscussionMessage }) {
           <span className="ml-2 font-normal text-muted">· {msg.relatedSection}</span>
         ) : null}
       </p>
+      {msg.discussionDecisionSignal && !msg.suggestsDecisionCandidate ? (
+        <p className="mt-1 rounded-md border border-sky-300/60 bg-sky-50/80 px-2 py-1 text-[11px] font-medium text-sky-900">
+          ⚠ Discussion may lead to a product decision
+        </p>
+      ) : null}
+      {msg.suggestsDecisionCandidate ? (
+        <p className="mt-1 rounded-md border border-amber-300/60 bg-amber-50/80 px-2 py-1 text-[11px] font-medium text-amber-900">
+          ⚠ Decision Candidate Suggested
+        </p>
+      ) : null}
       {isAgent ? (
         <div className="mt-1">
           <DiscussionMarkdown content={summary} />
@@ -64,7 +75,14 @@ export function DiscussionMessageBubble({ msg }: { msg: DiscussionMessage }) {
           ) : null}
         </div>
       ) : (
-        <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{summary}</p>
+        <>
+          {msg.targetAudience ? (
+            <p className="mt-0.5 text-[10px] text-muted">
+              To: {discussionTargetLabel(msg.targetAudience)}
+            </p>
+          ) : null}
+          <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{summary}</p>
+        </>
       )}
       <p className="mt-1 text-[10px] text-muted">
         {new Date(msg.createdAt).toLocaleString()}

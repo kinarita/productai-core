@@ -7,7 +7,24 @@ import {
 import type {
   BriefChangeProposal,
   DiscussionRelatedSection,
+  DiscussionTargetAudience,
 } from "@/lib/discussion/discussionTypes";
+import {
+  audienceIncludesCoo,
+  audienceIncludesPlanner,
+  resolveDiscussionAudience,
+} from "@/lib/discussion/resolveDiscussionAudience";
+import { classifyDiscussionIntent } from "@/lib/discussion/discussionIntent";
+import {
+  agentsSuggestEscalation,
+  ceoTopicAbsentFromBrief,
+  shouldShowDiscussionDecisionSignal,
+} from "@/lib/discussion/decisionCandidateDiscipline";
+import {
+  recallHypothesisForMessage,
+} from "@/lib/discussion/personaMemory";
+import { resolveDecisionCandidateTitle } from "@/lib/discussion/discussionTopic";
+import { isCeoBrainstormPhrase } from "@/lib/discussion/decisionDirective";
 import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 
 function proposalId(): string {
@@ -31,71 +48,14 @@ function detectFocus(message: string): string {
   return "general";
 }
 
-function buildPlannerCharts(
-  name: string,
-  brief: DiscussionContextInput["brief"],
-  mvp: string[],
-  psf: DiscussionContextInput["psfReport"],
-  thread: boolean,
-  mode: DiscussionMode
-) {
-  const mustHave = mvp.slice(0, 2).join("、") || brief?.coreFeatures?.slice(0, 2).join("、");
-  if (mode === "decision") {
-    const summary = `**結論:** 月次グラフは **MVPに含める** 方向で推奨します。\n\n**理由:** 「${name}」の価値は支出の見える化で、入力が続いたユーザーにはグラフが習慣化の報酬になります。\n\n**質問:** 週次サマリー＋月次グラフの2段階で合意しますか？`;
-    return {
-      summary,
-      detail: `### 決定モード\n- Must Have 維持: ${mustHave}\n- 検証: 3週間で入力3回以上ユーザーのグラフ開封率`,
-    };
-  }
-  if (mode === "challenge") {
-    const summary = `**結論:** 「グラフ必須」という前提を疑うべきです。\n\n**理由:** Must Have は「${mustHave}」で既に厚い。グラフは検証前の仮説に過ぎません。\n\n**質問:** グラフなしで5ユーザーに2週間使ってもらえますか？`;
-    return {
-      summary,
-      detail: `### 前提へのチャレンジ\n- 見える化＝価値 とは限らない\n- PSF Should-have: ${psf?.mvpFeatures.shouldHave.join("、") || "未定"}`,
-    };
-  }
-  const summary = thread
-    ? `**結論:** 先ほどのグラフの話なら、トップは軽いサマリーだけで十分です。\n\n**理由:** 「${name}」はまず入力習慣が価値の核で、Must Have は「${mustHave}」に集中すべきです。\n\n**質問:** 月次グラフだけを Should Have に置く案で進めますか？`
-    : `**結論:** MVPではグラフは **Should Have** に回すべきです。\n\n**理由:** 「${name}」は見える化より先に記録が続くことが重要で、入力がなければグラフは空になります。\n\n**質問:** 週3回入力したユーザーだけβチャートを開く検証でよいですか？`;
-
-  const detail = `### プロダクト観点（詳細）\n- 現行 Must Have: ${mustHave || "未定義"}\n- PSF Should-have: ${psf?.mvpFeatures.shouldHave.join("、") || "未定"}`;
-
-  return { summary, detail };
-}
-
-function buildCooCharts(
-  name: string,
-  opp: DiscussionContextInput["opportunityBrief"],
-  thread: boolean,
-  mode: DiscussionMode
-) {
-  const alt = opp?.currentAlternatives?.[0] ?? "主要家計簿アプリ";
-  if (mode === "decision") {
-    const summary = `**結論:** グラフは **段階導入** で合意可能です（Must Have 化は慎重に）。\n\n**理由:** ${alt} との差別化は入力体験側。グラフは第2スプリントでも遅れません。\n\n**質問:** 入力KPI達成後にグラフを解禁する条件を決めますか？`;
-    return { summary, detail: `### 事業合意\n- 実行リスクを抑えつつ見える化ロードマップを明示` };
-  }
-  if (mode === "challenge" || mode === "explore") {
-    const summary =
-      mode === "challenge"
-        ? `**結論:** Plannerと異なり、グラフの **Must Have 化には反対** です。\n\n**理由:** 開発・保守コストが高く、「${name}」は ${alt} とグラフ競争で不利です。入力の継続が先です。\n\n**質問:** グラフを第2フェーズに回し、今は獲得と継続に集中しますか？`
-        : thread
-          ? `**結論:** サマリー表示はコスト低めで、フルグラフの Must Have 化は避けたいです。\n\n**理由:** 「${name}」が ${alt} と同じ土俵でグラフ競争すると差別化が薄れます。\n\n**質問:** 継続率KPIを先に置き、グラフは第2フェーズにしますか？`
-          : `**結論:** グラフは **Should Have** で十分です。\n\n**理由:** 競合は標準装備ですが、${alt} でも継続率は入力体験に依存します。\n\n**質問:** MVP投資を入力に寄せる方針で合意しますか？`;
-    return {
-      summary,
-      detail: `### 事業観点（COOはPlannerと必ずしも一致しない）\n- 実行コストと競合ベンチマークを優先`,
-    };
-  }
-  const summary = thread
-    ? `**結論:** サマリー表示はコスト低めで、フルグラフの Must Have 化は避けたいです。\n\n**理由:** 「${name}」が ${alt} と同じ土俵でグラフ競争すると差別化が薄れます。\n\n**質問:** 継続率KPIを先に置き、グラフは第2フェーズにしますか？`
-    : `**結論:** グラフは **Should Have** で十分です。\n\n**理由:** 競合は標準装備ですが、${alt} でも継続率は入力体験に依存します。\n\n**質問:** MVP投資を入力に寄せる方針で合意しますか？`;
-
-  return { summary, detail: `### 事業観点\n- 実装コスト対効果` };
-}
-
 export function runDiscussionHeuristic(
-  input: DiscussionContextInput & { userMessage: string; discussionMode?: DiscussionMode }
+  input: DiscussionContextInput & {
+    userMessage: string;
+    discussionMode?: DiscussionMode;
+    targetAudience?: DiscussionTargetAudience;
+  }
 ): {
+  targetAudience: DiscussionTargetAudience;
   plannerResponse: string;
   plannerSummary: string;
   plannerDetail: string;
@@ -106,91 +66,255 @@ export function runDiscussionHeuristic(
   relatedSection: DiscussionRelatedSection;
   plannerChallenged?: boolean;
   cooRaisedConcern?: boolean;
+  plannerSuggestsDecision?: boolean;
+  cooSuggestsDecision?: boolean;
+  discussionSignal?: boolean;
 } {
+  const audience = resolveDiscussionAudience({
+    targetAudience: input.targetAudience,
+    userMessage: input.userMessage,
+  });
+  const wantPlanner = audienceIncludesPlanner(audience);
+  const wantCoo = audienceIncludesCoo(audience);
   const ctx = buildDiscussionContext(input);
-  const mode = input.discussionMode ?? "explore";
-  const focus = detectFocus(input.userMessage);
-  const relatedSection = inferRelatedSectionFromMessage(input.userMessage);
+  const intent = classifyDiscussionIntent(input.userMessage);
+  const ceoMsg = input.userMessage.trim();
   const name = ctx.projectName;
   const brief = input.brief;
-  const cpf = input.cpfReport;
+  const relatedSection = inferRelatedSectionFromMessage(ceoMsg);
+  const briefCorpus = brief ? JSON.stringify(brief) : "";
+  const recalled = recallHypothesisForMessage(input.discussionPersonaMemory, ceoMsg);
+
+  if (intent === "greeting") {
+    const plannerSummary = `おはようございます。元気ですよ。今日は「${name}」の整理をしていました。`;
+    const cooSummary = wantCoo
+      ? `おはようございます。こちらも順調です。昨日の議論を見直していました。`
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection,
+    };
+  }
+
+  if (intent === "clarification") {
+    const term = /グラフ|chart/i.test(ceoMsg)
+      ? "支出や価格を時系列・横並びで見える化する機能です。"
+      : /価格比較/i.test(ceoMsg)
+        ? "複数店舗の価格を横並びで比較できる機能です。"
+        : "ご質問の用語は、ユーザーが判断しやすくするための表示・比較の仕組みです。";
+    return {
+      targetAudience: audience,
+      plannerResponse: term,
+      plannerSummary: term,
+      plannerDetail: "",
+      cooResponse: "",
+      cooSummary: "",
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection,
+    };
+  }
+
+  if (intent === "decision") {
+    const candidateTitle = resolveDecisionCandidateTitle(ceoMsg, {
+      personaMemory: input.discussionPersonaMemory,
+      messages: input.discussionMessages,
+    });
+    const plannerSummary =
+      "承知しました。CEO のご意向どおり、Product Brief / MVP への反映を前提に整理します。";
+    const cooSummary = wantCoo
+      ? "判断事項として記録します。技術コスト・プライバシー・実現性の検証は Hold 推奨です。"
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: `候補: ${candidateTitle}`,
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: wantCoo
+        ? "運用・法務・インフラコストの見積もりが必要です。"
+        : "",
+      suggestedChanges: [],
+      relatedSection,
+      discussionSignal: false,
+      plannerSuggestsDecision: true,
+      cooSuggestsDecision: true,
+    };
+  }
+
+  const absentTopic = ceoTopicAbsentFromBrief(ceoMsg, briefCorpus);
+  if (
+    intent === "brainstorm" &&
+    isCeoBrainstormPhrase(ceoMsg) &&
+    /ライブ|カメラ|pos/i.test(ceoMsg)
+  ) {
+    const topic = absentTopic ?? ( /ライブ/i.test(ceoMsg) ? "ライブカメラ機能" : "POS連携");
+    const plannerSummary = absentTopic
+      ? `面白いですね。${topic}は現 Brief にはなく仮説段階ですが、ユーザー体験は向上しそうです。`
+      : `面白いですね。ユーザー体験・データ鮮度の観点ではアイデアとして魅力的です。`;
+    const cooSummary = wantCoo
+      ? `可能性はあります。ただし${topic}の運用コストと実装負荷は気になります。`
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection: "brief",
+      discussionSignal: shouldShowDiscussionDecisionSignal(ceoMsg),
+    };
+  }
+
+  if (recalled) {
+    const plannerSummary = `先ほどの「${recalled}」ですが、まだ仮説段階だと思っています。Brief には未反映です。`;
+    const cooSummary = wantCoo
+      ? `その通りです。${recalled}は採用前にコストと運用体制の整理が必要です。`
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection,
+      discussionSignal: true,
+    };
+  }
+
+  if (/面白い|いいね|いいかも/i.test(ceoMsg) && intent === "brainstorm") {
+    const plannerSummary = `ありがとうございます。ユーザー価値の観点では前向きに捉えています。`;
+    const cooSummary = wantCoo
+      ? `アイデア自体は理解しました。投資対効果が見えるまで様子見がよいと思います。`
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection,
+      discussionSignal: true,
+    };
+  }
+
+  if (/mvp.*グラフ|グラフ.*mvp/i.test(ceoMsg)) {
+    const mustHave = (input.psfMvpScope ?? input.psfReport?.mvpFeatures.mustHave ?? []).join("、");
+    const plannerSummary =
+      "私は MVP に月次グラフを入れることに賛成です。入力が続いたユーザーへの報酬になります。";
+    const cooSummary = wantCoo
+      ? "判断が必要です。MVP 範囲に影響するため、グラフの Must Have 化には慎重です。"
+      : "";
+    const now = new Date().toISOString();
+    const suggestedChanges: BriefChangeProposal[] = wantPlanner
+      ? [
+          {
+            id: proposalId(),
+            title: "Add monthly chart to MVP scope",
+            description: "CEO requested graph in MVP; agents disagree.",
+            reason: "CEO: include chart in MVP. Planner supports; COO cautious on scope.",
+            impact: "Defines MVP scope for architect handoff.",
+            affectedSections: ["mvp", "brief"],
+            targetSection: "mvp",
+            before: mustHave.slice(0, 400) || "Current MVP list",
+            after: `${mustHave}\n[Must Have] Monthly spending chart`,
+            confidence: 82,
+            status: "pending",
+            proposedAt: now,
+          },
+        ]
+      : [];
+    const escalation = agentsSuggestEscalation(plannerSummary, cooSummary);
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "### MVP scope",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: wantCoo ? "### 事業判断" : "",
+      suggestedChanges,
+      relatedSection: "mvp",
+      plannerSuggestsDecision: escalation.planner || true,
+      cooSuggestsDecision: escalation.coo || wantCoo,
+      discussionSignal: !escalation.both,
+    };
+  }
+
+  if (intent === "challenge") {
+    const plannerSummary =
+      "私は必要だと思います。ただし MVP では簡易版で十分かもしれません。";
+    const cooSummary = wantCoo
+      ? "私は慎重です。理由は初期開発コストと運用負荷です。"
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection,
+      discussionSignal: shouldShowDiscussionDecisionSignal(ceoMsg),
+    };
+  }
+
+  const mode = input.discussionMode ?? "explore";
+  const focus = detectFocus(ceoMsg);
   const psf = input.psfReport;
   const mvp = input.psfMvpScope ?? psf?.mvpFeatures.mustHave ?? [];
-  const thread = continuesPriorThread(input.userMessage, ctx);
+  const thread = continuesPriorThread(ceoMsg, ctx);
 
-  let plannerSummary = "";
+  let plannerSummary = `「${name}」について、Brief の次の一手は「${brief?.recommendedNextStep?.slice(0, 60) ?? "検証"}」が中心だと思います。`;
   let plannerDetail = "";
-  let cooSummary = "";
+  let cooSummary = wantCoo
+    ? `実行面では ${input.cooReview?.recommendation ?? "段階的リリース"} が現実的です。`
+    : "";
   let cooDetail = "";
 
-  if (focus === "charts" || (thread && ctx.priorTopics.includes("charts"))) {
-    const p = buildPlannerCharts(name, brief, mvp, psf, thread, mode);
-    const c = buildCooCharts(name, input.opportunityBrief, thread, mode);
-    plannerSummary = p.summary;
-    plannerDetail = p.detail;
-    cooSummary = c.summary;
-    cooDetail = c.detail;
-  } else if (focus === "audience") {
-    const persona = cpf?.persona?.[0] ?? brief?.targetUsers?.slice(0, 60) ?? "未定義";
-    plannerSummary = `**結論:** ターゲットは「${persona}」に絞るべきです。\n\n**理由:** CPF ${cpf?.cpfScore ?? "—"}% 時点で Brief の「${brief?.targetUsers?.slice(0, 80) ?? "—"}」は広めです。\n\n**質問:** 共働き世帯・週1家計見直しに限定しますか？`;
-    plannerDetail = `### CPF\n- 上位ペイン: ${cpf?.painPoints?.[0]?.text ?? "—"}\n- コア機能: ${brief?.coreFeatures?.[0] ?? "—"}`;
-    cooSummary = `**結論:** セグメントを1つに絞るとCACが下がります。\n\n**理由:** 「${name}」が万人向けになるとメッセージがぼやけます。\n\n**質問:** 支払い意思の高いニッチに絞りますか？`;
-    cooDetail = `### 市場\n- 懸念: ${input.cooReview?.concerns?.[0] ?? "ターゲット未定"}`;
-  } else if (focus === "platform") {
-    const mustHave = psf?.mvpFeatures.mustHave.join("、") ?? "";
-    plannerSummary = `**結論:** モバイル先が妥当です。\n\n**理由:** 「${name}」のジョブは隙間時間の入力で、Must Have「${mustHave.slice(0, 60)}」はモバイル前提です。\n\n**質問:** 4週間モバイルのみでリテンションを見ますか？`;
-    plannerDetail = `### PSF\n- Top problem: ${psf?.topProblem ?? "—"}\n- Recommendation: ${psf?.recommendation ?? "—"}`;
-    cooSummary = `**結論:** モバイルファーストは獲得に有利です。\n\n**理由:** 単一プラットフォームの方が実行リスクが下がります。\n\n**質問:** Web管理画面は第2フェーズでよいですか？`;
-    cooDetail = `### 実行\n- 開発リソースは1.5倍想定`;
-  } else {
-    plannerSummary = `**結論:** 次は「${brief?.recommendedNextStep?.slice(0, 80) ?? "検証"}」が優先です。\n\n**理由:** 「${name}」の成功指標は「${brief?.successMetrics ?? input.successGoal}」です。\n\n**質問:** 今週どの仮説を5ユーザーで潰しますか？`;
-    plannerDetail = `### Brief\n${brief?.projectSummary?.slice(0, 200) ?? "—"}`;
-    cooSummary = `**結論:** 議論で合意した変更だけ Brief に反映しましょう。\n\n**理由:** COO推奨は ${input.cooReview?.recommendation ?? "—"} です。\n\n**質問:** 承認前に他に懸念はありますか？`;
-    cooDetail = `### COO\n${input.cooReview?.executiveSummary?.slice(0, 240) ?? "—"}`;
+  if (focus === "charts") {
+    plannerSummary = thread
+      ? "先ほどのグラフの話なら、まずサマリー表示で十分だと思います。"
+      : "グラフは Should Have に回し、入力習慣を Must Have に集中したいです。";
+    cooSummary = wantCoo
+      ? "グラフ競争より獲得・継続 KPI を先に置きたいです。開発コストも抑えられます。"
+      : cooSummary;
   }
 
   const suggestedChanges: BriefChangeProposal[] = [];
-  const now = new Date().toISOString();
+  const discussionSignal = shouldShowDiscussionDecisionSignal(ceoMsg);
+  const escalation = agentsSuggestEscalation(plannerSummary, cooSummary);
 
-  if (focus === "charts") {
-    const before = mvp.join("\n") || brief?.coreFeatures.join("\n") || "";
-    suggestedChanges.push({
-      id: proposalId(),
-      title: "Mark monthly chart as Should Have in MVP",
-      description: "Reflect discussion: chart deferred from Must Have.",
-      reason: "CEO asked about charts; Planner and COO agreed input habit comes first.",
-      impact: "Reduces MVP scope creep while documenting chart intent.",
-      affectedSections: ["mvp", "brief"],
-      targetSection: "mvp",
-      before: before.slice(0, 400),
-      after: `${before}\n[Should Have] Monthly spending chart after 3+ weekly inputs`,
-      confidence: 76,
-      status: "pending",
-      proposedAt: now,
-    });
+  if (!wantPlanner) {
+    plannerSummary = "";
+    plannerDetail = "";
   }
-
-  if (focus === "audience" && brief?.targetUsers) {
-    suggestedChanges.push({
-      id: proposalId(),
-      title: "Sharpen primary persona in target users",
-      description: "Narrow CPF/Brief alignment from audience discussion.",
-      reason: "CEO flagged audience may be too broad.",
-      impact: "Clearer messaging and MVP focus for " + name,
-      affectedSections: ["cpf", "brief"],
-      targetSection: "cpf",
-      before: brief.targetUsers.slice(0, 300),
-      after: `${brief.targetUsers}\n[Primary persona] Couples reviewing shared expenses weekly.`,
-      confidence: 68,
-      status: "pending",
-      proposedAt: now,
-    });
+  if (!wantCoo) {
+    cooSummary = "";
+    cooDetail = "";
   }
-
-  const plannerChallenged = mode === "challenge" && /前提|疑う|challenge/i.test(plannerSummary);
-  const cooRaisedConcern = /反対|risk|懸念|コスト|競合/i.test(cooSummary);
 
   return {
+    targetAudience: audience,
     plannerResponse: plannerSummary,
     plannerSummary,
     plannerDetail,
@@ -199,7 +323,9 @@ export function runDiscussionHeuristic(
     cooDetail,
     suggestedChanges,
     relatedSection,
-    plannerChallenged,
-    cooRaisedConcern,
+    discussionSignal,
+    plannerSuggestsDecision: escalation.planner,
+    cooSuggestsDecision: escalation.coo,
+    cooRaisedConcern: wantCoo && /慎重|コスト|懸念/i.test(cooSummary),
   };
 }

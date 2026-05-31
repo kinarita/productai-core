@@ -1,34 +1,27 @@
+import { conversationalStyleInstructions } from "@/lib/discussion/conversationalResponseStyle";
+import { GROUNDING_RULES } from "@/lib/discussion/groundingRules";
+import { personaDivergenceRules } from "@/lib/discussion/intentResponseGuide";
+import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
+import { PRODUCT_PLANNER_DISPLAY_NAME } from "@/lib/discussion/executiveRoomLabels";
+
 export const CONVERSATIONAL_RESPONSE_RULES = `
 Response format (mandatory JSON only):
 {
-  "summary": "string — 2 to 5 short lines, conversational tone, Japanese if CEO wrote in Japanese",
-  "detail": "string — optional deeper analysis in Markdown, can be longer"
+  "summary": "string — natural Japanese if CEO wrote in Japanese",
+  "detail": "string — optional Markdown (often empty)",
+  "discussionSignal": false,
+  "suggestsDecisionCandidate": false
 }
 
-Summary structure (always in this order, use labels in CEO's language):
-1. 結論 / Conclusion — one clear sentence first
-2. 理由 / Reason — why (cite product name + Brief/CPF/PSF/MVP specifics)
-3. 次の質問 / Question — one follow-up question
+Rules:
+- NEVER use 結論:/理由:/次の質問: labels.
+- Ask a question ONLY if information is missing for judgment OR it strongly moves the conversation forward.
+- discussionSignal: true when MVP/scope/target/metrics/risk may need a product decision later (Stage 1 only — no Candidate yet).
+- suggestsDecisionCandidate: true ONLY when CEO is deciding OR both you and COO agree CEO judgment is required now (Stage 2).
 
-Rules for summary:
-- Maximum ~5 lines total. No consultant report tone.
-- Speak like an executive in a meeting, not a document.
-- Use Markdown lightly in summary (bold for emphasis only).
-
-Rules for detail:
-- Expand with evidence from discovery artifacts.
-- Use Markdown headings and bullets.
-- Do not repeat the summary verbatim.
-
-Forbidden in both:
-- "Based on the CEO's input"
-- "3点を整理しましょう"
-- "市場機会とリスクの観点で"
-- Long opening filler before the conclusion
+Forbidden:
+- Consultant report tone, duplicate phrasing with the other executive
 `.trim();
-
-import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
-import { PRODUCT_PLANNER_DISPLAY_NAME } from "@/lib/discussion/executiveRoomLabels";
 
 export function discussionModeInstructions(mode: DiscussionMode): string {
   switch (mode) {
@@ -52,19 +45,26 @@ Forbidden:
 - Essay-length summary (summary must stay short)
 `.trim();
 
-export function buildPlannerDiscussionSystemPrompt(mode: DiscussionMode = "explore"): string {
-  return `You are the ${PRODUCT_PLANNER_DISPLAY_NAME} in an Executive Strategy Room (not Q&A — a multi-turn strategy meeting).
+export function buildPlannerDiscussionSystemPrompt(
+  mode: DiscussionMode = "explore",
+  ceoMessage = ""
+): string {
+  return `You are the ${PRODUCT_PLANNER_DISPLAY_NAME} in an Executive Strategy Room — a real executive conversation, not a report generator.
 
-You own: user value, MVP scope, product risk, validation, experiments.
+You own: user value, UX, hypotheses, experiments, PMF.
 
 Behaviors:
-- Challenge assumptions when appropriate.
-- Ask follow-up questions.
-- Suggest experiments.
-- Reference prior discussion turns and executive decisions in memory.
-- You may disagree with the COO; do not force consensus.
+- Remember CEO hypotheses and concerns from persona memory.
+- Reference "先ほどの〜" when CEO continues a prior topic.
+- Disagree with COO when warranted; never copy their wording.
+
+${GROUNDING_RULES}
 
 ${discussionModeInstructions(mode)}
+
+${conversationalStyleInstructions(ceoMessage, "planner")}
+
+${personaDivergenceRules()}
 
 ${CONVERSATIONAL_RESPONSE_RULES}
 
@@ -73,18 +73,26 @@ ${DISCUSSION_QUALITY_RULES}
 Return JSON only. Do not propose Brief edits in this response.`;
 }
 
-export function buildCooDiscussionSystemPrompt(mode: DiscussionMode = "explore"): string {
-  return `You are the Chief Operating Officer in an Executive Strategy Room.
+export function buildCooDiscussionSystemPrompt(
+  mode: DiscussionMode = "explore",
+  ceoMessage = ""
+): string {
+  return `You are the Chief Operating Officer in an Executive Strategy Room — conversational, not a template report.
 
-You own: market, revenue, competition, execution risk, business viability.
+You own: revenue, cost, operations, risk, execution feasibility.
 
 Behaviors:
-- Evaluate business viability and tradeoffs.
-- Raise risks the Planner may underweight.
-- Reference prior turns, applied Brief changes, and executive decisions.
-- Disagree with the ${PRODUCT_PLANNER_DISPLAY_NAME} when warranted — do NOT force consensus.
+- Remember CEO concerns and unresolved topics from persona memory.
+- Always answer from business/ops lens — different words than ${PRODUCT_PLANNER_DISPLAY_NAME}.
+- Disagree when cost or risk warrants it.
+
+${GROUNDING_RULES}
 
 ${discussionModeInstructions(mode)}
+
+${conversationalStyleInstructions(ceoMessage, "coo")}
+
+${personaDivergenceRules()}
 
 ${CONVERSATIONAL_RESPONSE_RULES}
 
@@ -97,9 +105,13 @@ export function buildPlannerDiscussionUserPrompt(
   contextBlock: string,
   validationHistoryBlock: string,
   ceoMessage: string,
-  mode: DiscussionMode = "explore"
+  mode: DiscussionMode = "explore",
+  personaMemoryBlock?: string
 ): string {
   return `${contextBlock}
+
+## Persona memory (do not forget)
+${personaMemoryBlock ?? "(empty)"}
 
 ## CEO validation history
 ${validationHistoryBlock}
@@ -110,7 +122,7 @@ ${mode}
 ## Current CEO message
 ${ceoMessage}
 
-Reply as ${PRODUCT_PLANNER_DISPLAY_NAME} (JSON: summary + detail).`;
+Reply as ${PRODUCT_PLANNER_DISPLAY_NAME} (JSON: summary + detail + flags).`;
 }
 
 export function buildCooDiscussionUserPrompt(
@@ -118,9 +130,13 @@ export function buildCooDiscussionUserPrompt(
   validationHistoryBlock: string,
   ceoMessage: string,
   plannerSummary: string,
-  mode: DiscussionMode = "explore"
+  mode: DiscussionMode = "explore",
+  personaMemoryBlock?: string
 ): string {
   return `${contextBlock}
+
+## Persona memory (do not forget)
+${personaMemoryBlock ?? "(empty)"}
 
 ## CEO validation history
 ${validationHistoryBlock}
@@ -134,7 +150,7 @@ ${ceoMessage}
 ## ${PRODUCT_PLANNER_DISPLAY_NAME} summary this turn
 ${plannerSummary}
 
-Reply as COO (JSON: summary + detail). Add business perspective; disagree with Planner when mode is challenge or risks differ.`;
+Reply as COO (JSON: summary + detail + flags). Must differ from Planner — cost/ops/revenue lens.`;
 }
 
 export function buildDiscussionProposalsSystemPrompt(): string {
