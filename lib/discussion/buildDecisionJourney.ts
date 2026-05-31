@@ -33,6 +33,8 @@ export function buildDecisionJourney(input: {
     const status = normalizeDecisionStatus(d);
     const topic = topicFromDecision(d, input.messages);
     let result = "Pending CEO decision";
+    let decisionLine = "Pending";
+
     if (status === "approved" || status === "applied_to_brief") {
       const applied = input.appliedProposals.find(
         (p) => p.id === d.sourceProposalId || p.title === d.title
@@ -40,30 +42,44 @@ export function buildDecisionJourney(input: {
       result = applied
         ? `Brief ${input.briefVersionLabel ?? "updated"} — ${applied.title}`
         : `CEO: ${DECISION_STATUS_LABELS.approved}`;
+      decisionLine = DECISION_STATUS_LABELS.approved;
     } else if (status === "rejected") {
       result = DECISION_STATUS_LABELS.rejected;
+      decisionLine = DECISION_STATUS_LABELS.rejected;
     } else if (status === "on_hold") {
       result = DECISION_STATUS_LABELS.on_hold;
+      decisionLine = DECISION_STATUS_LABELS.on_hold;
     }
 
     const reason =
-      status === "approved" || status === "applied_to_brief"
-        ? d.plannerRationale || d.rationale
-        : status === "rejected"
-          ? d.cooRationale || d.rationale
-          : d.rationale;
+      status === "on_hold"
+        ? d.cooRationale || d.rationale
+        : status === "approved" || status === "applied_to_brief"
+          ? d.plannerRationale || d.rationale
+          : status === "rejected"
+            ? d.cooRationale || d.rationale
+            : d.cooRationale || d.plannerRationale || d.rationale;
 
     const ceoLine =
       status === "pending"
         ? "Pending"
         : DECISION_STATUS_LABELS[status] ?? status;
 
+    const plannerComment = d.plannerRationale?.slice(0, 120) ?? "";
+    const cooComment = d.cooRationale?.slice(0, 120) ?? "";
+
     journeys.push({
       topic,
-      discussion: `CEO: ${topic.slice(0, 60)} → Planner: ${voteLabel(d.plannerVote)} · COO: ${voteLabel(d.cooVote)}`,
+      discussion: [
+        plannerComment ? `Planner: ${plannerComment}` : `Planner: ${voteLabel(d.plannerVote)}`,
+        cooComment ? `COO: ${cooComment}` : `COO: ${voteLabel(d.cooVote)}`,
+      ].join(" · "),
       planner: voteLabel(d.plannerVote),
+      plannerComment,
       coo: voteLabel(d.cooVote),
+      cooComment,
       ceo: ceoLine,
+      decision: decisionLine,
       reason: reason.slice(0, 280),
       result,
     });

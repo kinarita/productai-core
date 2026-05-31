@@ -58,6 +58,7 @@ function DecisionCandidateCard({
   return (
     <article className="rounded-lg border border-accent/25 bg-indigo-50/25 px-4 py-3">
       <p className="text-sm font-semibold text-foreground">{d.title}</p>
+      <p className="mt-0.5 text-[10px] text-muted">状態: 議論中 — CEO の判断待ち</p>
 
       <div className="mt-3 space-y-2 text-xs">
         <VoteRow

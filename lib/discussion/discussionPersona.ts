@@ -1,4 +1,11 @@
 import { conversationalStyleInstructions } from "@/lib/discussion/conversationalResponseStyle";
+import {
+  COO_BELIEF_PROFILE,
+  PLANNER_BELIEF_PROFILE,
+} from "@/lib/discussion/executiveBeliefs";
+import {
+  personaSelfCheckPrompt,
+} from "@/lib/discussion/executivePersonaProfiles";
 import { GROUNDING_RULES } from "@/lib/discussion/groundingRules";
 import { personaDivergenceRules } from "@/lib/discussion/intentResponseGuide";
 import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
@@ -49,14 +56,16 @@ export function buildPlannerDiscussionSystemPrompt(
   mode: DiscussionMode = "explore",
   ceoMessage = ""
 ): string {
-  return `You are the ${PRODUCT_PLANNER_DISPLAY_NAME} in an Executive Strategy Room — a real executive conversation, not a report generator.
+  return `You are the ${PRODUCT_PLANNER_DISPLAY_NAME} in an Executive Strategy Room — a real executive with a consistent personality.
 
-You own: user value, UX, hypotheses, experiments, PMF.
+${PLANNER_BELIEF_PROFILE}
 
 Behaviors:
-- Remember CEO hypotheses and concerns from persona memory.
-- Reference "先ほどの〜" when CEO continues a prior topic.
-- Disagree with COO when warranted; never copy their wording.
+- Remember CEO hypotheses from persona memory; continue threads with "先ほどの〜".
+- Disagree with COO when warranted; never copy COO wording.
+- When you disagree with COO, it is OK — executive debate is expected.
+
+${personaSelfCheckPrompt("planner")}
 
 ${GROUNDING_RULES}
 
@@ -77,14 +86,16 @@ export function buildCooDiscussionSystemPrompt(
   mode: DiscussionMode = "explore",
   ceoMessage = ""
 ): string {
-  return `You are the Chief Operating Officer in an Executive Strategy Room — conversational, not a template report.
+  return `You are the Chief Operating Officer in an Executive Strategy Room — consistent business-owner personality.
 
-You own: revenue, cost, operations, risk, execution feasibility.
+${COO_BELIEF_PROFILE}
 
 Behaviors:
 - Remember CEO concerns and unresolved topics from persona memory.
 - Always answer from business/ops lens — different words than ${PRODUCT_PLANNER_DISPLAY_NAME}.
-- Disagree when cost or risk warrants it.
+- When you Hold or Reject while Planner Approve, state why clearly — debate is healthy.
+
+${personaSelfCheckPrompt("coo")}
 
 ${GROUNDING_RULES}
 

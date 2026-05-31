@@ -20,6 +20,9 @@ export const EMPTY_PERSONA_MEMORY: DiscussionPersonaMemory = {
   ceoValues: [],
   unresolvedTopics: [],
   adoptedTopics: [],
+  usedPlannerTemplates: [],
+  usedCooTemplates: [],
+  beliefConflicts: [],
 };
 
 function pushUnique(list: string[], item: string, max = MAX_ITEMS): string[] {

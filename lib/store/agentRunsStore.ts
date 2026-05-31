@@ -90,6 +90,7 @@ import { detectStrategySignals } from "@/lib/discussion/detectStrategySignals";
 import { createDecisionItemFromCeoMessage } from "@/lib/discussion/createDecisionFromProposal";
 import {
   createDecisionFromDiscussionTurn,
+  inferDecisionVotesWithReasons,
   inferInternalDiscussionMode,
   inferVotesFromDiscussionTurn,
   registerAutoDecisionsFromProposals,
@@ -100,6 +101,24 @@ import { classifyDiscussionIntent } from "@/lib/discussion/discussionIntent";
 import {
   updatePersonaMemory,
 } from "@/lib/discussion/personaMemory";
+import {
+  appendBeliefConflictToMemory,
+} from "@/lib/discussion/buildBeliefConflicts";
+import {
+  buildExecutiveDebateContext,
+  cooBeliefFromReason,
+  isExecutiveDebate,
+  plannerBeliefFromReason,
+} from "@/lib/discussion/executiveDebate";
+import {
+  linkDebatesToDecision,
+  resolveDebatesForDecision,
+} from "@/lib/discussion/resolveExecutiveDebate";
+import { recordTemplateUsage } from "@/lib/discussion/templatePhraseGuard";
+import {
+  personaSelfCheckCoo,
+  personaSelfCheckPlanner,
+} from "@/lib/discussion/executivePersonaProfiles";
 import {
   audienceIncludesCoo,
   audienceIncludesPlanner,
@@ -1016,7 +1035,17 @@ function setCeoDecisionOnItem(
     );
   }
 
-  let nextMeta = mergePlannerMeta(meta, { decisionItems, pendingProposals });
+  const discussionMessages = resolveDebatesForDecision(
+    meta.discussionMessages ?? [],
+    item,
+    status
+  );
+
+  let nextMeta = mergePlannerMeta(meta, {
+    decisionItems,
+    pendingProposals,
+    discussionMessages,
+  });
   const projectName = projectNameFromIdea(run.input.idea);
   let handoff = refreshArchitectHandoffForRun({ ...run, plannerMeta: nextMeta }, projectName);
 
@@ -1122,6 +1151,7 @@ function generateMeetingMinutesForMission(
     appliedProposals: meta.pendingProposals ?? [],
     openQuestionSignals: openFromSignals,
     briefVersion: meta.briefVersion,
+    discussionPersonaMemory: meta.discussionPersonaMemory,
   });
 
   const nextMeta = mergePlannerMeta(meta, { meetingMinutes: minutes });
@@ -1464,6 +1494,69 @@ async function sendDiscoveryDiscussionMessage(
     (data.discussionSignal === true ||
       shouldShowDiscussionDecisionSignal(userMessage));
 
+  const turnVoteDetails = inferDecisionVotesWithReasons(
+    data.plannerSummary,
+    data.cooSummary,
+    userMessage
+  );
+  const turnVotes = {
+    plannerVote: turnVoteDetails.plannerVote,
+    cooVote: turnVoteDetails.cooVote,
+  };
+  const executiveDebate =
+    wantPlanner &&
+    wantCoo &&
+    isExecutiveDebate(turnVotes.plannerVote, turnVotes.cooVote);
+
+  const debateCtx = executiveDebate
+    ? buildExecutiveDebateContext({
+        ceoMessage: userMessage,
+        plannerSummary: data.plannerSummary,
+        cooSummary: data.cooSummary,
+        plannerVote: turnVotes.plannerVote,
+        cooVote: turnVotes.cooVote,
+        plannerRationale: turnVoteDetails.plannerRationale,
+        cooRationale: turnVoteDetails.cooRationale,
+        memory: personaMemory,
+      })
+    : undefined;
+
+  const plannerTextChecked = personaSelfCheckPlanner(
+    plannerText,
+    false,
+    personaMemory
+  );
+  const cooTextChecked = personaSelfCheckCoo(cooText, personaMemory);
+
+  let memoryAfterTemplates = recordTemplateUsage(
+    personaMemory,
+    plannerTextChecked,
+    cooTextChecked
+  );
+  if (debateCtx) {
+    memoryAfterTemplates = {
+      ...memoryAfterTemplates,
+      beliefConflicts: appendBeliefConflictToMemory(
+        memoryAfterTemplates.beliefConflicts,
+        {
+          topic: debateCtx.topic,
+          plannerBelief: plannerBeliefFromReason(debateCtx.plannerReason),
+          cooBelief: cooBeliefFromReason(debateCtx.cooReason),
+        }
+      ),
+    };
+  }
+
+  const debateFields = debateCtx
+    ? {
+        debateTopic: debateCtx.topic,
+        debatePlannerReason: debateCtx.plannerReason,
+        debateCooReason: debateCtx.cooReason,
+        debateWhy: debateCtx.whyDebate,
+        debateSummary: debateCtx.debateSummary,
+      }
+    : {};
+
   const newMessages: DiscussionMessage[] = [];
   if (wantPlanner && plannerText) {
     activities.push(plannerRespondedToDiscussionActivity(missionId));
@@ -1471,13 +1564,17 @@ async function sendDiscoveryDiscussionMessage(
       id: discussionMessageId(),
       missionId,
       participant: "planner",
-      message: plannerText,
-      summary: plannerText,
+      message: plannerTextChecked,
+      summary: plannerTextChecked,
       detail: data.plannerDetail,
       createdAt: new Date().toISOString(),
       relatedSection: data.relatedSection,
       discussionDecisionSignal: stage1Signal,
       suggestsDecisionCandidate: stage2Candidate,
+      executiveDebate,
+      agentVote: turnVotes.plannerVote,
+      debatePartnerVote: executiveDebate ? turnVotes.cooVote : undefined,
+      ...debateFields,
     });
   }
   if (wantCoo && cooText) {
@@ -1486,13 +1583,17 @@ async function sendDiscoveryDiscussionMessage(
       id: discussionMessageId(),
       missionId,
       participant: "coo",
-      message: cooText,
-      summary: cooText,
-      detail: data.cooDetail,
+      message: cooTextChecked,
+      summary: cooTextChecked,
+      detail: debateCtx?.debateSummary ?? data.cooDetail,
       createdAt: new Date().toISOString(),
       relatedSection: data.relatedSection,
       discussionDecisionSignal: stage1Signal,
       suggestsDecisionCandidate: stage2Candidate,
+      executiveDebate,
+      agentVote: turnVotes.cooVote,
+      debatePartnerVote: executiveDebate ? turnVotes.plannerVote : undefined,
+      ...debateFields,
     });
   }
 
@@ -1535,7 +1636,8 @@ async function sendDiscoveryDiscussionMessage(
   if (newProposals.length === 0) {
     const turnVotes = inferVotesFromDiscussionTurn(
       data.plannerSummary,
-      data.cooSummary
+      data.cooSummary,
+      userMessage
     );
     if (
       shouldAutoCreateDecisionCandidate({
@@ -1569,8 +1671,22 @@ async function sendDiscoveryDiscussionMessage(
 
   const pendingWithStatus = [...priorPending, ...registered.proposals];
 
+  let linkedNewMessages = newMessages;
+  const newDecisions = decisionItems.slice(priorCount);
+  for (const dec of newDecisions) {
+    if (!executiveDebate) continue;
+    linkedNewMessages = linkDebatesToDecision(
+      linkedNewMessages,
+      linkedNewMessages.filter((m) => m.executiveDebate).map((m) => m.id),
+      dec.id
+    );
+  }
+
   const updatedMemory = updatePersonaMemory(
-    latest.plannerMeta?.discussionPersonaMemory ?? personaMemory,
+    {
+      ...(latest.plannerMeta?.discussionPersonaMemory ?? personaMemory),
+      ...memoryAfterTemplates,
+    },
     userMessage,
     decisionItems
   );
@@ -1579,7 +1695,7 @@ async function sendDiscoveryDiscussionMessage(
     discussionMode,
     discussionMessages: [
       ...(latest.plannerMeta?.discussionMessages ?? []),
-      ...newMessages,
+      ...linkedNewMessages,
     ],
     pendingProposals: pendingWithStatus,
     strategySignals: allSignals,

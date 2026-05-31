@@ -51,15 +51,25 @@ export interface MeetingMinutesDecisionEntry {
   impact: string;
 }
 
-/** Phase 28 / 28.5 — traceable path from discussion to outcome. */
+/** Phase 28 / 29 — traceable path from discussion to outcome. */
 export interface MeetingMinutesDecisionJourneyEntry {
   topic: string;
   discussion: string;
   planner: string;
+  plannerComment?: string;
   coo: string;
+  cooComment?: string;
   ceo: string;
+  decision?: string;
   reason: string;
   result: string;
+}
+
+export interface MeetingMinutesBeliefConflictEntry {
+  topic: string;
+  plannerBelief: string;
+  cooBelief: string;
+  ceoDecision?: string;
 }
 
 export interface MeetingMinutes {
@@ -67,6 +77,8 @@ export interface MeetingMinutes {
   discussionTopics: string[];
   /** Phase 28 — discussion → votes → CEO → Brief outcome */
   decisionJourney?: MeetingMinutesDecisionJourneyEntry[];
+  /** Phase 29.5 — why executives disagreed */
+  beliefConflicts?: MeetingMinutesBeliefConflictEntry[];
   decisionsMade: MeetingMinutesDecisionEntry[];
   pendingDecisions?: string[];
   rejectedIdeas: string[];

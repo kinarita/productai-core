@@ -4,12 +4,18 @@ import {
   inferAgentVotes,
 } from "@/lib/discussion/createDecisionFromProposal";
 import type { AgentVote, DecisionItem } from "@/lib/discussion/decisionGovernanceTypes";
+import { classifyDiscussionIntent } from "@/lib/discussion/discussionIntent";
 import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 import { shouldAutoCreateDecisionCandidate } from "@/lib/discussion/decisionCandidateDiscipline";
 import { resolveDecisionCandidateTitle } from "@/lib/discussion/discussionTopic";
 import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
 import type { DiscussionPersonaMemory } from "@/lib/discussion/discussionTypes";
-import { classifyDiscussionIntent } from "@/lib/discussion/discussionIntent";
+import {
+  executiveCommentForVote,
+  inferStrongExecutiveVotes,
+  personaSelfCheckCoo,
+  personaSelfCheckPlanner,
+} from "@/lib/discussion/executivePersonaProfiles";
 
 function decisionId(): string {
   return `dec-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -39,23 +45,10 @@ export {
 
 export function inferVotesFromDiscussionTurn(
   plannerSummary?: string,
-  cooSummary?: string
+  cooSummary?: string,
+  ceoMessage?: string
 ): { plannerVote: AgentVote; cooVote: AgentVote } {
-  const p = plannerSummary ?? "";
-  const c = cooSummary ?? "";
-  const pl = p.toLowerCase();
-  const cl = c.toLowerCase();
-  let plannerVote: AgentVote = "neutral";
-  let cooVote: AgentVote = "neutral";
-  if (/賛成|support|recommend|必要だと|価値が高|approve|👍/i.test(p)) plannerVote = "approve";
-  if (/反対|却下|見送|不要/i.test(p)) plannerVote = "reject";
-  if (/賛成|support|recommend|align/i.test(c)) cooVote = "approve";
-  if (/反対|却下|見送/i.test(c)) cooVote = "reject";
-  if (/慎重|hold|保留|コスト不明|運用コスト|様子見|プライバシー|実現性/i.test(c)) {
-    cooVote = "hold";
-  }
-  if (/簡易版|段階|should have/i.test(pl) && cooVote === "neutral") cooVote = "hold";
-  return { plannerVote, cooVote };
+  return inferStrongExecutiveVotes(plannerSummary, cooSummary, ceoMessage);
 }
 
 /** Phase 28.5 — votes + short reasons for Decision Candidate cards. */
@@ -69,31 +62,47 @@ export function inferDecisionVotesWithReasons(
   plannerRationale: string;
   cooRationale: string;
 } {
-  const votes = inferVotesFromDiscussionTurn(plannerSummary, cooSummary);
-  const p = plannerSummary ?? "";
-  const c = cooSummary ?? "";
+  const p = personaSelfCheckPlanner(plannerSummary ?? "");
+  const c = personaSelfCheckCoo(cooSummary ?? "");
+  const votes = inferStrongExecutiveVotes(p, c, ceoMessage);
 
   let plannerRationale = extractRationaleFromAgentText(p);
   let cooRationale = extractRationaleFromAgentText(c);
 
+  const topic = ceoMessage?.slice(0, 40);
+
   if (!plannerRationale || plannerRationale.length < 8) {
-    if (votes.plannerVote === "approve") plannerRationale = "ユーザー価値・UX の観点で前向きです。";
-    else if (votes.plannerVote === "reject") plannerRationale = "MVP 焦点を守るため見送りを推奨します。";
-    else plannerRationale = "追加情報があれば判断できます。";
+    plannerRationale = executiveCommentForVote("planner", votes.plannerVote, ceoMessage);
   }
   if (!cooRationale || cooRationale.length < 8) {
-    if (votes.cooVote === "hold") cooRationale = "実現コスト・運用負荷が未確定のため慎重です。";
-    else if (votes.cooVote === "approve") cooRationale = "事業・実行の観点で問題ありません。";
-    else if (votes.cooVote === "reject") cooRationale = "初期開発・運用コストが見合いません。";
-    else cooRationale = "コストとリスクの精査が必要です。";
+    cooRationale = executiveCommentForVote("coo", votes.cooVote, ceoMessage);
   }
 
-  if (/ライブ|カメラ/i.test(ceoMessage ?? "")) {
-    if (votes.plannerVote === "approve" && plannerRationale.length < 40) {
-      plannerRationale = "入力負荷削減とデータ鮮度の観点でメリットがあります。";
+  if (/ライブ|ocr|OCR/i.test(ceoMessage ?? "")) {
+    if (votes.plannerVote === "approve") {
+      plannerRationale = "入力負荷を大幅に削減できる可能性があります。";
     }
     if (votes.cooVote === "hold") {
-      cooRationale = "実現コスト・運用体制が不明なため Hold です。";
+      cooRationale = "OCR精度と開発工数が不明です。検証してからでも遅くありません。";
+    }
+  }
+
+  if (/音声|voice input|voice/i.test(ceoMessage ?? "")) {
+    if (votes.plannerVote === "approve") {
+      plannerRationale =
+        "ユーザーが買い物中に入力不要で使える体験は、PMFに近づく可能性があります。";
+    }
+    if (votes.cooVote === "hold" || votes.cooVote === "reject") {
+      cooRationale = "OCR・音声認識精度が不明です。まず検証データが必要です。";
+    }
+  }
+
+  if (/グラフ|chart/i.test(ceoMessage ?? "")) {
+    if (votes.plannerVote === "approve") {
+      plannerRationale = "ユーザー価値・リテンションの観点で有効です。";
+    }
+    if (votes.cooVote === "hold") {
+      cooRationale = "MVPには重いかもしれません。開発工数調査が必要です。";
     }
   }
 

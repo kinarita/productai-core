@@ -1,4 +1,5 @@
 import type { ProductBriefSections } from "@/lib/agents/planner/plannerTypes";
+import type { AgentVote } from "@/lib/discussion/decisionGovernanceTypes";
 import type {
   BriefChangeSummary,
   BriefVersionDiff,
@@ -31,6 +32,30 @@ export interface DiscussionMessage {
   suggestsDecisionCandidate?: boolean;
   /** Phase 28.5 — Stage 1: product decision may emerge (no Candidate yet) */
   discussionDecisionSignal?: boolean;
+  /** Phase 29 — executive debate this turn */
+  executiveDebate?: boolean;
+  /** Phase 29 — agent stance this turn */
+  agentVote?: AgentVote;
+  /** Phase 29 — paired vote when executiveDebate (COO bubble shows Planner stance) */
+  debatePartnerVote?: AgentVote;
+  /** Phase 29.5 — debate clarity */
+  debateTopic?: string;
+  debatePlannerReason?: string;
+  debateCooReason?: string;
+  debateWhy?: string;
+  debateSummary?: string;
+  /** Phase 29.6 — debate closed after CEO decision */
+  debateResolved?: boolean;
+  debateResolutionStatus?: import("@/lib/discussion/decisionCandidateStatus").DecisionCandidateStatus;
+  /** Phase 29.6 — link to governing Decision Candidate */
+  debateDecisionId?: string;
+}
+
+export interface BeliefConflictRecord {
+  topic: string;
+  plannerBelief: string;
+  cooBelief: string;
+  ceoDecision?: string;
 }
 
 /** Phase 28.5 — cross-turn CEO & topic memory for Planner/COO */
@@ -40,6 +65,10 @@ export interface DiscussionPersonaMemory {
   ceoValues: string[];
   unresolvedTopics: string[];
   adoptedTopics: string[];
+  /** Phase 29.5 — template phrase tracking */
+  usedPlannerTemplates?: string[];
+  usedCooTemplates?: string[];
+  beliefConflicts?: BeliefConflictRecord[];
 }
 
 export interface BriefChangeProposal {

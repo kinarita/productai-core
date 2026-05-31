@@ -1,32 +1,41 @@
 import type { BriefChangeProposal } from "@/lib/discussion/discussionTypes";
 import type { AgentVote, DecisionItem } from "@/lib/discussion/decisionGovernanceTypes";
+import {
+  executiveCommentForVote,
+  inferStrongExecutiveVotes,
+} from "@/lib/discussion/executivePersonaProfiles";
 
 function decisionId(): string {
   return `dec-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
-/** Infer Planner/COO votes from proposal confidence and keywords (Phase 26). */
+/** Infer Planner/COO votes from proposal (Phase 29 — strong votes, no default Neutral). */
 export function inferAgentVotes(proposal: BriefChangeProposal): {
   plannerVote: AgentVote;
   cooVote: AgentVote;
 } {
-  const text = `${proposal.title} ${proposal.reason} ${proposal.impact}`.toLowerCase();
-  const plannerVote: AgentVote =
-    proposal.confidence >= 72 ? "approve" : proposal.confidence >= 55 ? "neutral" : "reject";
+  const text = `${proposal.title} ${proposal.reason} ${proposal.impact}`;
+  const scopeExpansion = /scope|mvp|graph|feature|機能|追加|chart|ocr/i.test(text);
 
-  let cooVote: AgentVote = "neutral";
-  if (/scope|mvp|graph|feature|入力|habit|validation/i.test(text)) {
-    cooVote = proposal.confidence >= 65 ? "neutral" : "reject";
+  let plannerVote: AgentVote =
+    proposal.confidence >= 60 ? "approve" : "hold";
+  let cooVote: AgentVote = scopeExpansion ? "hold" : "approve";
+
+  if (/defer|should have|phase 2|第2|段階/i.test(text)) {
+    cooVote = "hold";
   }
-  if (/market|revenue|competitor|cost|risk|競合|収益/i.test(text)) {
-    cooVote = proposal.confidence < 60 ? "reject" : "neutral";
+  if (/cost|risk|競合|コスト|リスク|重い/i.test(text) && proposal.confidence < 70) {
+    cooVote = "reject";
   }
-  if (/defer|should have|phase 2|第2/i.test(text)) {
+  if (proposal.confidence >= 78 && !scopeExpansion) {
     cooVote = "approve";
-    if (plannerVote === "approve") cooVote = "reject";
   }
 
-  return { plannerVote, cooVote };
+  return inferStrongExecutiveVotes(
+    plannerVote === "approve" ? "賛成 — user value" : "保留",
+    cooVote === "hold" ? "慎重 — コスト" : cooVote === "reject" ? "反対" : "賛成",
+    text
+  );
 }
 
 export function createDecisionItemFromProposal(
@@ -45,8 +54,12 @@ export function createDecisionItemFromProposal(
     cooVote: votes.cooVote,
     status: "pending",
     impact: proposal.impact,
-    plannerRationale: proposal.reason?.slice(0, 280),
-    cooRationale: proposal.impact?.slice(0, 280),
+    plannerRationale:
+      proposal.reason?.slice(0, 280) ||
+      executiveCommentForVote("planner", votes.plannerVote, proposal.title),
+    cooRationale:
+      proposal.impact?.slice(0, 280) ||
+      executiveCommentForVote("coo", votes.cooVote, proposal.title),
     createdAt: now,
     updatedAt: now,
   };

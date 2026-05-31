@@ -14,6 +14,10 @@ import {
   audienceIncludesPlanner,
   resolveDiscussionAudience,
 } from "@/lib/discussion/resolveDiscussionAudience";
+import {
+  personaSelfCheckCoo,
+  personaSelfCheckPlanner,
+} from "@/lib/discussion/executivePersonaProfiles";
 import { classifyDiscussionIntent } from "@/lib/discussion/discussionIntent";
 import {
   agentsSuggestEscalation,
@@ -122,6 +126,85 @@ export function runDiscussionHeuristic(
     };
   }
 
+  if (/音声入力|音声を入れ|voice input/i.test(ceoMsg)) {
+    const plannerSummary = personaSelfCheckPlanner(
+      "面白いですね。もし実現できれば、ユーザーは価格入力をほぼ意識しなくなります。私は価値があると思います。",
+      false,
+      input.discussionPersonaMemory
+    );
+    const cooSummary = wantCoo
+      ? personaSelfCheckCoo(
+          "価値は理解できます。ただ MVP としては重いです。音声認識精度と開発コストが未検証なので、私ならまず小規模実験を提案します。",
+          input.discussionPersonaMemory
+        )
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection: "mvp",
+      discussionSignal: intent !== "decision",
+      plannerSuggestsDecision: intent === "decision",
+      cooSuggestsDecision: intent === "decision" && wantCoo,
+    };
+  }
+
+  if (/ライブ.*ocr|OCR|ライブ動画OCR/i.test(ceoMsg)) {
+    const plannerSummary = personaSelfCheckPlanner(
+      "面白いですね。ライブ動画OCRなら入力負荷を大幅に削減でき、PMFに近づく可能性があります。",
+      false,
+      input.discussionPersonaMemory
+    );
+    const cooSummary = wantCoo
+      ? personaSelfCheckCoo(
+          "慎重に考えるべきです。OCR精度と開発工数が不明です。検証してからでも遅くありません。",
+          input.discussionPersonaMemory
+        )
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection: "mvp",
+      discussionSignal: intent !== "decision",
+      plannerSuggestsDecision: intent === "decision",
+      cooSuggestsDecision: intent === "decision" && wantCoo,
+    };
+  }
+
+  if (/グラフ.*必要|MVP.*グラフ.*必要|必要.*グラフ/i.test(ceoMsg)) {
+    const plannerSummary = personaSelfCheckPlanner(
+      "ユーザーは喜びそうです。リテンションの観点ではグラフは有効だと思います。"
+    );
+    const cooSummary = wantCoo
+      ? personaSelfCheckCoo(
+          "MVPには重いかもしれません。開発工数調査が必要です。"
+        )
+      : "";
+    return {
+      targetAudience: audience,
+      plannerResponse: plannerSummary,
+      plannerSummary,
+      plannerDetail: "",
+      cooResponse: cooSummary,
+      cooSummary,
+      cooDetail: "",
+      suggestedChanges: [],
+      relatedSection: "mvp",
+      discussionSignal: true,
+    };
+  }
+
   if (intent === "decision") {
     const candidateTitle = resolveDecisionCandidateTitle(ceoMsg, {
       personaMemory: input.discussionPersonaMemory,
@@ -156,12 +239,14 @@ export function runDiscussionHeuristic(
     isCeoBrainstormPhrase(ceoMsg) &&
     /ライブ|カメラ|pos/i.test(ceoMsg)
   ) {
-    const topic = absentTopic ?? ( /ライブ/i.test(ceoMsg) ? "ライブカメラ機能" : "POS連携");
-    const plannerSummary = absentTopic
-      ? `面白いですね。${topic}は現 Brief にはなく仮説段階ですが、ユーザー体験は向上しそうです。`
-      : `面白いですね。ユーザー体験・データ鮮度の観点ではアイデアとして魅力的です。`;
+    const topic = /ライブ/i.test(ceoMsg) ? "ライブカメラ機能" : "POS連携";
+    const plannerSummary = personaSelfCheckPlanner(
+      `面白いですね。${topic}はユーザー体験・データ鮮度の観点で魅力的です。体験として強い可能性があります。`
+    );
     const cooSummary = wantCoo
-      ? `可能性はあります。ただし${topic}の運用コストと実装負荷は気になります。`
+      ? personaSelfCheckCoo(
+          `慎重に考えるべきです。${topic}の運用コストと実装負荷は気になります。`
+        )
       : "";
     return {
       targetAudience: audience,
@@ -178,9 +263,13 @@ export function runDiscussionHeuristic(
   }
 
   if (recalled) {
-    const plannerSummary = `先ほどの「${recalled}」ですが、まだ仮説段階だと思っています。Brief には未反映です。`;
+    const plannerSummary = personaSelfCheckPlanner(
+      `先ほどの「${recalled}」ですが、ユーザー価値の観点ではまだ検証すべき仮説だと思っています。`
+    );
     const cooSummary = wantCoo
-      ? `その通りです。${recalled}は採用前にコストと運用体制の整理が必要です。`
+      ? personaSelfCheckCoo(
+          `その通りです。${recalled}は採用前にコストと運用体制の整理が必要です。`
+        )
       : "";
     return {
       targetAudience: audience,

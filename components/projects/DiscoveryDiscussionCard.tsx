@@ -199,7 +199,11 @@ export function DiscoveryDiscussionCard({
           {messages.length > 0 ? (
             <ul className="space-y-3">
               {messages.map((msg) => (
-                <DiscussionMessageBubble key={msg.id} msg={msg} />
+                <DiscussionMessageBubble
+                  key={msg.id}
+                  msg={msg}
+                  decisionItems={decisionItems}
+                />
               ))}
             </ul>
           ) : (

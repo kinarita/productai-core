@@ -7,6 +7,7 @@ import {
   DECISION_STATUS_LABELS,
   voteEmoji,
   type MeetingMinutes,
+  type MeetingMinutesBeliefConflictEntry,
   type MeetingMinutesDecisionJourneyEntry,
 } from "@/lib/discussion/decisionGovernanceTypes";
 
@@ -64,6 +65,7 @@ export function MeetingMinutesModal({
           <div className="mt-4 space-y-4 text-xs">
             <Section title="Discussion Topics" items={minutes.discussionTopics} />
             <DecisionJourneySection entries={minutes.decisionJourney ?? []} />
+            <BeliefConflictSection entries={minutes.beliefConflicts ?? []} />
             <Section
               title="Pending Decisions"
               items={minutes.pendingDecisions ?? []}
@@ -106,6 +108,42 @@ function Section({
   );
 }
 
+function BeliefConflictSection({
+  entries,
+}: {
+  entries: MeetingMinutesBeliefConflictEntry[];
+}) {
+  if (!entries.length) return null;
+  return (
+    <section>
+      <p className="font-medium text-foreground">Belief Conflict</p>
+      <ul className="mt-2 space-y-3">
+        {entries.map((b) => (
+          <li
+            key={b.topic}
+            className="rounded border border-border bg-surface/60 px-2 py-2 text-muted"
+          >
+            <p>
+              <span className="text-foreground">Topic:</span> {b.topic}
+            </p>
+            <p>
+              <span className="text-foreground">Planner Belief:</span> {b.plannerBelief}
+            </p>
+            <p>
+              <span className="text-foreground">COO Belief:</span> {b.cooBelief}
+            </p>
+            {b.ceoDecision ? (
+              <p>
+                <span className="text-foreground">CEO Decision:</span> {b.ceoDecision}
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function DecisionJourneySection({
   entries,
 }: {
@@ -130,6 +168,11 @@ function DecisionJourneySection({
             <p>
               {PRODUCT_PLANNER_DISPLAY_NAME}: {j.planner} · COO: {j.coo} · CEO: {j.ceo}
             </p>
+            {j.decision ? (
+              <p>
+                <span className="text-foreground">Decision:</span> CEO: {j.decision}
+              </p>
+            ) : null}
             <p>
               <span className="text-foreground">Reason:</span> {j.reason}
             </p>

@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { DiscussionMarkdown } from "@/components/projects/DiscussionMarkdown";
 import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
+import type { DecisionItem } from "@/lib/discussion/decisionGovernanceTypes";
+import {
+  AGENT_VOTE_LABELS,
+  voteEmoji,
+} from "@/lib/discussion/decisionGovernanceTypes";
+import { getDebateDisplayState } from "@/lib/discussion/resolveExecutiveDebate";
 import {
   discussionTargetLabel,
   PRODUCT_PLANNER_DISPLAY_NAME,
@@ -21,11 +27,76 @@ const PARTICIPANT_EMOJI: Record<DiscussionMessage["participant"], string> = {
   coo: "🧭",
 };
 
-export function DiscussionMessageBubble({ msg }: { msg: DiscussionMessage }) {
+function DebateClarityBlock({
+  msg,
+  decisionItems,
+}: {
+  msg: DiscussionMessage;
+  decisionItems: DecisionItem[];
+}) {
+  if (!msg.executiveDebate || !msg.debateTopic) return null;
+
+  const { isPending, resolvedLabel } = getDebateDisplayState(msg, decisionItems);
+
+  if (!isPending && resolvedLabel) {
+    return (
+      <p className="mt-1 text-[10px] text-muted">{resolvedLabel}</p>
+    );
+  }
+
+  if (!isPending) return null;
+
+  const pVote = msg.participant === "coo" ? msg.debatePartnerVote : msg.agentVote;
+  const cVote = msg.participant === "coo" ? msg.agentVote : msg.debatePartnerVote;
+  if (!pVote || !cVote) return null;
+
+  return (
+    <div className="mt-1 space-y-1 rounded-md border border-violet-300/60 bg-violet-50/80 px-2 py-1.5 text-[11px] text-violet-900">
+      <p className="font-semibold">⚔ Debate</p>
+      <p>
+        <span className="font-medium">Topic:</span> {msg.debateTopic}
+      </p>
+      <p>
+        Planner: {voteEmoji(pVote)} {AGENT_VOTE_LABELS[pVote]}
+        {msg.debatePlannerReason ? (
+          <span className="block pl-2 text-violet-800/90">
+            「{msg.debatePlannerReason}」
+          </span>
+        ) : null}
+      </p>
+      <p>
+        COO: {voteEmoji(cVote)} {AGENT_VOTE_LABELS[cVote]}
+        {msg.debateCooReason ? (
+          <span className="block pl-2 text-violet-800/90">
+            「{msg.debateCooReason}」
+          </span>
+        ) : null}
+      </p>
+      {msg.debateWhy ? (
+        <p>
+          <span className="font-medium">Why Debate?</span> {msg.debateWhy}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function DiscussionMessageBubble({
+  msg,
+  decisionItems = [],
+}: {
+  msg: DiscussionMessage;
+  decisionItems?: DecisionItem[];
+}) {
   const [expanded, setExpanded] = useState(false);
   const summary = msg.summary ?? msg.message;
   const detail = msg.detail?.trim();
   const isAgent = msg.participant === "planner" || msg.participant === "coo";
+  const debateState = getDebateDisplayState(msg, decisionItems);
+  const detailIsDebateSummaryOnly = !!detail?.startsWith("Debate Summary");
+  const showDetailExpand =
+    !!detail &&
+    (!msg.executiveDebate || debateState.isPending || !detailIsDebateSummaryOnly);
 
   return (
     <li
@@ -41,7 +112,8 @@ export function DiscussionMessageBubble({ msg }: { msg: DiscussionMessage }) {
           <span className="ml-2 font-normal text-muted">· {msg.relatedSection}</span>
         ) : null}
       </p>
-      {msg.discussionDecisionSignal && !msg.suggestsDecisionCandidate ? (
+      <DebateClarityBlock msg={msg} decisionItems={decisionItems} />
+      {msg.discussionDecisionSignal && !msg.suggestsDecisionCandidate && !debateState.isPending ? (
         <p className="mt-1 rounded-md border border-sky-300/60 bg-sky-50/80 px-2 py-1 text-[11px] font-medium text-sky-900">
           ⚠ Discussion may lead to a product decision
         </p>
@@ -54,7 +126,7 @@ export function DiscussionMessageBubble({ msg }: { msg: DiscussionMessage }) {
       {isAgent ? (
         <div className="mt-1">
           <DiscussionMarkdown content={summary} />
-          {detail ? (
+          {detail && showDetailExpand ? (
             <div className="mt-2">
               <button
                 type="button"

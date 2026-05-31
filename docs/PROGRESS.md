@@ -1480,6 +1480,26 @@ Move ProductAI from store-only architecture to a hybrid persistence foundation w
 - Propagated governanceAttention replay query context across CEO, Runtime, Mission, and Judgment views.
 - Added decision attention metadata verification script and persistence documentation.
 
+## 2026-05-30 (Phase 29.6 — Resolved debate cleanup)
+
+- CEO decision resolves linked Debate messages; pending debates stay prominent, resolved show one-line label.
+- `debateDecisionId` links debates to candidates; re-proposed topics start fresh debates.
+- See `docs/PHASE29_6_RESOLVED_DEBATE_CLEANUP.md`.
+
+## 2026-05-30 (Phase 29.5 — Persona voice & debate clarity)
+
+- Executive Belief System (Planner PMF / COO execution) replacing role-label personas.
+- Debate clarity UI: Topic, Planner/COO reasons, Why Debate; Debate Summary on COO detail.
+- Template phrase guard; belief-based Decision Candidate rationales; Meeting Minutes Belief Conflict.
+- See `docs/PHASE29_5_PERSONA_VOICE_AND_DEBATE_CLARITY.md`.
+
+## 2026-05-30 (Phase 29 — Strong persona & executive debate)
+
+- Strong Planner/COO profiles, personaSelfCheck, executive debate detection (⚔ Debate).
+- Strong voting (Planner Approve/Hold; COO Approve/Hold/Reject; minimal Neutral).
+- Decision Candidate executive comments; Meeting Minutes journey with planner/coo comments.
+- See `docs/PHASE29_STRONG_PERSONA_AND_DEBATE.md`.
+
 ## 2026-05-30 (Phase 28.5.1 — Decision intent escalation hotfix)
 
 - CEO 明示依頼（入れてください / ブリーフに反映 / MVPに含めて 等）を `decision` intent に分類し Stage 2 へ。

@@ -1,3 +1,4 @@
+import { buildBeliefConflicts } from "@/lib/discussion/buildBeliefConflicts";
 import { buildDecisionJourney } from "@/lib/discussion/buildDecisionJourney";
 import type { BriefChangeProposal, DiscussionMessage } from "@/lib/discussion/discussionTypes";
 import {
@@ -37,6 +38,7 @@ export function generateMeetingMinutes(input: {
   appliedProposals: BriefChangeProposal[];
   openQuestionSignals?: string[];
   briefVersion?: number;
+  discussionPersonaMemory?: import("@/lib/discussion/discussionTypes").DiscussionPersonaMemory;
 }): MeetingMinutes {
   const ceoTurns = input.messages.filter((m) => m.participant === "ceo").length;
   const topics = input.messages
@@ -98,10 +100,17 @@ export function generateMeetingMinutes(input: {
     briefVersionLabel: input.briefVersion ? `v${input.briefVersion}` : undefined,
   });
 
+  const beliefConflicts = buildBeliefConflicts({
+    messages: input.messages,
+    decisionItems: input.decisionItems,
+    memoryConflicts: input.discussionPersonaMemory?.beliefConflicts,
+  });
+
   return {
     id: `minutes-${Date.now()}`,
     discussionTopics: topics.length ? topics : [`${input.projectName} 経営会議`],
     decisionJourney: decisionJourney.length ? decisionJourney : undefined,
+    beliefConflicts: beliefConflicts.length ? beliefConflicts : undefined,
     decisionsMade,
     pendingDecisions,
     rejectedIdeas,

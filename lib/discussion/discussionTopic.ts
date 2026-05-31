@@ -2,6 +2,7 @@ import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
 import type { DiscussionPersonaMemory } from "@/lib/discussion/discussionTypes";
 
 const TOPIC_PATTERNS: Array<{ re: RegExp; label: string }> = [
+  { re: /音声入力|音声|voice input|voice/i, label: "音声入力機能" },
   { re: /ライブ(動画|カメラ)?/i, label: "ライブカメラ機能" },
   { re: /ライブカメラ/i, label: "ライブカメラ機能" },
   { re: /月次グラフ|グラフ機能|グラフ/i, label: "月次グラフ" },
