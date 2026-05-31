@@ -36,7 +36,8 @@ export interface BriefChangeProposal {
   before: string;
   after: string;
   confidence: number;
-  status: "pending" | "applied" | "dismissed";
+  /** Phase 26: awaiting_decision → brief_candidate → applied */
+  status: "pending" | "awaiting_decision" | "brief_candidate" | "applied" | "dismissed";
   proposedAt: string;
   messageId?: string;
 }

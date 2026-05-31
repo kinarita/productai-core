@@ -37,6 +37,7 @@ export type ProjectPipelineStage =
   | "planning"
   | "coo_review"
   | "discovery_discussion"
+  | "executive_decision"
   | "ceo_approval"
   | "validation_refinement"
   | "architecture"

@@ -56,8 +56,9 @@ export interface ProjectDashboardCard {
 const pipelineToDashboardStage: Record<ProjectPipelineStage, ProjectStageLabel> = {
   planning: "Planning",
   coo_review: "COO Review",
-  discovery_discussion: "Discovery Discussion",
-  ceo_approval: "CEO Approval",
+  discovery_discussion: "Discussion",
+  executive_decision: "Decision",
+  ceo_approval: "Approval",
   validation_refinement: "Needs Validation",
   architecture: "Architecture",
   build: "Build",

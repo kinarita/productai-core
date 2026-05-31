@@ -4,6 +4,7 @@ import {
   type DiscussionContextInput,
 } from "@/lib/discussion/runDiscussionRespond";
 import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
+import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 import type { ProductBriefSections } from "@/lib/agents/planner/plannerTypes";
 import type { CooReviewReport } from "@/lib/coo-review/cooReviewTypes";
 import type { CustomerProblemFitReport } from "@/lib/cpf/cpfTypes";
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as DiscussionContextInput & {
       userMessage?: string;
       discussionMessages?: DiscussionMessage[];
+      discussionMode?: DiscussionMode;
     };
 
     if (!body.missionId?.trim() || !body.userMessage?.trim()) {
@@ -40,6 +42,10 @@ export async function POST(request: Request) {
       cooReview: body.cooReview,
       validationRequests: body.validationRequests,
       discussionMessages: body.discussionMessages,
+      discussionMode: body.discussionMode,
+      briefVersions: body.briefVersions,
+      pendingProposals: body.pendingProposals,
+      decisionItems: body.decisionItems,
       userMessage: body.userMessage.trim(),
     });
 
@@ -52,6 +58,8 @@ export async function POST(request: Request) {
       cooDetail: result.cooDetail,
       suggestedChanges: result.suggestedChanges,
       relatedSection: result.relatedSection,
+      plannerChallenged: result.plannerChallenged,
+      cooRaisedConcern: result.cooRaisedConcern,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Discussion response failed";

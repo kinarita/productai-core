@@ -22,6 +22,7 @@ import type {
   BriefChangeProposal,
   DiscussionRelatedSection,
 } from "@/lib/discussion/discussionTypes";
+import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 
 export type { DiscussionContextInput };
 
@@ -31,8 +32,10 @@ export interface DiscussionAgentReply extends StructuredDiscussionResponse {
 }
 
 export async function runDiscussionRespond(
-  input: DiscussionContextInput & { userMessage: string }
+  input: DiscussionContextInput & { userMessage: string; discussionMode?: DiscussionMode }
 ): Promise<{
+  plannerChallenged?: boolean;
+  cooRaisedConcern?: boolean;
   plannerResponse: string;
   plannerSummary: string;
   plannerDetail: string;
@@ -44,9 +47,10 @@ export async function runDiscussionRespond(
 }> {
   const provider = getDiscussionProvider();
   const ctx = buildDiscussionContext(input);
+  const mode = input.discussionMode ?? "explore";
 
   if (provider.id === "mock") {
-    const h = runDiscussionHeuristic(input);
+    const h = runDiscussionHeuristic({ ...input, discussionMode: mode });
     return {
       plannerResponse: h.plannerResponse,
       plannerSummary: h.plannerSummary,
@@ -56,26 +60,30 @@ export async function runDiscussionRespond(
       cooDetail: h.cooDetail,
       suggestedChanges: h.suggestedChanges,
       relatedSection: h.relatedSection,
+      plannerChallenged: h.plannerChallenged,
+      cooRaisedConcern: h.cooRaisedConcern,
     };
   }
 
   const plannerRaw = await provider.completeJson(
-    buildPlannerDiscussionSystemPrompt(),
+    buildPlannerDiscussionSystemPrompt(mode),
     buildPlannerDiscussionUserPrompt(
       ctx.contextBlock,
       ctx.validationHistoryBlock,
-      input.userMessage
+      input.userMessage,
+      mode
     )
   );
   const planner = parseStructuredDiscussionResponse(plannerRaw);
 
   const cooRaw = await provider.completeJson(
-    buildCooDiscussionSystemPrompt(),
+    buildCooDiscussionSystemPrompt(mode),
     buildCooDiscussionUserPrompt(
       ctx.contextBlock,
       ctx.validationHistoryBlock,
       input.userMessage,
-      planner.summary
+      planner.summary,
+      mode
     )
   );
   const coo = parseStructuredDiscussionResponse(cooRaw);
@@ -97,10 +105,15 @@ export async function runDiscussionRespond(
     suggestedChanges = parsed.suggestedChanges;
     relatedSection = parsed.relatedSection;
   } catch {
-    const fallback = runDiscussionHeuristic(input);
+    const fallback = runDiscussionHeuristic({ ...input, discussionMode: mode });
     suggestedChanges = fallback.suggestedChanges;
     relatedSection = fallback.relatedSection;
   }
+
+  const plannerChallenged =
+    mode === "challenge" && /challenge|assumption|risk|懸念|見直し/i.test(planner.summary);
+  const cooRaisedConcern =
+    /risk|concern|懸念|競合|収益|complexity|コスト/i.test(coo.summary);
 
   return {
     plannerResponse: planner.summary,
@@ -111,5 +124,7 @@ export async function runDiscussionRespond(
     cooDetail: coo.detail,
     suggestedChanges,
     relatedSection,
+    plannerChallenged,
+    cooRaisedConcern,
   };
 }

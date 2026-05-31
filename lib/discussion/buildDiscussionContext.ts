@@ -4,9 +4,16 @@ import type { CustomerProblemFitReport } from "@/lib/cpf/cpfTypes";
 import type { ProblemSolutionFitReport } from "@/lib/psf/psfTypes";
 import type { OpportunityBrief } from "@/lib/opportunity/opportunityTypes";
 import type {
+  BriefChangeProposal,
+  BriefVersionRecord,
   DiscussionMessage,
   DiscussionRelatedSection,
 } from "@/lib/discussion/discussionTypes";
+import {
+  formatBriefVersionHistory,
+  type DiscussionMode,
+} from "@/lib/discussion/strategyRoomTypes";
+import type { DecisionItem } from "@/lib/discussion/decisionGovernanceTypes";
 
 export interface DiscussionContextInput {
   missionId: string;
@@ -24,6 +31,11 @@ export interface DiscussionContextInput {
   cooReview?: CooReviewReport;
   validationRequests?: Array<{ reason: string; requestedAt: string }>;
   discussionMessages?: DiscussionMessage[];
+  /** Phase 25 — thread memory */
+  discussionMode?: DiscussionMode;
+  briefVersions?: BriefVersionRecord[];
+  pendingProposals?: BriefChangeProposal[];
+  decisionItems?: DecisionItem[];
 }
 
 export interface DiscussionContext {
@@ -40,7 +52,7 @@ export interface DiscussionContext {
 const PARTICIPANT_LABEL: Record<DiscussionMessage["participant"], string> = {
   ceo: "CEO",
   planner: "Product Planner",
-  coo: "COO",
+  coo: "Chief Operating Officer",
 };
 
 function formatBrief(brief: ProductBriefSections): string {
@@ -190,6 +202,39 @@ export function buildDiscussionContext(input: DiscussionContextInput): Discussio
   const lastCeo = [...messages].reverse().find((m) => m.participant === "ceo");
 
   sections.push("", "## Full discussion history", historyBlock);
+
+  if (input.briefVersions?.length) {
+    sections.push("", "## Brief version history", formatBriefVersionHistory(input.briefVersions));
+  }
+
+  const applied = (input.pendingProposals ?? []).filter((p) => p.status === "applied");
+  if (applied.length) {
+    sections.push(
+      "",
+      "## Applied changes from discussion",
+      applied.map((p) => `- ${p.title}: ${p.reason ?? p.description}`).join("\n")
+    );
+  }
+
+  const decisions = input.decisionItems?.length
+    ? input.decisionItems
+    : [];
+  if (decisions.length) {
+    sections.push(
+      "",
+      "## Decision register (governance)",
+      decisions
+        .map(
+          (d) =>
+            `${d.title} [CEO: ${d.status ?? d.ceoDecision ?? "pending"}] Planner:${d.plannerVote} COO:${d.cooVote} — ${d.rationale.slice(0, 100)}`
+        )
+        .join("\n")
+    );
+  }
+
+  if (input.discussionMode) {
+    sections.push("", "## Discussion mode this session", input.discussionMode);
+  }
 
   return {
     missionId: input.missionId,

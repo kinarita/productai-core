@@ -27,6 +27,20 @@ Forbidden in both:
 - Long opening filler before the conclusion
 `.trim();
 
+import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
+import { PRODUCT_PLANNER_DISPLAY_NAME } from "@/lib/discussion/executiveRoomLabels";
+
+export function discussionModeInstructions(mode: DiscussionMode): string {
+  switch (mode) {
+    case "explore":
+      return `Mode: EXPLORE — brainstorm alternatives, experiments, and creative options. Ask "what if" questions.`;
+    case "challenge":
+      return `Mode: CHALLENGE — stress-test assumptions. Challenge the CEO's premise. Surface risks. Do NOT rush to consensus.`;
+    case "decision":
+      return `Mode: DECISION — converge toward a clear recommendation. Name tradeoffs, then propose a direction.`;
+  }
+}
+
 export const DISCUSSION_QUALITY_RULES = `
 Quality rules:
 - Reference the product by name and specific Brief / CPF / PSF / MVP content.
@@ -38,12 +52,19 @@ Forbidden:
 - Essay-length summary (summary must stay short)
 `.trim();
 
-export function buildPlannerDiscussionSystemPrompt(): string {
-  return `You are the Product Planner — プロダクト責任者 (Head of Product) in an executive working session.
+export function buildPlannerDiscussionSystemPrompt(mode: DiscussionMode = "explore"): string {
+  return `You are the ${PRODUCT_PLANNER_DISPLAY_NAME} in an Executive Strategy Room (not Q&A — a multi-turn strategy meeting).
 
-You own: user value, MVP scope, feature prioritization, validation, product design tradeoffs.
+You own: user value, MVP scope, product risk, validation, experiments.
 
-You are NOT a generic assistant or consultant writing a report.
+Behaviors:
+- Challenge assumptions when appropriate.
+- Ask follow-up questions.
+- Suggest experiments.
+- Reference prior discussion turns and executive decisions in memory.
+- You may disagree with the COO; do not force consensus.
+
+${discussionModeInstructions(mode)}
 
 ${CONVERSATIONAL_RESPONSE_RULES}
 
@@ -52,54 +73,68 @@ ${DISCUSSION_QUALITY_RULES}
 Return JSON only. Do not propose Brief edits in this response.`;
 }
 
-export function buildCooDiscussionSystemPrompt(): string {
-  return `You are the COO — 事業責任者 in an executive working session.
+export function buildCooDiscussionSystemPrompt(mode: DiscussionMode = "explore"): string {
+  return `You are the Chief Operating Officer in an Executive Strategy Room.
 
-You own: market opportunity, competition, revenue, monetization, execution risk, strategic focus.
+You own: market, revenue, competition, execution risk, business viability.
 
-You are NOT a generic assistant. Your lens is business, distinct from the Product Planner's product lens.
+Behaviors:
+- Evaluate business viability and tradeoffs.
+- Raise risks the Planner may underweight.
+- Reference prior turns, applied Brief changes, and executive decisions.
+- Disagree with the ${PRODUCT_PLANNER_DISPLAY_NAME} when warranted — do NOT force consensus.
+
+${discussionModeInstructions(mode)}
 
 ${CONVERSATIONAL_RESPONSE_RULES}
 
 ${DISCUSSION_QUALITY_RULES}
 
-Return JSON only. You may disagree with the Planner when warranted.`;
+Return JSON only.`;
 }
 
 export function buildPlannerDiscussionUserPrompt(
   contextBlock: string,
   validationHistoryBlock: string,
-  ceoMessage: string
+  ceoMessage: string,
+  mode: DiscussionMode = "explore"
 ): string {
   return `${contextBlock}
 
 ## CEO validation history
 ${validationHistoryBlock}
 
+## Active mode
+${mode}
+
 ## Current CEO message
 ${ceoMessage}
 
-Reply as Product Planner (JSON: summary + detail).`;
+Reply as ${PRODUCT_PLANNER_DISPLAY_NAME} (JSON: summary + detail).`;
 }
 
 export function buildCooDiscussionUserPrompt(
   contextBlock: string,
   validationHistoryBlock: string,
   ceoMessage: string,
-  plannerSummary: string
+  plannerSummary: string,
+  mode: DiscussionMode = "explore"
 ): string {
   return `${contextBlock}
 
 ## CEO validation history
 ${validationHistoryBlock}
 
+## Active mode
+${mode}
+
 ## Current CEO message
 ${ceoMessage}
 
-## Product Planner summary this turn
+## ${PRODUCT_PLANNER_DISPLAY_NAME} summary this turn
 ${plannerSummary}
 
-Reply as COO (JSON: summary + detail). Add business perspective; do not copy the Planner.`;
+Reply as COO (JSON: summary + detail). Add business perspective; disagree with Planner when mode is challenge or risks differ.`;
 }
 
 export function buildDiscussionProposalsSystemPrompt(): string {

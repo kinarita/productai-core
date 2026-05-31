@@ -7,6 +7,10 @@ import { migrateLegacyReviewReport } from "@/lib/coo-review/cooReviewMigration";
 import type { PlannerAgentRun, ProductBriefSections } from "@/lib/agents/planner/plannerTypes";
 import { getBriefAtVersion } from "@/lib/discussion/briefVersioning";
 import type { Mission } from "@/types/productai";
+import {
+  countPendingDecisionCandidates,
+  pendingDecisionWarning,
+} from "@/lib/discussion/decisionCandidateStatus";
 
 export function getCooReviewReport(
   mission?: Mission,
@@ -31,9 +35,18 @@ export function getExecutiveDecision(
   return undefined;
 }
 
-/** Architect runs only after human CEO approval (Phase 21.5). */
+export function getPendingDecisionCandidateCount(run?: PlannerAgentRun): number {
+  return countPendingDecisionCandidates(run?.decisionItems ?? []);
+}
+
+export function getPendingDecisionWarning(run?: PlannerAgentRun): string | null {
+  return pendingDecisionWarning(getPendingDecisionCandidateCount(run));
+}
+
+/** Architect runs only after human CEO approval and no pending decision candidates (Phase 26.2). */
 export function isArchitectUnlocked(mission?: Mission, run?: PlannerAgentRun): boolean {
-  return getExecutiveDecision(mission, run) === "approved";
+  if (getExecutiveDecision(mission, run) !== "approved") return false;
+  return getPendingDecisionCandidateCount(run) === 0;
 }
 
 /** Working brief — latest discussion version or current planner output (Phase 22). */
@@ -79,6 +92,10 @@ export function architectLockReason(mission?: Mission, run?: PlannerAgentRun): s
 
   if (!report) {
     return "COO Review has not completed — Architect is locked until planning outputs are reviewed.";
+  }
+  const pendingWarn = getPendingDecisionWarning(run);
+  if (pendingWarn) {
+    return pendingWarn;
   }
   if (!decision || decision === "awaiting_ceo_approval") {
     const rec = report.recommendation;

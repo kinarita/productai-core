@@ -8,6 +8,7 @@ import type {
   BriefChangeProposal,
   DiscussionRelatedSection,
 } from "@/lib/discussion/discussionTypes";
+import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 
 function proposalId(): string {
   return `prop-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -35,31 +36,65 @@ function buildPlannerCharts(
   brief: DiscussionContextInput["brief"],
   mvp: string[],
   psf: DiscussionContextInput["psfReport"],
-  thread: boolean
+  thread: boolean,
+  mode: DiscussionMode
 ) {
   const mustHave = mvp.slice(0, 2).join("、") || brief?.coreFeatures?.slice(0, 2).join("、");
+  if (mode === "decision") {
+    const summary = `**結論:** 月次グラフは **MVPに含める** 方向で推奨します。\n\n**理由:** 「${name}」の価値は支出の見える化で、入力が続いたユーザーにはグラフが習慣化の報酬になります。\n\n**質問:** 週次サマリー＋月次グラフの2段階で合意しますか？`;
+    return {
+      summary,
+      detail: `### 決定モード\n- Must Have 維持: ${mustHave}\n- 検証: 3週間で入力3回以上ユーザーのグラフ開封率`,
+    };
+  }
+  if (mode === "challenge") {
+    const summary = `**結論:** 「グラフ必須」という前提を疑うべきです。\n\n**理由:** Must Have は「${mustHave}」で既に厚い。グラフは検証前の仮説に過ぎません。\n\n**質問:** グラフなしで5ユーザーに2週間使ってもらえますか？`;
+    return {
+      summary,
+      detail: `### 前提へのチャレンジ\n- 見える化＝価値 とは限らない\n- PSF Should-have: ${psf?.mvpFeatures.shouldHave.join("、") || "未定"}`,
+    };
+  }
   const summary = thread
     ? `**結論:** 先ほどのグラフの話なら、トップは軽いサマリーだけで十分です。\n\n**理由:** 「${name}」はまず入力習慣が価値の核で、Must Have は「${mustHave}」に集中すべきです。\n\n**質問:** 月次グラフだけを Should Have に置く案で進めますか？`
     : `**結論:** MVPではグラフは **Should Have** に回すべきです。\n\n**理由:** 「${name}」は見える化より先に記録が続くことが重要で、入力がなければグラフは空になります。\n\n**質問:** 週3回入力したユーザーだけβチャートを開く検証でよいですか？`;
 
-  const detail = `### プロダクト観点（詳細）\n- 現行 Must Have: ${mustHave || "未定義"}\n- PSF Should-have: ${psf?.mvpFeatures.shouldHave.join("、") || "未定"}\n- フルダッシュボードは **Out of Scope** 相当まで遅らせ、データが溜まってから可視化する方が学習コストが低いです。`;
+  const detail = `### プロダクト観点（詳細）\n- 現行 Must Have: ${mustHave || "未定義"}\n- PSF Should-have: ${psf?.mvpFeatures.shouldHave.join("、") || "未定"}`;
 
   return { summary, detail };
 }
 
-function buildCooCharts(name: string, opp: DiscussionContextInput["opportunityBrief"], thread: boolean) {
+function buildCooCharts(
+  name: string,
+  opp: DiscussionContextInput["opportunityBrief"],
+  thread: boolean,
+  mode: DiscussionMode
+) {
   const alt = opp?.currentAlternatives?.[0] ?? "主要家計簿アプリ";
+  if (mode === "decision") {
+    const summary = `**結論:** グラフは **段階導入** で合意可能です（Must Have 化は慎重に）。\n\n**理由:** ${alt} との差別化は入力体験側。グラフは第2スプリントでも遅れません。\n\n**質問:** 入力KPI達成後にグラフを解禁する条件を決めますか？`;
+    return { summary, detail: `### 事業合意\n- 実行リスクを抑えつつ見える化ロードマップを明示` };
+  }
+  if (mode === "challenge" || mode === "explore") {
+    const summary =
+      mode === "challenge"
+        ? `**結論:** Plannerと異なり、グラフの **Must Have 化には反対** です。\n\n**理由:** 開発・保守コストが高く、「${name}」は ${alt} とグラフ競争で不利です。入力の継続が先です。\n\n**質問:** グラフを第2フェーズに回し、今は獲得と継続に集中しますか？`
+        : thread
+          ? `**結論:** サマリー表示はコスト低めで、フルグラフの Must Have 化は避けたいです。\n\n**理由:** 「${name}」が ${alt} と同じ土俵でグラフ競争すると差別化が薄れます。\n\n**質問:** 継続率KPIを先に置き、グラフは第2フェーズにしますか？`
+          : `**結論:** グラフは **Should Have** で十分です。\n\n**理由:** 競合は標準装備ですが、${alt} でも継続率は入力体験に依存します。\n\n**質問:** MVP投資を入力に寄せる方針で合意しますか？`;
+    return {
+      summary,
+      detail: `### 事業観点（COOはPlannerと必ずしも一致しない）\n- 実行コストと競合ベンチマークを優先`,
+    };
+  }
   const summary = thread
     ? `**結論:** サマリー表示はコスト低めで、フルグラフの Must Have 化は避けたいです。\n\n**理由:** 「${name}」が ${alt} と同じ土俵でグラフ競争すると差別化が薄れます。\n\n**質問:** 継続率KPIを先に置き、グラフは第2フェーズにしますか？`
     : `**結論:** グラフは **Should Have** で十分です。\n\n**理由:** 競合は標準装備ですが、${alt} でも継続率は入力体験に依存します。\n\n**質問:** MVP投資を入力に寄せる方針で合意しますか？`;
 
-  const detail = `### 事業観点（詳細）\n- 実装コスト対効果: グラフは開発・保守コストが高め\n- 収益化前はニッチな「記録が続く」体験の方が戦略的フィットが上がります`;
-
-  return { summary, detail };
+  return { summary, detail: `### 事業観点\n- 実装コスト対効果` };
 }
 
 export function runDiscussionHeuristic(
-  input: DiscussionContextInput & { userMessage: string }
+  input: DiscussionContextInput & { userMessage: string; discussionMode?: DiscussionMode }
 ): {
   plannerResponse: string;
   plannerSummary: string;
@@ -69,8 +104,11 @@ export function runDiscussionHeuristic(
   cooDetail: string;
   suggestedChanges: BriefChangeProposal[];
   relatedSection: DiscussionRelatedSection;
+  plannerChallenged?: boolean;
+  cooRaisedConcern?: boolean;
 } {
   const ctx = buildDiscussionContext(input);
+  const mode = input.discussionMode ?? "explore";
   const focus = detectFocus(input.userMessage);
   const relatedSection = inferRelatedSectionFromMessage(input.userMessage);
   const name = ctx.projectName;
@@ -86,8 +124,8 @@ export function runDiscussionHeuristic(
   let cooDetail = "";
 
   if (focus === "charts" || (thread && ctx.priorTopics.includes("charts"))) {
-    const p = buildPlannerCharts(name, brief, mvp, psf, thread);
-    const c = buildCooCharts(name, input.opportunityBrief, thread);
+    const p = buildPlannerCharts(name, brief, mvp, psf, thread, mode);
+    const c = buildCooCharts(name, input.opportunityBrief, thread, mode);
     plannerSummary = p.summary;
     plannerDetail = p.detail;
     cooSummary = c.summary;
@@ -149,6 +187,9 @@ export function runDiscussionHeuristic(
     });
   }
 
+  const plannerChallenged = mode === "challenge" && /前提|疑う|challenge/i.test(plannerSummary);
+  const cooRaisedConcern = /反対|risk|懸念|コスト|競合/i.test(cooSummary);
+
   return {
     plannerResponse: plannerSummary,
     plannerSummary,
@@ -158,5 +199,7 @@ export function runDiscussionHeuristic(
     cooDetail,
     suggestedChanges,
     relatedSection,
+    plannerChallenged,
+    cooRaisedConcern,
   };
 }

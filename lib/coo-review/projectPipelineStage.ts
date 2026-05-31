@@ -17,7 +17,9 @@ export function inferProjectPipelineStage(mission: Mission): ProjectPipelineStag
   }
   if (decision === "hold") return "planning";
   if (decision === "needs_validation") return "validation_refinement";
-  if (review && (decision === "awaiting_ceo_approval" || !decision)) return "discovery_discussion";
+  if (review && (decision === "awaiting_ceo_approval" || !decision)) {
+    return "executive_decision";
+  }
   if (mission.requirementsSummary?.trim() && !review) return "coo_review";
   return "planning";
 }
@@ -29,9 +31,11 @@ export function projectPipelineStageLabel(stage: ProjectPipelineStage): string {
     case "coo_review":
       return "COO Review";
     case "discovery_discussion":
-      return "Discovery Discussion";
+      return "Discussion";
+    case "executive_decision":
+      return "Decision";
     case "ceo_approval":
-      return "CEO Approval";
+      return "Approval";
     case "validation_refinement":
       return "Needs Validation";
     case "architecture":
@@ -46,7 +50,7 @@ export function projectPipelineStageLabel(stage: ProjectPipelineStage): string {
 }
 
 export function pipelineStageAfterCooReview(): ProjectPipelineStage {
-  return "discovery_discussion";
+  return "executive_decision";
 }
 
 export function pipelineStageAfterExecutiveDecision(

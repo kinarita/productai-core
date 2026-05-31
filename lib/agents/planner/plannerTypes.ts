@@ -18,6 +18,18 @@ import type {
   BriefVersionRecord,
   DiscussionMessage,
 } from "@/lib/discussion/discussionTypes";
+import type {
+  BriefChangeCandidate,
+  DecisionItem,
+  MeetingMinutes,
+} from "@/lib/discussion/decisionGovernanceTypes";
+import type {
+  ArchitectHandoffPreview,
+  DiscussionMode,
+  ExecutiveDecisionRecord,
+  StrategySignal,
+  StrategySummary,
+} from "@/lib/discussion/strategyRoomTypes";
 import type { DiscoveryMode, ProjectCreationInput } from "@/lib/project-creation/projectCreationTypes";
 
 export const PLANNER_PROMPT_VERSION = "planner-v6";
@@ -99,6 +111,15 @@ export interface PlannerAgentRun {
   latestApprovedBriefVersion?: number;
   briefVersionAudits?: BriefVersionAuditRecord[];
   lastBriefApplyFeedback?: BriefApplyFeedback;
+  /** Phase 25 — Executive Strategy Room */
+  discussionMode?: DiscussionMode;
+  strategySignals?: StrategySignal[];
+  executiveDecisions?: ExecutiveDecisionRecord[];
+  strategySummary?: StrategySummary;
+  architectHandoffPreview?: ArchitectHandoffPreview;
+  decisionItems?: DecisionItem[];
+  briefChangeCandidates?: BriefChangeCandidate[];
+  meetingMinutes?: MeetingMinutes;
 }
 
 export type PlannerAgentRunRecord = PlannerStoredRun;
@@ -159,6 +180,14 @@ export interface PlannerRunMeta {
   latestApprovedBriefVersion?: number;
   briefVersionAudits?: BriefVersionAuditRecord[];
   lastBriefApplyFeedback?: BriefApplyFeedback;
+  discussionMode?: DiscussionMode;
+  strategySignals?: StrategySignal[];
+  executiveDecisions?: ExecutiveDecisionRecord[];
+  strategySummary?: StrategySummary;
+  architectHandoffPreview?: ArchitectHandoffPreview;
+  decisionItems?: DecisionItem[];
+  briefChangeCandidates?: BriefChangeCandidate[];
+  meetingMinutes?: MeetingMinutes;
 }
 
 export type PlannerStoredRun = AgentRun<ProjectCreationInput, PlannerGenerationResult> & {

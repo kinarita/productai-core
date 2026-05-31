@@ -6,17 +6,22 @@ import { Badge } from "@/components/Badge";
 import { Card } from "@/components/Card";
 import { BriefDiffViewer } from "@/components/projects/BriefDiffViewer";
 import { BriefHistoryPanel } from "@/components/projects/BriefHistoryPanel";
+import { ArchitectHandoffModal } from "@/components/projects/ArchitectHandoffModal";
+import { DecisionCandidatesList } from "@/components/projects/DecisionCandidateCard";
 import { DiscussionMessageBubble } from "@/components/projects/DiscussionMessageBubble";
+import { MeetingMinutesModal } from "@/components/projects/MeetingMinutesModal";
 import type { BriefApplyFeedback } from "@/lib/brief-diff/briefDiffTypes";
 import { getVersionPairDiff } from "@/lib/brief-diff/getVersionPairDiff";
-import { getCooReviewReport } from "@/lib/coo-review/architectGate";
+import {
+  getCooReviewReport,
+  getPendingDecisionCandidateCount,
+} from "@/lib/coo-review/architectGate";
+import { PRODUCT_PLANNER_DISPLAY_NAME } from "@/lib/discussion/executiveRoomLabels";
 import { EXAMPLE_DISCUSSION_PROMPTS } from "@/lib/discussion/discussionTypes";
-import type { BriefChangeProposal } from "@/lib/discussion/discussionTypes";
 import { useAgentRunsStore } from "@/lib/store/agentRunsStore";
 import type { PlannerAgentRun } from "@/lib/agents/planner/plannerTypes";
 import type { Mission } from "@/types/productai";
 
-/** Phase 24.6 — primary discussion viewport (scrollable). */
 const DISCUSSION_VIEWPORT_CLASS =
   "min-h-[400px] h-[50vh] max-h-[60vh] overflow-y-auto md:min-h-[600px] md:h-[65vh] md:max-h-[75vh]";
 
@@ -68,54 +73,6 @@ function BriefApplyFeedbackBlock({
   );
 }
 
-function PendingProposalCard({
-  proposal,
-  onApply,
-  onDismiss,
-  busy,
-}: {
-  proposal: BriefChangeProposal;
-  onApply: () => void;
-  onDismiss: () => void;
-  busy: boolean;
-}) {
-  return (
-    <div className="rounded-lg border border-warning/30 bg-amber-50/50 px-4 py-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-warning">Suggested Change</p>
-      <p className="mt-1 text-sm font-medium text-foreground">{proposal.title}</p>
-      <p className="mt-1 text-xs text-muted">
-        <span className="font-medium text-foreground">Reason:</span>{" "}
-        {proposal.reason ?? proposal.description}
-      </p>
-      <p className="mt-1 text-xs text-muted">
-        <span className="font-medium text-foreground">Impact:</span> {proposal.impact ?? "—"}
-      </p>
-      <p className="mt-2 text-xs text-muted">
-        Confidence: {proposal.confidence}% · Sections:{" "}
-        {(proposal.affectedSections ?? [proposal.targetSection]).join(", ")}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onApply}
-          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
-          Apply to Brief
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onDismiss}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface disabled:opacity-50"
-        >
-          Dismiss
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function DiscoveryDiscussionCard({
   mission,
   run,
@@ -127,28 +84,48 @@ export function DiscoveryDiscussionCard({
 }) {
   const report = getCooReviewReport(mission, run);
   const sendMessage = useAgentRunsStore((s) => s.sendDiscoveryDiscussionMessage);
-  const applyProposal = useAgentRunsStore((s) => s.applyDiscoveryBriefProposal);
-  const dismissProposal = useAgentRunsStore((s) => s.dismissDiscoveryBriefProposal);
+  const setCeoDecisionOnItem = useAgentRunsStore((s) => s.setCeoDecisionOnItem);
+  const generateMeetingMinutes = useAgentRunsStore((s) => s.generateMeetingMinutes);
+  const recordArchitectHandoffOpened = useAgentRunsStore(
+    (s) => s.recordArchitectHandoffOpened
+  );
   const clearApplyFeedback = useAgentRunsStore((s) => s.clearBriefApplyFeedback);
 
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewDiffVersion, setViewDiffVersion] = useState<number | undefined>();
+  const [minutesOpen, setMinutesOpen] = useState(false);
+  const [handoffOpen, setHandoffOpen] = useState(false);
 
   const messages = run?.discussionMessages ?? [];
-  const pendingProposals = (run?.pendingProposals ?? []).filter((p) => p.status === "pending");
+  const decisionItems = run?.decisionItems ?? [];
+  const meetingMinutes = run?.meetingMinutes;
   const applyFeedback =
     run?.lastBriefApplyFeedback?.missionId === missionId
       ? run.lastBriefApplyFeedback
       : undefined;
   const currentVersion = run?.briefVersion;
+  const handoffPreview = run?.architectHandoffPreview;
+  const pendingCount = getPendingDecisionCandidateCount(run);
 
   useEffect(() => {
     if (applyFeedback?.version) {
       setViewDiffVersion(applyFeedback.version);
     }
   }, [applyFeedback?.createdAt, applyFeedback?.version]);
+
+  useEffect(() => {
+    if (minutesOpen) {
+      generateMeetingMinutes(missionId, "open");
+    }
+  }, [minutesOpen, missionId, generateMeetingMinutes]);
+
+  useEffect(() => {
+    if (handoffOpen) {
+      recordArchitectHandoffOpened(missionId);
+    }
+  }, [handoffOpen, missionId, recordArchitectHandoffOpened]);
 
   const pairDiff =
     viewDiffVersion != null
@@ -157,9 +134,9 @@ export function DiscoveryDiscussionCard({
 
   if (!report) {
     return (
-      <Card title="Discovery Discussion">
+      <Card title="Executive Strategy Room">
         <p className="text-sm text-muted">
-          Discovery Discussion opens after COO Review completes.
+          Executive Strategy Room opens after COO Review completes.
         </p>
       </Card>
     );
@@ -181,15 +158,36 @@ export function DiscoveryDiscussionCard({
   }
 
   return (
-    <Card title="Discovery Discussion" className="shadow-md">
-      <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-border pb-3">
-        <Badge variant="info">Executive discussion</Badge>
-        {currentVersion ? (
-          <span className="text-xs text-muted">Brief v{currentVersion}</span>
-        ) : null}
+    <Card title="Executive Strategy Room" className="shadow-md">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="info">Planner · COO · CEO</Badge>
+          {currentVersion ? (
+            <span className="text-xs text-muted">Brief v{currentVersion}</span>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMinutesOpen(true)}
+            className="rounded-lg border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-surface"
+          >
+            Meeting Minutes
+          </button>
+          <button
+            type="button"
+            onClick={() => setHandoffOpen(true)}
+            className="rounded-lg border border-accent/30 px-3 py-1 text-xs font-medium text-accent hover:bg-indigo-50/50"
+          >
+            Architect Handoff
+          </button>
+        </div>
       </div>
 
-      {/* Primary workspace: conversation + reply */}
+      <p className="mb-4 text-sm text-muted">
+        AI幹部との経営会議。採用した論点は Brief に自動反映されます。
+      </p>
+
       <section aria-label="Discussion thread" className="space-y-3">
         <div
           className={`rounded-xl border border-border/80 bg-surface/40 p-3 ${DISCUSSION_VIEWPORT_CLASS}`}
@@ -243,22 +241,13 @@ export function DiscoveryDiscussionCard({
         </div>
       </section>
 
-      {/* Change notifications — below reply, above review */}
-      <section aria-label="Change notifications" className="mt-4 space-y-3">
-        {pendingProposals.length > 0 ? (
-          <div className="space-y-2">
-            {pendingProposals.map((p) => (
-              <PendingProposalCard
-                key={p.id}
-                proposal={p}
-                busy={busy}
-                onApply={() => applyProposal(missionId, p.id)}
-                onDismiss={() => dismissProposal(missionId, p.id)}
-              />
-            ))}
-          </div>
-        ) : null}
+      <DecisionCandidatesList
+        decisions={decisionItems}
+        busy={busy}
+        onCeoDecision={(id, status) => setCeoDecisionOnItem(missionId, id, status)}
+      />
 
+      <section aria-label="Change notifications" className="mt-4 space-y-3">
         {applyFeedback ? (
           <BriefApplyFeedbackBlock
             feedback={applyFeedback}
@@ -269,7 +258,6 @@ export function DiscoveryDiscussionCard({
 
       <hr className="my-6 border-border/70" />
 
-      {/* Secondary: diff review + history */}
       <section aria-label="Brief change review" className="scroll-mt-6 rounded-lg">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
           Brief Change Review
@@ -283,7 +271,7 @@ export function DiscoveryDiscussionCard({
           </div>
         ) : (
           <p className="mt-2 text-xs text-muted">
-            Apply a change or pick a version below to review section-level differences.
+            採用すると Brief の差分がここに表示されます。
           </p>
         )}
 
@@ -300,6 +288,20 @@ export function DiscoveryDiscussionCard({
           />
         </div>
       </section>
+
+      <MeetingMinutesModal
+        open={minutesOpen}
+        onClose={() => setMinutesOpen(false)}
+        minutes={meetingMinutes}
+        busy={busy}
+        onRefresh={() => generateMeetingMinutes(missionId, "refresh")}
+      />
+      <ArchitectHandoffModal
+        open={handoffOpen}
+        onClose={() => setHandoffOpen(false)}
+        preview={handoffPreview}
+        pendingCount={pendingCount}
+      />
     </Card>
   );
 }

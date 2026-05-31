@@ -3,16 +3,20 @@
 import { useState } from "react";
 import { DiscussionMarkdown } from "@/components/projects/DiscussionMarkdown";
 import type { DiscussionMessage } from "@/lib/discussion/discussionTypes";
+import {
+  PRODUCT_PLANNER_DISPLAY_NAME,
+  PRODUCT_PLANNER_EMOJI,
+} from "@/lib/discussion/executiveRoomLabels";
 
 const PARTICIPANT_LABEL: Record<DiscussionMessage["participant"], string> = {
   ceo: "CEO",
-  planner: "プロダクト責任者",
-  coo: "事業責任者",
+  planner: PRODUCT_PLANNER_DISPLAY_NAME,
+  coo: "COO",
 };
 
 const PARTICIPANT_EMOJI: Record<DiscussionMessage["participant"], string> = {
   ceo: "👤",
-  planner: "🧠",
+  planner: PRODUCT_PLANNER_EMOJI,
   coo: "🧭",
 };
 

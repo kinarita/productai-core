@@ -10,6 +10,7 @@ import {
 import {
   getCooReviewReport,
   getExecutiveDecision,
+  getPendingDecisionWarning,
   isArchitectUnlocked,
 } from "@/lib/coo-review/architectGate";
 import { LatestChangesReviewPanel } from "@/components/projects/LatestChangesReviewPanel";
@@ -46,7 +47,9 @@ export function CeoDecisionCard({
   }
 
   const status = decision ?? "awaiting_ceo_approval";
-  const canDecide = status === "awaiting_ceo_approval" && !revalidating;
+  const pendingDecisionWarning = getPendingDecisionWarning(run);
+  const canDecide =
+    status === "awaiting_ceo_approval" && !revalidating && !pendingDecisionWarning;
   const architectUnlocked = isArchitectUnlocked(mission, run);
 
   async function handleAction(action: "approve" | "needs_validation" | "hold") {
@@ -79,10 +82,19 @@ export function CeoDecisionCard({
         )}
       </div>
 
+      {pendingDecisionWarning ? (
+        <p className="mb-3 rounded-lg border border-warning/30 bg-amber-50/40 px-3 py-2 text-xs text-warning">
+          {pendingDecisionWarning}
+        </p>
+      ) : null}
+
       <p className="mb-4 text-sm text-muted">
         You are the CEO. The COO recommendation is{" "}
         <strong className="text-foreground">{report.recommendation}</strong> — your decision
         authorizes whether architecture work may begin.
+        {pendingDecisionWarning
+          ? " Resolve Executive Strategy Room decisions first."
+          : null}
       </p>
 
       {revalidating ? (

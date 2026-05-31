@@ -2,6 +2,33 @@
 
 All notable changes to ProductAI are documented here.
 
+## 2026-05-31
+
+### Changed (Phase 26.3 Executive Strategy Room Cleanup)
+
+- Product Planner naming, pending banner placement, view-only meeting minutes, handoff blocked copy.
+- Documentation: `docs/PHASE26_3_EXECUTIVE_STRATEGY_ROOM_CLEANUP.md`.
+
+### Changed (Phase 26.2 Decision Candidate Flow Finalization)
+
+- Decision candidates below input; 採用 auto-applies Brief; minutes auto-generate on open; handoff gated on pending.
+- Documentation: `docs/PHASE26_2_DECISION_CANDIDATE_FLOW_FINALIZATION.md`.
+
+### Changed (Phase 26.1 Executive Strategy Room Simplification)
+
+- Conversation-first 1-column room; auto decision candidates; modals for minutes and architect handoff.
+- Documentation: `docs/PHASE26_1_EXECUTIVE_STRATEGY_ROOM_SIMPLIFICATION.md`.
+
+### Added (Phase 26 Decision Governance & Executive Meeting System)
+
+- Decision board, meeting minutes, and governed Brief change candidates before commit.
+- Documentation: `docs/PHASE26_DECISION_GOVERNANCE_AND_EXECUTIVE_MEETING_SYSTEM.md`.
+
+### Added (Phase 25 Executive Strategy Room)
+
+- Multi-turn Executive Strategy Room with modes, signals, decision log, strategy summary, and architect handoff preview.
+- Documentation: `docs/PHASE25_EXECUTIVE_STRATEGY_ROOM.md`.
+
 ## 2026-05-30
 
 ### Added (Phase 24.6 Discussion Workspace Layout Optimization)

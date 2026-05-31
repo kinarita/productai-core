@@ -37,11 +37,17 @@ export function applyBriefChangeProposal(
         brief.coreFeatures.push(chartLine);
       }
       if (psfReport) {
+        const shouldHave = psfReport.mvpFeatures.shouldHave;
+        const hasChartInShouldHave =
+          shouldHave.includes(chartLine) ||
+          shouldHave.some((s) => /chart|グラフ/i.test(s));
         psfReport = {
           ...psfReport,
           mvpFeatures: {
             ...psfReport.mvpFeatures,
-            shouldHave: [...psfReport.mvpFeatures.shouldHave, chartLine],
+            shouldHave: hasChartInShouldHave
+              ? shouldHave
+              : [...shouldHave, chartLine],
           },
         };
       }

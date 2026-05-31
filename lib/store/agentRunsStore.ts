@@ -80,13 +80,47 @@ import { applyBriefChangeProposal } from "@/lib/discussion/applyBriefChangePropo
 import {
   briefUpdatedVersionActivity,
   suggestedChangeAppliedActivity,
-  ceoStartedDiscussionActivity,
   cooRespondedToDiscussionActivity,
   plannerRespondedToDiscussionActivity,
   suggestedChangeProposedActivity,
 } from "@/lib/discussion/discussionActivity";
+import { buildArchitectHandoffPreview } from "@/lib/discussion/buildArchitectHandoffPreview";
 import { buildDiscussionAuditRecord } from "@/lib/discussion/discussionAudit";
+import { detectStrategySignals } from "@/lib/discussion/detectStrategySignals";
+import { createDecisionItemFromCeoMessage } from "@/lib/discussion/createDecisionFromProposal";
+import {
+  createDecisionFromDiscussionTurn,
+  inferInternalDiscussionMode,
+  inferVotesFromDiscussionTurn,
+  registerAutoDecisionsFromProposals,
+  shouldAutoCreateDecisionCandidate,
+} from "@/lib/discussion/autoDecisionCandidate";
+import { generateMeetingMinutes } from "@/lib/discussion/generateMeetingMinutes";
+import { buildDecisionGovernanceAuditRecord } from "@/lib/discussion/decisionGovernanceAudit";
+import {
+  briefChangeCandidateCreatedActivity,
+  decisionApprovedActivity,
+  decisionProposedActivity,
+  decisionRejectedActivity,
+  meetingMinutesGeneratedActivity,
+} from "@/lib/discussion/decisionGovernanceActivity";
+import type {
+  BriefChangeCandidate,
+  DecisionCandidateStatus,
+  DecisionItem,
+} from "@/lib/discussion/decisionGovernanceTypes";
+import {
+  countPendingDecisionCandidates,
+  normalizeDecisionStatus,
+} from "@/lib/discussion/decisionCandidateStatus";
+import {
+  cooRaisedBusinessConcernActivity,
+  executiveDiscussionStartedActivity,
+  plannerChallengedAssumptionActivity,
+} from "@/lib/discussion/strategyRoomActivity";
+import { buildStrategyRoomAuditRecord } from "@/lib/discussion/strategyRoomAudit";
 import type { BriefChangeProposal, DiscussionMessage } from "@/lib/discussion/discussionTypes";
+import type { DiscussionMode } from "@/lib/discussion/strategyRoomTypes";
 import type {
   PlannerAgentRun,
   PlannerGenerationResult,
@@ -197,6 +231,14 @@ function mergePlannerMeta(
       patch.latestApprovedBriefVersion ?? base?.latestApprovedBriefVersion,
     briefVersionAudits: patch.briefVersionAudits ?? base?.briefVersionAudits,
     lastBriefApplyFeedback: patch.lastBriefApplyFeedback ?? base?.lastBriefApplyFeedback,
+    discussionMode: patch.discussionMode ?? base?.discussionMode,
+    strategySignals: patch.strategySignals ?? base?.strategySignals,
+    executiveDecisions: patch.executiveDecisions ?? base?.executiveDecisions,
+    strategySummary: patch.strategySummary ?? base?.strategySummary,
+    architectHandoffPreview: patch.architectHandoffPreview ?? base?.architectHandoffPreview,
+    decisionItems: patch.decisionItems ?? base?.decisionItems,
+    briefChangeCandidates: patch.briefChangeCandidates ?? base?.briefChangeCandidates,
+    meetingMinutes: patch.meetingMinutes ?? base?.meetingMinutes,
   };
 }
 
@@ -829,6 +871,417 @@ function discussionMessageId(): string {
   return `msg-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
+function executiveDecisionId(): string {
+  return `dec-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function briefCandidateId(): string {
+  return `bcc-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function refreshArchitectHandoffForRun(
+  run: PlannerStoredRun,
+  projectName: string
+): PlannerRunMeta["architectHandoffPreview"] {
+  const meta = run.plannerMeta;
+  const brief = run.audit?.output?.brief as ProductBriefSections | undefined;
+  if (!meta || !brief) return undefined;
+  return buildArchitectHandoffPreview({
+    projectName,
+    brief,
+    briefVersion: meta.briefVersion,
+    decisionItems: meta.decisionItems ?? [],
+    strategySignals: meta.strategySignals ?? [],
+    meetingMinutes: meta.meetingMinutes,
+    appliedProposals: meta.pendingProposals ?? [],
+    briefChangeCandidates: meta.briefChangeCandidates ?? [],
+    discussionMessages: meta.discussionMessages ?? [],
+  });
+}
+
+function setDiscussionModeOnMission(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  mode: DiscussionMode
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  if (!run?.plannerMeta) return;
+  const projectName = projectNameFromIdea(run.input.idea);
+  const nextMeta = mergePlannerMeta(run.plannerMeta, { discussionMode: mode });
+  const handoff = refreshArchitectHandoffForRun(
+    { ...run, plannerMeta: nextMeta },
+    projectName
+  );
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(nextMeta, { architectHandoffPreview: handoff }),
+  });
+  get().appendAudit(
+    buildStrategyRoomAuditRecord({
+      missionId,
+      eventType: "discussion_mode_set",
+      summary: `Discussion mode set to ${mode}`,
+      reasoning: [`WHY: CEO selected ${mode} mode for Executive Strategy Room.`],
+      discussionMode: mode,
+      runInput: run.input,
+    })
+  );
+}
+
+function createDecisionFromMessageOnMission(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  input: { messageId: string; message: string; title?: string }
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  if (!run || !meta) return;
+
+  const item = createDecisionItemFromCeoMessage(input);
+  const decisionItems = [...(meta.decisionItems ?? []), item];
+  const nextMeta = mergePlannerMeta(meta, { decisionItems });
+  const projectName = projectNameFromIdea(run.input.idea);
+  const handoff = refreshArchitectHandoffForRun(
+    { ...run, plannerMeta: nextMeta },
+    projectName
+  );
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(nextMeta, { architectHandoffPreview: handoff }),
+  });
+
+  get().appendAudit(
+    buildDecisionGovernanceAuditRecord({
+      missionId,
+      eventType: "decision_created",
+      summary: `Decision created: ${item.title}`,
+      reasoning: [`WHY: ${item.rationale.slice(0, 120)}`],
+      decisionItems,
+      runInput: run.input,
+    })
+  );
+
+  useProjectCreationStore.setState((state) => ({
+    activities: [decisionProposedActivity(missionId, item.title), ...state.activities].slice(
+      0,
+      120
+    ),
+  }));
+}
+
+function setCeoDecisionOnItem(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  decisionId: string,
+  status: DecisionCandidateStatus
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  if (!run || !meta) return;
+
+  const now = new Date().toISOString();
+  const prior = meta.decisionItems?.find((d) => d.id === decisionId);
+  if (!prior) return;
+
+  let decisionItems = (meta.decisionItems ?? []).map((d) =>
+    d.id === decisionId ? { ...d, status, ceoDecision: undefined, updatedAt: now } : d
+  );
+  const item = decisionItems.find((d) => d.id === decisionId)!;
+
+  let pendingProposals = meta.pendingProposals ?? [];
+  if (status === "rejected" && item.sourceProposalId) {
+    pendingProposals = pendingProposals.map((p) =>
+      p.id === item.sourceProposalId ? { ...p, status: "dismissed" as const } : p
+    );
+  }
+
+  let nextMeta = mergePlannerMeta(meta, { decisionItems, pendingProposals });
+  const projectName = projectNameFromIdea(run.input.idea);
+  let handoff = refreshArchitectHandoffForRun({ ...run, plannerMeta: nextMeta }, projectName);
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(nextMeta, { architectHandoffPreview: handoff }),
+  });
+
+  const auditEvent: import("@/lib/discussion/decisionGovernanceAudit").DecisionGovernanceAuditEventType =
+    status === "approved"
+      ? "decision_approved"
+      : status === "rejected"
+        ? "decision_rejected"
+        : status === "on_hold"
+          ? "decision_on_hold"
+          : "decision_needs_discussion";
+
+  get().appendAudit(
+    buildDecisionGovernanceAuditRecord({
+      missionId,
+      eventType: auditEvent,
+      summary: `CEO ${status} on decision: ${item.title}`,
+      reasoning: [`WHY: Governance decision on ${item.title}`],
+      decisionItems,
+      runInput: run.input,
+    })
+  );
+
+  const activity =
+    status === "approved"
+      ? decisionApprovedActivity(missionId, item.title)
+      : status === "rejected"
+        ? decisionRejectedActivity(missionId, item.title)
+        : decisionProposedActivity(missionId, `${item.title} (${status})`);
+
+  useProjectCreationStore.setState((state) => ({
+    activities: [activity, ...state.activities].slice(0, 120),
+  }));
+
+  if (status === "approved" && item.sourceProposalId) {
+    applyApprovedDecisionToBrief(set, get, missionId, decisionId);
+    const latest = getStoredPlannerRun(get, missionId);
+    if (!latest?.plannerMeta) return;
+    decisionItems = (latest.plannerMeta.decisionItems ?? []).map((d) =>
+      d.id === decisionId
+        ? { ...d, status: "applied_to_brief" as const, updatedAt: now }
+        : d
+    );
+    nextMeta = mergePlannerMeta(latest.plannerMeta, { decisionItems });
+    handoff = refreshArchitectHandoffForRun({ ...latest, plannerMeta: nextMeta }, projectName);
+    persistPlannerRun(set, key, {
+      plannerMeta: mergePlannerMeta(nextMeta, { architectHandoffPreview: handoff }),
+    });
+    get().appendAudit(
+      buildDecisionGovernanceAuditRecord({
+        missionId,
+        eventType: "decision_auto_applied_to_brief",
+        summary: `Brief updated from approved decision: ${item.title}`,
+        reasoning: [`WHY: CEO 採用 — automatic Brief vNext from proposal ${item.sourceProposalId}`],
+        decisionItems,
+        runInput: run.input,
+      })
+    );
+  }
+}
+
+function applyApprovedDecisionToBrief(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  decisionId: string
+) {
+  proposeBriefChangeCandidate(set, get, missionId, decisionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const candidate = run?.plannerMeta?.briefChangeCandidates?.find(
+    (c) => c.decisionId === decisionId && c.status === "approved"
+  );
+  if (candidate) {
+    commitBriefChangeCandidate(set, get, missionId, candidate.id);
+  }
+}
+
+function generateMeetingMinutesForMission(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  trigger: "open" | "refresh" | "manual" = "manual"
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  if (!run || !meta) return;
+
+  const projectName = projectNameFromIdea(run.input.idea);
+  const openFromSignals = (meta.strategySignals ?? [])
+    .filter((s) => s.kind === "scope_risk" || s.kind === "business_risk")
+    .map((s) => s.title);
+
+  const minutes = generateMeetingMinutes({
+    projectName,
+    messages: meta.discussionMessages ?? [],
+    decisionItems: meta.decisionItems ?? [],
+    briefChangeCandidates: meta.briefChangeCandidates ?? [],
+    appliedProposals: meta.pendingProposals ?? [],
+    openQuestionSignals: openFromSignals,
+  });
+
+  const nextMeta = mergePlannerMeta(meta, { meetingMinutes: minutes });
+  const handoff = refreshArchitectHandoffForRun({ ...run, plannerMeta: nextMeta }, projectName);
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(nextMeta, { architectHandoffPreview: handoff }),
+  });
+
+  get().appendAudit(
+    buildDecisionGovernanceAuditRecord({
+      missionId,
+      eventType: trigger === "open" ? "meeting_minutes_opened" : "meeting_minutes_generated",
+      summary:
+        trigger === "open"
+          ? "Meeting minutes opened and regenerated."
+          : "Meeting minutes generated.",
+      reasoning: minutes.architectNotes.map((n) => `WHY: ${n}`),
+      meetingMinutes: minutes,
+      architectHandoffPreview: handoff,
+      runInput: run.input,
+    })
+  );
+
+  if (trigger !== "open") {
+    useProjectCreationStore.setState((state) => ({
+      activities: [meetingMinutesGeneratedActivity(missionId), ...state.activities].slice(0, 120),
+    }));
+  }
+}
+
+function recordArchitectHandoffOpened(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string
+) {
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  if (!run || !meta) return;
+
+  const pending = countPendingDecisionCandidates(meta.decisionItems ?? []);
+  if (pending <= 0) return;
+
+  get().appendAudit(
+    buildDecisionGovernanceAuditRecord({
+      missionId,
+      eventType: "architect_handoff_blocked_pending_decisions",
+      summary: `${pending} pending decision(s) block final architect handoff.`,
+      reasoning: [
+        `WHY: ${pending} pending decision(s) must be resolved (採用 / 保留 / 却下) before final handoff.`,
+      ],
+      decisionItems: meta.decisionItems,
+      architectHandoffPreview: meta.architectHandoffPreview,
+      runInput: run.input,
+    })
+  );
+}
+
+function finalizeMeetingMinutes(set: AgentRunsSet, get: AgentRunsGet, missionId: string) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const minutes = run?.plannerMeta?.meetingMinutes;
+  if (!run?.plannerMeta || !minutes) return;
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(run.plannerMeta, {
+      meetingMinutes: { ...minutes, status: "finalized" },
+    }),
+  });
+}
+
+function proposeBriefChangeCandidate(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  decisionId: string
+) {
+  const key = plannerStorageKey(missionId);
+  const run = getStoredPlannerRun(get, missionId);
+  const meta = run?.plannerMeta;
+  if (!run || !meta) return;
+
+  const decision = meta.decisionItems?.find((d) => {
+    if (d.id !== decisionId) return false;
+    const s = normalizeDecisionStatus(d);
+    return s === "approved" || s === "applied_to_brief";
+  });
+  if (!decision?.sourceProposalId) return;
+
+  const proposal = meta.pendingProposals?.find((p) => p.id === decision.sourceProposalId);
+  if (!proposal || proposal.status === "applied" || proposal.status === "dismissed") return;
+
+  const existing = meta.briefChangeCandidates ?? [];
+  if (existing.some((c) => c.decisionId === decisionId && c.status !== "rejected")) return;
+
+  const candidate: BriefChangeCandidate = {
+    id: briefCandidateId(),
+    proposalId: proposal.id,
+    decisionId,
+    title: proposal.title,
+    status: "approved",
+    createdAt: new Date().toISOString(),
+  };
+
+  const pendingProposals = (meta.pendingProposals ?? []).map((p) =>
+    p.id === proposal.id ? { ...p, status: "brief_candidate" as const } : p
+  );
+
+  const nextMeta = mergePlannerMeta(meta, {
+    briefChangeCandidates: [...existing, candidate],
+    pendingProposals,
+  });
+  const projectName = projectNameFromIdea(run.input.idea);
+  const handoff = refreshArchitectHandoffForRun(
+    { ...run, plannerMeta: nextMeta },
+    projectName
+  );
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(nextMeta, { architectHandoffPreview: handoff }),
+  });
+
+  get().appendAudit(
+    buildDecisionGovernanceAuditRecord({
+      missionId,
+      eventType: "brief_change_candidate_created",
+      summary: `Brief change candidate: ${candidate.title}`,
+      reasoning: [`WHY: Decision approved — Brief update queued for commit.`],
+      decisionItems: meta.decisionItems,
+      runInput: run.input,
+    })
+  );
+
+  useProjectCreationStore.setState((state) => ({
+    activities: [
+      briefChangeCandidateCreatedActivity(missionId, candidate.title),
+      ...state.activities,
+    ].slice(0, 120),
+  }));
+}
+
+function commitBriefChangeCandidate(
+  set: AgentRunsSet,
+  get: AgentRunsGet,
+  missionId: string,
+  candidateId: string
+) {
+  const run = getStoredPlannerRun(get, missionId);
+  const candidate = run?.plannerMeta?.briefChangeCandidates?.find(
+    (c) => c.id === candidateId && c.status === "approved"
+  );
+  if (!candidate) return;
+
+  applyDiscoveryBriefProposal(set, get, missionId, candidate.proposalId);
+
+  const key = plannerStorageKey(missionId);
+  const latest = getStoredPlannerRun(get, missionId);
+  if (!latest?.plannerMeta) return;
+
+  const briefChangeCandidates = (latest.plannerMeta.briefChangeCandidates ?? []).map((c) =>
+    c.id === candidateId ? { ...c, status: "applied" as const } : c
+  );
+
+  persistPlannerRun(set, key, {
+    plannerMeta: mergePlannerMeta(latest.plannerMeta, { briefChangeCandidates }),
+  });
+
+  get().appendAudit(
+    buildDecisionGovernanceAuditRecord({
+      missionId,
+      eventType: "brief_change_committed",
+      summary: `Brief change committed: ${candidate.title}`,
+      reasoning: [`WHY: Approved governance path — Brief version updated.`],
+      runInput: latest.input,
+    })
+  );
+}
+
 async function sendDiscoveryDiscussionMessage(
   set: AgentRunsSet,
   get: AgentRunsGet,
@@ -843,7 +1296,9 @@ async function sendDiscoveryDiscussionMessage(
 
   const cooReview =
     meta.cooReviewReport ?? migrateLegacyReviewReport(meta.ceoReviewReport);
-  const isFirst = !(meta.discussionMessages?.length);
+  const discussionMode = inferInternalDiscussionMode(userMessage);
+  const priorMessages = meta.discussionMessages ?? [];
+  const isFirst = !priorMessages.length;
   const ceoMsg: DiscussionMessage = {
     id: discussionMessageId(),
     missionId,
@@ -853,15 +1308,52 @@ async function sendDiscoveryDiscussionMessage(
   };
 
   const activities: ProjectActivityItem[] = [];
-  if (isFirst) activities.push(ceoStartedDiscussionActivity(missionId));
+  if (isFirst) {
+    activities.push(executiveDiscussionStartedActivity(missionId));
+    get().appendAudit(
+      buildStrategyRoomAuditRecord({
+        missionId,
+        eventType: "executive_discussion_started",
+        summary: "Executive Strategy Room discussion started.",
+        reasoning: ["WHY: CEO opened multi-turn strategy session."],
+        discussionMode,
+        runInput: run.input,
+      })
+    );
+  }
   activities.push(
     plannerRespondedToDiscussionActivity(missionId),
     cooRespondedToDiscussionActivity(missionId)
   );
 
+  let decisionItems = [...(meta.decisionItems ?? [])];
+
+  const newSignals = detectStrategySignals({
+    ceoMessage: userMessage,
+    existing: meta.strategySignals,
+    sourceMessageId: ceoMsg.id,
+  });
+  const strategySignals = [...(meta.strategySignals ?? []), ...newSignals];
+  if (newSignals.length) {
+    get().appendAudit(
+      buildStrategyRoomAuditRecord({
+        missionId,
+        eventType: "strategy_signal_detected",
+        summary: `Strategy signals: ${newSignals.map((s) => s.title).join(", ")}`,
+        reasoning: newSignals.map((s) => `WHY: ${s.description}`),
+        strategySignals,
+        discussionMode,
+        runInput: run.input,
+      })
+    );
+  }
+
   persistPlannerRun(set, key, {
     plannerMeta: mergePlannerMeta(meta, {
-      discussionMessages: [...(meta.discussionMessages ?? []), ceoMsg],
+      discussionMessages: [...priorMessages, ceoMsg],
+      decisionItems,
+      strategySignals,
+      discussionMode,
     }),
   });
 
@@ -896,7 +1388,11 @@ async function sendDiscoveryDiscussionMessage(
       psfMvpScope: meta.psfMvpScope,
       cooReview,
       validationRequests: meta.validationRequests,
-      discussionMessages: meta.discussionMessages,
+      discussionMessages: [...priorMessages, ceoMsg],
+      discussionMode,
+      briefVersions: meta.briefVersions,
+      pendingProposals: meta.pendingProposals,
+      decisionItems: meta.decisionItems,
     }),
   });
 
@@ -909,6 +1405,8 @@ async function sendDiscoveryDiscussionMessage(
     cooDetail?: string;
     suggestedChanges?: BriefChangeProposal[];
     relatedSection?: DiscussionMessage["relatedSection"];
+    plannerChallenged?: boolean;
+    cooRaisedConcern?: boolean;
     error?: string;
   };
 
@@ -937,29 +1435,94 @@ async function sendDiscoveryDiscussionMessage(
     relatedSection: data.relatedSection,
   };
 
+  const postSignals = detectStrategySignals({
+    ceoMessage: userMessage,
+    plannerSummary: data.plannerSummary,
+    cooSummary: data.cooSummary,
+    existing: strategySignals,
+  });
+  const allSignals = [...strategySignals, ...postSignals];
+
+  if (data.plannerChallenged) {
+    activities.push(plannerChallengedAssumptionActivity(missionId));
+  }
+  if (data.cooRaisedConcern) {
+    activities.push(cooRaisedBusinessConcernActivity(missionId));
+  }
+
   const latest = getStoredPlannerRun(get, missionId)!;
-  const proposals = data.suggestedChanges ?? [];
-  const pending = [
-    ...(latest.plannerMeta?.pendingProposals ?? []).filter((p) => p.status === "pending"),
-    ...proposals,
-  ];
+  const newProposals = data.suggestedChanges ?? [];
+  const priorPending = (latest.plannerMeta?.pendingProposals ?? []).filter(
+    (p) => p.status === "pending" || p.status === "awaiting_decision" || p.status === "brief_candidate"
+  );
+  const pending = [...priorPending, ...newProposals];
+  const registered = registerAutoDecisionsFromProposals(
+    decisionItems,
+    newProposals,
+    ceoMsg.id,
+    {
+      ceoMessage: userMessage,
+      plannerSummary: data.plannerSummary,
+      cooSummary: data.cooSummary,
+    }
+  );
+  decisionItems = registered.decisionItems;
+  const priorCount = decisionItems.length;
+
+  if (newProposals.length === 0) {
+    const turnVotes = inferVotesFromDiscussionTurn(
+      data.plannerSummary,
+      data.cooSummary
+    );
+    if (
+      shouldAutoCreateDecisionCandidate({
+        ceoMessage: userMessage,
+        plannerSummary: data.plannerSummary,
+        cooSummary: data.cooSummary,
+        plannerVote: turnVotes.plannerVote,
+        cooVote: turnVotes.cooVote,
+        hasNewProposals: false,
+      })
+    ) {
+      const turnDecision = createDecisionFromDiscussionTurn({
+        ceoMessage: userMessage,
+        sourceDiscussionId: ceoMsg.id,
+        plannerSummary: data.plannerSummary,
+        cooSummary: data.cooSummary,
+        plannerDetail: data.plannerDetail,
+        cooDetail: data.cooDetail,
+      });
+      decisionItems = [...decisionItems, turnDecision];
+    }
+  }
+
+  const pendingWithStatus = [...priorPending, ...registered.proposals];
+
+  const mergedMeta = mergePlannerMeta(latest.plannerMeta, {
+    discussionMode,
+    discussionMessages: [
+      ...(latest.plannerMeta?.discussionMessages ?? []),
+      plannerMsg,
+      cooMsg,
+    ],
+    pendingProposals: pendingWithStatus,
+    strategySignals: allSignals,
+    decisionItems,
+  });
+  const handoff = refreshArchitectHandoffForRun(
+    { ...latest, plannerMeta: mergedMeta },
+    projectName
+  );
 
   persistPlannerRun(set, key, {
-    plannerMeta: mergePlannerMeta(latest.plannerMeta, {
-      discussionMessages: [
-        ...(latest.plannerMeta?.discussionMessages ?? []),
-        plannerMsg,
-        cooMsg,
-      ],
-      pendingProposals: pending,
-    }),
+    plannerMeta: mergePlannerMeta(mergedMeta, { architectHandoffPreview: handoff }),
   });
 
   get().appendAudit(
     buildDiscussionAuditRecord({
       missionId,
       eventType: "discussion_response",
-      summary: "Planner and COO responded in Discovery Discussion.",
+      summary: "Planner and COO responded in Executive Strategy Room.",
       reasoning: [
         `WHY: Planner — ${data.plannerResponse.slice(0, 80)}`,
         `WHY: COO — ${data.cooResponse.slice(0, 80)}`,
@@ -968,7 +1531,24 @@ async function sendDiscoveryDiscussionMessage(
     })
   );
 
-  for (const proposal of proposals) {
+  if (decisionItems.length > priorCount) {
+    get().appendAudit(
+      buildDecisionGovernanceAuditRecord({
+        missionId,
+        eventType: "decision_created",
+        summary: `Decision candidate(s) auto-created (${decisionItems.length - priorCount}).`,
+        reasoning: [
+          `WHY: Planner — ${data.plannerResponse.slice(0, 80)}`,
+          `WHY: COO — ${data.cooResponse.slice(0, 80)}`,
+        ],
+        decisionItems,
+        architectHandoffPreview: handoff,
+        runInput: run.input,
+      })
+    );
+  }
+
+  for (const proposal of newProposals) {
     get().appendAudit(
       buildDiscussionAuditRecord({
         missionId,
@@ -980,6 +1560,7 @@ async function sendDiscoveryDiscussionMessage(
       })
     );
     activities.push(suggestedChangeProposedActivity(missionId, proposal.title));
+    activities.push(decisionProposedActivity(missionId, proposal.title));
   }
 
   useProjectCreationStore.setState((state) => ({
@@ -992,7 +1573,7 @@ async function sendDiscoveryDiscussionMessage(
         ? {
             ...m,
             projectPipelineStage: pipelineStageAfterCooReview(),
-            recentActivity: "Discovery Discussion in progress",
+            recentActivity: "Executive Strategy Room in progress",
             updatedAt: "Just now",
           }
         : m
@@ -1013,7 +1594,9 @@ function applyDiscoveryBriefProposal(
   const brief = run?.audit?.output?.brief as ProductBriefSections | undefined;
   if (!run || !meta || !brief) return;
 
-  const proposal = meta.pendingProposals?.find((p) => p.id === proposalId && p.status === "pending");
+  const proposal = meta.pendingProposals?.find(
+    (p) => p.id === proposalId && p.status === "brief_candidate"
+  );
   if (!proposal) return;
 
   const applied = applyBriefChangeProposal(proposal, {
@@ -1103,23 +1686,46 @@ function applyDiscoveryBriefProposal(
     p.id === proposalId ? { ...p, status: "applied" as const } : p
   );
 
+  const projectName = projectNameFromIdea(run.input.idea);
+  const mergedMeta = mergePlannerMeta(meta, {
+    opportunityBrief: applied.opportunityBrief,
+    cpfReport: applied.cpfReport,
+    psfReport: applied.psfReport,
+    psfMvpScope: applied.psfMvpScope,
+    briefVersion,
+    briefVersions,
+    pendingProposals: updatedProposals,
+    briefVersionAudits: [...(meta.briefVersionAudits ?? []), versionAudit],
+    lastBriefApplyFeedback: applyFeedback,
+  });
+  const handoff = refreshArchitectHandoffForRun(
+    {
+      ...run,
+      audit: run.audit ? { ...run.audit, output: updatedOutput } : run.audit,
+      plannerMeta: mergedMeta,
+    },
+    projectName
+  );
+
   persistPlannerRun(set, key, {
     audit: run.audit ? { ...run.audit, output: updatedOutput } : run.audit,
-    plannerMeta: mergePlannerMeta(meta, {
-      opportunityBrief: applied.opportunityBrief,
-      cpfReport: applied.cpfReport,
-      psfReport: applied.psfReport,
-      psfMvpScope: applied.psfMvpScope,
-      briefVersion,
-      briefVersions,
-      pendingProposals: updatedProposals,
-      briefVersionAudits: [...(meta.briefVersionAudits ?? []), versionAudit],
-      lastBriefApplyFeedback: applyFeedback,
-    }),
+    plannerMeta: mergePlannerMeta(mergedMeta, { architectHandoffPreview: handoff }),
   });
 
-  const projectName = projectNameFromIdea(run.input.idea);
   applyBriefToMission(missionId, projectName, applied.brief);
+
+  if (handoff) {
+    get().appendAudit(
+      buildStrategyRoomAuditRecord({
+        missionId,
+        eventType: "architect_handoff_preview",
+        summary: "Architect handoff preview updated after Brief apply.",
+        reasoning: [`WHY: Brief v${briefVersion} — ${proposal.title}`],
+        architectHandoffPreview: handoff,
+        runInput: run.input,
+      })
+    );
+  }
 
   get().appendAudit(
     buildBriefDiffAuditRecord({
@@ -1580,6 +2186,25 @@ interface AgentRunsState {
   ) => Promise<void>;
   retryPlannerGeneration: (missionId: string) => Promise<void>;
   sendDiscoveryDiscussionMessage: (missionId: string, userMessage: string) => Promise<void>;
+  setDiscussionMode: (missionId: string, mode: DiscussionMode) => void;
+  createDecisionFromMessage: (
+    missionId: string,
+    input: { messageId: string; message: string; title?: string }
+  ) => void;
+  setCeoDecisionOnItem: (
+    missionId: string,
+    decisionId: string,
+    status: DecisionCandidateStatus
+  ) => void;
+  proposeBriefChangeFromDecision: (missionId: string, decisionId: string) => void;
+  applyApprovedDecisionToBrief: (missionId: string, decisionId: string) => void;
+  commitBriefChangeCandidate: (missionId: string, candidateId: string) => void;
+  generateMeetingMinutes: (
+    missionId: string,
+    trigger?: "open" | "refresh" | "manual"
+  ) => void;
+  recordArchitectHandoffOpened: (missionId: string) => void;
+  finalizeMeetingMinutes: (missionId: string) => void;
   applyDiscoveryBriefProposal: (missionId: string, proposalId: string) => void;
   dismissDiscoveryBriefProposal: (missionId: string, proposalId: string) => void;
   clearBriefApplyFeedback: (missionId: string) => void;
@@ -2097,6 +2722,42 @@ export const useAgentRunsStore = create<AgentRunsState>()(
 
       sendDiscoveryDiscussionMessage: async (missionId, userMessage) => {
         await sendDiscoveryDiscussionMessage(set, get, missionId, userMessage);
+      },
+
+      setDiscussionMode: (missionId, mode) => {
+        setDiscussionModeOnMission(set, get, missionId, mode);
+      },
+
+      createDecisionFromMessage: (missionId, input) => {
+        createDecisionFromMessageOnMission(set, get, missionId, input);
+      },
+
+      setCeoDecisionOnItem: (missionId, decisionId, status) => {
+        setCeoDecisionOnItem(set, get, missionId, decisionId, status);
+      },
+
+      proposeBriefChangeFromDecision: (missionId, decisionId) => {
+        proposeBriefChangeCandidate(set, get, missionId, decisionId);
+      },
+
+      applyApprovedDecisionToBrief: (missionId, decisionId) => {
+        applyApprovedDecisionToBrief(set, get, missionId, decisionId);
+      },
+
+      commitBriefChangeCandidate: (missionId, candidateId) => {
+        commitBriefChangeCandidate(set, get, missionId, candidateId);
+      },
+
+      generateMeetingMinutes: (missionId, trigger) => {
+        generateMeetingMinutesForMission(set, get, missionId, trigger);
+      },
+
+      recordArchitectHandoffOpened: (missionId) => {
+        recordArchitectHandoffOpened(set, get, missionId);
+      },
+
+      finalizeMeetingMinutes: (missionId) => {
+        finalizeMeetingMinutes(set, get, missionId);
       },
 
       applyDiscoveryBriefProposal: (missionId, proposalId) => {

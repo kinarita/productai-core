@@ -1,5 +1,63 @@
 # ProductAI Development Progress
 
+## 2026-05-31 — Phase 26.3 Executive Strategy Room Cleanup & UX Polish
+
+### Implemented
+
+- Head of Product → Product Planner (UI, activity, discussion persona, context, meeting minutes)
+- Meeting Minutes: view-only; removed 議事録を確定; Refresh Minutes retained
+- Pending warning moved below input (日本語バナー) before Decision Candidates
+- Architect Handoff blocked state with explicit title + pending count
+- `docs/PHASE26_3_EXECUTIVE_STRATEGY_ROOM_CLEANUP.md`
+
+## 2026-05-31 — Phase 26.2 Decision Candidate Flow Finalization
+
+### Implemented
+
+- Layout: Conversation → Input → Decision candidates → Brief Updated → Brief Change Review
+- 採用で Brief 自動反映（`applied_to_brief`）、Apply to Brief ボタン削除
+- Meeting Minutes モーダルオープン時に自動生成、Refresh Minutes のみ
+- `DecisionCandidateStatus`: pending / approved / rejected / on_hold / applied_to_brief
+- Pending 時は Architect Handoff プレビューのみ、CEO Approval / Architect unlock をゲート
+- Audit: `decision_on_hold`, `decision_auto_applied_to_brief`, `meeting_minutes_opened`, `architect_handoff_blocked_pending_decisions`
+- `docs/PHASE26_2_DECISION_CANDIDATE_FLOW_FINALIZATION.md`
+
+## 2026-05-31 — Phase 26.1 Executive Strategy Room Simplification
+
+### Implemented
+
+- Removed Discussion Mode UI, Strategy Signals panel, right sidebar, and Create Decision button
+- Auto Decision Candidate when agents disagree, proposals arrive, or CEO seeks judgment
+- Inline Decision Candidate cards (採用 / 保留 / 却下) with Planner/COO vote + rationale
+- Single-column Executive Strategy Room; Meeting Minutes and Architect Handoff modals
+- Apply to Brief only after CEO 採用 (`applyApprovedDecisionToBrief`)
+- Meeting Minutes vote history (Planner / COO / CEO / Result / Reason)
+- `docs/PHASE26_1_EXECUTIVE_STRATEGY_ROOM_SIMPLIFICATION.md`
+
+## 2026-05-31 — Phase 26 Decision Governance & Executive Meeting System
+
+### Implemented
+
+- `DecisionItem` governance layer with Planner/COO votes and CEO Approve/Reject/Need Discussion
+- Suggested changes register as decision candidates (no direct Brief apply)
+- Brief change candidates → commit path after approval
+- Meeting Minutes replaces Strategy Summary for organizational record
+- Create Decision on CEO messages (replaces Agreed/Open/Rejected)
+- Enhanced Architect handoff with decisions and minutes
+- Pipeline stage: Discussion → Decision → Approval
+- `docs/PHASE26_DECISION_GOVERNANCE_AND_EXECUTIVE_MEETING_SYSTEM.md`
+
+## 2026-05-31 — Phase 25 Executive Strategy Room
+
+### Implemented
+
+- Multi-turn discussion memory (brief history, applied changes, decisions)
+- Discussion modes: Explore, Challenge, Decision
+- Strategy Signals sidebar; Executive Decision Log; CEO message markers
+- Strategy Summary generation; Architect Will Receive handoff preview
+- Strategy room activity labels and append-only audit trail
+- `docs/PHASE25_EXECUTIVE_STRATEGY_ROOM.md`
+
 ## 2026-05-30 — Phase 24.6 Discussion Workspace Layout Optimization
 
 ### Implemented

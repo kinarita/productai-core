@@ -8,12 +8,14 @@ import {
 import type { PlannerAgentRun } from "@/lib/agents/planner/plannerTypes";
 
 function MvpColumn({ title, items }: { title: string; items: string[] }) {
+  const uniqueItems = items.filter((item, index) => items.indexOf(item) === index);
+
   return (
     <div>
       <p className="text-xs font-medium uppercase text-muted">{title}</p>
       <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-foreground">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
+        {uniqueItems.map((item, index) => (
+          <li key={`${title}-${index}`}>{item}</li>
         ))}
       </ul>
     </div>

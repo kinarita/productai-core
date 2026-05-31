@@ -87,5 +87,13 @@ export function toPlannerAgentRun(run: PlannerStoredRun | undefined): PlannerAge
     latestApprovedBriefVersion: meta?.latestApprovedBriefVersion,
     briefVersionAudits: meta?.briefVersionAudits,
     lastBriefApplyFeedback: meta?.lastBriefApplyFeedback,
+    discussionMode: meta?.discussionMode ?? "explore",
+    strategySignals: meta?.strategySignals,
+    executiveDecisions: meta?.executiveDecisions,
+    strategySummary: meta?.strategySummary,
+    architectHandoffPreview: meta?.architectHandoffPreview,
+    decisionItems: meta?.decisionItems,
+    briefChangeCandidates: meta?.briefChangeCandidates,
+    meetingMinutes: meta?.meetingMinutes,
   };
 }
